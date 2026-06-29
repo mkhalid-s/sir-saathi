@@ -80,7 +80,7 @@ function stateFromConfig(config: StateConfig): StateSummary {
     finalRollDate: displayDate(config.sir_schedule.final_roll_date),
     officialLink: officialLinkFor(config),
     sourceLabels: config.official_sources.map((source) => source.label),
-    sourceFreshness: config.official_sources.map((source) => `${source.label}: verified ${displayDate(source.last_verified)}`)
+    sourceFreshness: config.official_sources.map((source) => `${source.label}: last checked ${displayDate(source.last_verified)}`)
   };
 }
 

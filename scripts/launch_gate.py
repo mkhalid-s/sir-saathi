@@ -67,8 +67,10 @@ def verify_abuse_protection() -> None:
 def verify_source_freshness() -> None:
     web = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
-    if "Source freshness:" not in web or "last_verified" not in api:
+    if "Sources last checked:" not in web or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
+    if "verified " in web.casefold():
+        raise RuntimeError("web source freshness copy must not imply official verification")
     for path in sorted((ROOT / "config/states").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         for source in data.get("official_sources", []):

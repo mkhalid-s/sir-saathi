@@ -25,7 +25,8 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
     ]:
         assert field in source
     assert "Sources:" in source
-    assert "Source freshness:" in source
+    assert "Sources last checked:" in source
+    assert "Confirm deadlines and eligibility on the official portal" in source
     assert "Indexed public search is not launch-ready" in source
 
 
@@ -33,6 +34,18 @@ def test_web_state_summary_surfaces_source_freshness() -> None:
     source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     assert "last_verified" in source
     assert "sourceFreshness" in source
+    assert "last checked" in source
+
+
+def test_web_copy_does_not_overstate_source_certainty() -> None:
+    web_sources = [
+        ROOT / "apps/web/src/data/states.ts",
+        ROOT / "apps/web/src/components/ActionWizard.tsx",
+        ROOT / "apps/web/src/pages/methodology.astro",
+    ]
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in web_sources)
+    assert "verified " not in combined.casefold()
+    assert "confirm deadlines and eligibility" in combined
 
 
 def test_web_guidance_escalates_sir_risk_signals() -> None:

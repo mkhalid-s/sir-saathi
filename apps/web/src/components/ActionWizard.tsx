@@ -78,7 +78,8 @@ export default function ActionWizard() {
         <p class="result-summary">{guidance.summary}</p>
         <p class="deadline">Deadline: {deadline ?? 'Check official portal'}</p>
         <p class="source-note">Sources: {state.sourceLabels.join(', ')}</p>
-        <p class="source-note">Source freshness: {state.sourceFreshness.join('; ')}</p>
+        <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>
+        <p class="source-note">Confirm deadlines and eligibility on the official portal before acting.</p>
         <p class="source-note">Languages planned: {state.languages.join(', ')}. Default: {state.defaultLanguage}.</p>
         {!state.publicLaunchReady && <p class="warning-note">Indexed public search is not launch-ready for this state yet. Use official channels for final verification.</p>}
       </div>
