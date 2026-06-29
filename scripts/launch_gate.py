@@ -100,6 +100,19 @@ def verify_forms_catalogue() -> None:
         raise RuntimeError("forms catalogue must expose all MVP SIR forms")
 
 
+def verify_state_schedule_api() -> None:
+    from services.api.app import list_states_payload
+
+    for state in list_states_payload():
+        schedule = state.get("sir_schedule")
+        if not isinstance(schedule, dict):
+            raise RuntimeError("state payload must expose structured SIR schedule metadata")
+        if "status" not in schedule or "final_roll_date" not in schedule:
+            raise RuntimeError("state schedule payload must include status and final_roll_date")
+        if "ceo_portal" not in state:
+            raise RuntimeError("state payload must include CEO portal")
+
+
 def main() -> int:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
     if missing:
@@ -113,6 +126,7 @@ def main() -> int:
     verify_source_freshness()
     verify_pwa_installability()
     verify_forms_catalogue()
+    verify_state_schedule_api()
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])

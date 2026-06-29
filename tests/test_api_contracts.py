@@ -20,6 +20,10 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     mh = next(state for state in states if state["state_id"] == "IN-MH")
     assert mh["data_capability"] == "pilot_indexed_search"
     assert "final_roll_date" in mh
+    assert mh["ceo_portal"] == "https://ceoelection.maharashtra.gov.in/"
+    assert mh["sir_schedule"]["enumeration_end"] == "2026-07-29"
+    assert mh["sir_schedule"]["claims_end"] == "2026-09-04"
+    assert mh["sir_schedule"]["final_roll_date"] == "2026-10-07"
     assert mh["official_sources"][0]["last_verified"] == "2026-06-29"
 
 

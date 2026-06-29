@@ -6,6 +6,7 @@ The pure functions are importable in tests without requiring a running server.
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import date
 from typing import Any
 
 from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
@@ -42,6 +43,10 @@ API_ROUTES = {
 }
 
 
+def _date_payload(value: date | None) -> str | None:
+    return value.isoformat() if value else None
+
+
 def list_states_payload() -> list[dict[str, Any]]:
     states = load_all_states()
     return [
@@ -52,7 +57,19 @@ def list_states_payload() -> list[dict[str, Any]]:
             "data_capability": state.data_capability,
             "public_launch_ready": state.public_launch_ready,
             "sir_status": state.schedule.status,
-            "final_roll_date": state.schedule.final_roll_date.isoformat() if state.schedule.final_roll_date else None,
+            "sir_schedule": {
+                "phase": state.schedule.phase,
+                "qualifying_date": _date_payload(state.schedule.qualifying_date),
+                "enumeration_start": _date_payload(state.schedule.enumeration_start),
+                "enumeration_end": _date_payload(state.schedule.enumeration_end),
+                "draft_roll_date": _date_payload(state.schedule.draft_roll_date),
+                "claims_start": _date_payload(state.schedule.claims_start),
+                "claims_end": _date_payload(state.schedule.claims_end),
+                "final_roll_date": _date_payload(state.schedule.final_roll_date),
+                "status": state.schedule.status,
+            },
+            "ceo_portal": state.ceo_portal,
+            "final_roll_date": _date_payload(state.schedule.final_roll_date),
             "official_sources": [
                 {
                     "label": source.label,
