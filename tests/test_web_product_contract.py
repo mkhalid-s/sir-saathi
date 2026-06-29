@@ -60,7 +60,17 @@ def test_web_guidance_covers_backend_supported_situations() -> None:
         assert f'"{situation}"' in schema_source
         assert f"'{situation}'" in wizard_source
         assert f"'{situation}'" in guidance_source
-    assert "Form 7" in guidance_source
+    assert "form_7" in guidance_source
+
+
+def test_web_guidance_imports_canonical_forms_catalogue() -> None:
+    forms_source = (ROOT / "apps/web/src/data/forms.ts").read_text(encoding="utf-8")
+    guidance_source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    assert "../../../../config/forms/sir-actions.json" in forms_source
+    assert "formLabel('form_6')" in guidance_source
+    assert "formLabel('form_7')" in guidance_source
+    assert "formLabel('form_8')" in guidance_source
+    assert "documentsFor('identity', 'address', 'age')" in guidance_source
 
 
 def test_pwa_manifest_is_installable() -> None:

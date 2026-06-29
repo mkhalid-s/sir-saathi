@@ -1,4 +1,5 @@
 import type { StateSummary } from '../data/states';
+import { documentsFor, formLabel } from '../data/forms';
 
 export type Situation =
   | 'existing_voter'
@@ -86,9 +87,9 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     return {
       title: 'Register as a new voter',
       priority: 'high',
-      summary: 'Use Form 6 through official online or offline channels if you are eligible and not registered.',
-      actions: ['Check eligibility for the qualifying date.', 'Prepare identity, address, and age proof.', 'Submit Form 6 through the official voter portal or ERO/BLO route.'],
-      documents: ['Identity proof', 'Address proof', 'Age proof'],
+      summary: `Use ${formLabel('form_6')} through official online or offline channels if you are eligible and not registered.`,
+      actions: ['Check eligibility for the qualifying date.', 'Prepare identity, address, and age proof.', `Submit ${formLabel('form_6')} through the official voter portal or ERO/BLO route.`],
+      documents: documentsFor('identity', 'address', 'age'),
       notices
     };
   }
@@ -98,8 +99,8 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       title: 'Update your shifted address',
       priority: 'high',
       summary: 'Use the official correction or shift workflow so your roll entry matches your current residence.',
-      actions: ['Confirm whether the move is within the same AC.', 'Prepare current address proof.', 'Submit Form 8 or the official shift workflow.', 'Verify your updated polling station after disposal.'],
-      documents: ['Current address proof', 'Existing voter reference'],
+      actions: ['Confirm whether the move is within the same AC.', 'Prepare current address proof.', `Submit ${formLabel('form_8')} or the official shift workflow.`, 'Verify your updated polling station after disposal.'],
+      documents: [...documentsFor('address'), 'Existing voter reference'],
       notices
     };
   }
@@ -108,9 +109,9 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     return {
       title: 'Correct voter details',
       priority: 'medium',
-      summary: 'Use Form 8 for spelling, age, address, replacement EPIC, or similar corrections.',
-      actions: ['Identify the incorrect field.', 'Prepare supporting proof.', 'Submit Form 8 and track the request.'],
-      documents: ['Existing voter reference', 'Document supporting the correction'],
+      summary: `Use ${formLabel('form_8')} for spelling, age, address, replacement EPIC, or similar corrections.`,
+      actions: ['Identify the incorrect field.', 'Prepare supporting proof.', `Submit ${formLabel('form_8')} and track the request.`],
+      documents: ['Existing voter reference', ...documentsFor('correction')],
       notices
     };
   }
@@ -120,7 +121,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       title: 'Report a deceased family member entry',
       priority: 'medium',
       summary: 'Use the official objection or deletion route only with supporting details and documents.',
-      actions: ['Confirm the entry in the current roll.', 'Prepare available supporting record for the deceased elector.', 'Submit Form 7 or contact the local ERO/BLO route.', 'Keep acknowledgement details for follow-up.'],
+      actions: ['Confirm the entry in the current roll.', 'Prepare available supporting record for the deceased elector.', `Submit ${formLabel('form_7')} or contact the local ERO/BLO route.`, 'Keep acknowledgement details for follow-up.'],
       documents: ['Supporting record for deletion request', 'Your contact details for official follow-up'],
       notices
     };
@@ -132,7 +133,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       priority: 'medium',
       summary: 'Duplicate entries should be corrected through official ERO/BLO channels so the valid entry is retained.',
       actions: ['Note both duplicate entries without sharing them publicly.', 'Contact the BLO or ERO and ask which entry should remain active.', 'Submit the official objection or correction form if instructed.'],
-      documents: ['Existing voter reference', 'Current address proof if the duplicate relates to a shift'],
+      documents: ['Existing voter reference', ...documentsFor('address')],
       notices
     };
   }

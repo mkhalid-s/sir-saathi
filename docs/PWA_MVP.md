@@ -9,7 +9,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Follow-up SIR questions for BLO visit, enumeration form receipt/submission, current roll match, and base/base-roll match.
 - SIR deadline card.
 - Next-action checklist.
-- Document checklist.
+- Document checklist backed by `config/forms/sir-actions.json`.
 - Official portal link.
 - Source labels, source freshness, and launch-readiness warning.
 - WhatsApp-shareable checklist.
