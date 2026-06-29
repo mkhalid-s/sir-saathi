@@ -110,6 +110,17 @@ def verify_pwa_installability() -> None:
         raise RuntimeError("service worker must cache the app shell and avoid API caching")
 
 
+def verify_ui_language_readiness() -> None:
+    states_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    if "uiLanguageReadiness" not in states_source or "English UI is available now" not in states_source:
+        raise RuntimeError("web must expose explicit UI language readiness")
+    if "human review" not in states_source:
+        raise RuntimeError("planned non-English UI translations must require human review")
+    if "UI language" not in wizard or "(planned)" not in wizard:
+        raise RuntimeError("wizard must show available and planned UI language status")
+
+
 def verify_forms_catalogue() -> None:
     from services.api.app import forms_payload
 
@@ -145,6 +156,7 @@ def main() -> int:
     verify_abuse_protection()
     verify_source_freshness()
     verify_pwa_installability()
+    verify_ui_language_readiness()
     verify_forms_catalogue()
     verify_state_schedule_api()
     run([sys.executable, "scripts/check_sensitive.py"])

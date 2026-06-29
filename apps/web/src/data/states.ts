@@ -2,6 +2,7 @@ import maharashtraConfig from '../../../../config/states/IN-MH.json';
 import westBengalConfig from '../../../../config/states/IN-WB.json';
 
 export type StateCapability = 'guidance_only' | 'official_link_search' | 'pilot_indexed_search' | 'validated_indexed_search';
+export type UiLanguageStatus = 'available' | 'planned';
 
 interface SourceConfig {
   label: string;
@@ -55,6 +56,14 @@ export interface StateSummary {
   };
 }
 
+export interface UiLanguageOption {
+  code: string;
+  label: string;
+  status: UiLanguageStatus;
+}
+
+const ENGLISH_LABEL = 'English';
+
 const languageNames: Record<string, string> = {
   bn: 'Bengali',
   en: 'English',
@@ -75,6 +84,26 @@ function displayDate(value: string | null): string | undefined {
 function officialLinkFor(config: StateConfig): string {
   const officialSource = config.official_sources.find((source) => source.source_type === 'official_portal');
   return officialSource?.url ?? config.ceo_portal;
+}
+
+export function uiLanguageOptionsForState(stateLanguages: string[]): UiLanguageOption[] {
+  const plannedLanguages = stateLanguages.filter((language) => language !== ENGLISH_LABEL);
+  return [
+    { code: 'en', label: ENGLISH_LABEL, status: 'available' },
+    ...plannedLanguages.map((language) => ({
+      code: language.toLowerCase(),
+      label: language,
+      status: 'planned' as const
+    }))
+  ];
+}
+
+export function uiLanguageReadiness(stateLanguages: string[]): string {
+  const plannedLanguages = stateLanguages.filter((language) => language !== ENGLISH_LABEL);
+  if (plannedLanguages.length === 0) {
+    return 'English UI is available now.';
+  }
+  return `English UI is available now. ${plannedLanguages.join(', ')} translations are planned and will be added after human review.`;
 }
 
 function stateFromConfig(config: StateConfig): StateSummary {

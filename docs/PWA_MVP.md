@@ -14,6 +14,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - State-by-state search availability status that stays privacy-safe.
 - Official portal link.
 - Source labels, source freshness, and launch-readiness warning.
+- UI language selector that shows English as available and non-English translations as planned until human review.
 - WhatsApp-shareable checklist.
 - Installable PWA manifest with app icon.
 - Service worker for offline app-shell fallback; API calls are not cached.
@@ -25,4 +26,4 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Document uploads.
 - National unscoped voter search.
 - AI eligibility decisions.
-- Full multilingual UI strings beyond the first English UX pass.
+- Full reviewed non-English UI translations beyond the first English UX pass.

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks';
-import { states } from '../data/states';
+import { states, uiLanguageOptionsForState, uiLanguageReadiness } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
 
 const situations: { value: Situation; label: string }[] = [
@@ -36,10 +36,13 @@ function statusSelect(
 
 export default function ActionWizard() {
   const [stateId, setStateId] = useState('IN-MH');
+  const [uiLanguage, setUiLanguage] = useState('en');
   const [answers, setAnswers] = useState<WizardAnswers>(defaultAnswers);
   const state = states.find((item) => item.stateId === stateId) ?? states[0];
   const guidance = useMemo(() => guidanceFor(answers, state), [answers, state]);
   const deadline = deadlineFor(state, answers.situation);
+  const languageOptions = uiLanguageOptionsForState(state.languages);
+  const languageReadiness = uiLanguageReadiness(state.languages);
   const shareText = `SIR Saathi checklist for ${state.name}: ${guidance.title}. Next: ${guidance.actions[0]} Deadline: ${deadline ?? 'check official portal'}.`;
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const updateAnswer = <K extends keyof WizardAnswers>(key: K, value: WizardAnswers[K]) => {
@@ -62,6 +65,13 @@ export default function ActionWizard() {
             {situations.map((item) => <option value={item.value}>{item.label}</option>)}
           </select>
         </label>
+
+        <label class="field">
+          UI language
+          <select class="select" value={uiLanguage} onChange={(event) => setUiLanguage((event.currentTarget as HTMLSelectElement).value)}>
+            {languageOptions.map((item) => <option value={item.code} disabled={item.status === 'planned'}>{item.label}{item.status === 'planned' ? ' (planned)' : ''}</option>)}
+          </select>
+        </label>
       </div>
 
       <div class="question-grid" aria-label="SIR follow-up questions">
@@ -82,7 +92,8 @@ export default function ActionWizard() {
         <p class="source-note">Schedule note: {state.scheduleProvenance.notes}</p>
         <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>
         <p class="source-note">Confirm deadlines and eligibility on the official portal before acting.</p>
-        <p class="source-note">Languages planned: {state.languages.join(', ')}. Default: {state.defaultLanguage}.</p>
+        <p class="source-note">UI language status: {languageReadiness}</p>
+        <p class="source-note">State languages tracked: {state.languages.join(', ')}. Default: {state.defaultLanguage}.</p>
         {!state.publicLaunchReady && <p class="warning-note">Indexed public search is not launch-ready for this state yet. Use official channels for final verification.</p>}
       </div>
 

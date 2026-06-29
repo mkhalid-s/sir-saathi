@@ -40,6 +40,18 @@ def test_web_state_summary_surfaces_source_freshness() -> None:
     assert "last checked" in source
 
 
+def test_web_surfaces_reviewed_ui_language_readiness() -> None:
+    state_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    assert "uiLanguageOptionsForState" in state_source
+    assert "uiLanguageReadiness" in state_source
+    assert "English UI is available now" in state_source
+    assert "human review" in state_source
+    assert "UI language" in wizard_source
+    assert "(planned)" in wizard_source
+    assert "UI language status:" in wizard_source
+
+
 def test_web_copy_does_not_overstate_source_certainty() -> None:
     web_sources = [
         ROOT / "apps/web/src/data/states.ts",
