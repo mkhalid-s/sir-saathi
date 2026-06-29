@@ -5,7 +5,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 ## Included
 
 - State selector backed by the canonical `config/states/*.json` registry.
-- Situation selector.
+- Situation selector covering verification, missing name, new voter, shifted address, correction, deceased-family entry, duplicate entry, and portal failure.
 - Follow-up SIR questions for BLO visit, enumeration form receipt/submission, current roll match, and base/base-roll match.
 - SIR deadline card.
 - Next-action checklist.

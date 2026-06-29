@@ -8,6 +8,8 @@ const situations: { value: Situation; label: string }[] = [
   { value: 'new_voter', label: 'I need to register as a new voter' },
   { value: 'shifted_address', label: 'I shifted address' },
   { value: 'correction', label: 'My name, age, or address needs correction' },
+  { value: 'deceased_family', label: 'I need to report a deceased family member entry' },
+  { value: 'duplicate_entry', label: 'I found a duplicate voter entry' },
   { value: 'portal_failed', label: 'The official portal is not working for me' }
 ];
 

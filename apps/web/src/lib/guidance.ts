@@ -6,6 +6,8 @@ export type Situation =
   | 'new_voter'
   | 'shifted_address'
   | 'correction'
+  | 'deceased_family'
+  | 'duplicate_entry'
   | 'portal_failed';
 
 export type StatusAnswer = 'yes' | 'no' | 'unknown';
@@ -109,6 +111,28 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       summary: 'Use Form 8 for spelling, age, address, replacement EPIC, or similar corrections.',
       actions: ['Identify the incorrect field.', 'Prepare supporting proof.', 'Submit Form 8 and track the request.'],
       documents: ['Existing voter reference', 'Document supporting the correction'],
+      notices
+    };
+  }
+
+  if (answers.situation === 'deceased_family') {
+    return {
+      title: 'Report a deceased family member entry',
+      priority: 'medium',
+      summary: 'Use the official objection or deletion route only with supporting details and documents.',
+      actions: ['Confirm the entry in the current roll.', 'Prepare available supporting record for the deceased elector.', 'Submit Form 7 or contact the local ERO/BLO route.', 'Keep acknowledgement details for follow-up.'],
+      documents: ['Supporting record for deletion request', 'Your contact details for official follow-up'],
+      notices
+    };
+  }
+
+  if (answers.situation === 'duplicate_entry') {
+    return {
+      title: 'Report or resolve duplicate entries',
+      priority: 'medium',
+      summary: 'Duplicate entries should be corrected through official ERO/BLO channels so the valid entry is retained.',
+      actions: ['Note both duplicate entries without sharing them publicly.', 'Contact the BLO or ERO and ask which entry should remain active.', 'Submit the official objection or correction form if instructed.'],
+      documents: ['Existing voter reference', 'Current address proof if the duplicate relates to a shift'],
       notices
     };
   }

@@ -43,6 +43,26 @@ def test_web_guidance_escalates_sir_risk_signals() -> None:
     assert "enumerationFormReceived === 'yes'" in source
 
 
+def test_web_guidance_covers_backend_supported_situations() -> None:
+    schema_source = (ROOT / "services/api/schemas.py").read_text(encoding="utf-8")
+    wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    guidance_source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    for situation in [
+        "existing_voter",
+        "new_voter",
+        "missing_name",
+        "shifted_address",
+        "correction",
+        "deceased_family",
+        "duplicate_entry",
+        "portal_failed",
+    ]:
+        assert f'"{situation}"' in schema_source
+        assert f"'{situation}'" in wizard_source
+        assert f"'{situation}'" in guidance_source
+    assert "Form 7" in guidance_source
+
+
 def test_pwa_manifest_is_installable() -> None:
     manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
     assert manifest["display"] == "standalone"
