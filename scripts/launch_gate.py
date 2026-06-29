@@ -66,6 +66,7 @@ def verify_abuse_protection() -> None:
 
 def verify_source_freshness() -> None:
     web = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    search_availability = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
     if "Sources last checked:" not in web or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
@@ -73,6 +74,8 @@ def verify_source_freshness() -> None:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
+    if "Schedule provenance:" not in search_availability or "comes from an official source" not in search_availability:
+        raise RuntimeError("search availability must show official schedule provenance requirement")
     for path in sorted((ROOT / "config/states").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         provenance = data.get("schedule_provenance", {})

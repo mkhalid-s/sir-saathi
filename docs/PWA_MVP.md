@@ -11,7 +11,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Next-action checklist.
 - Document checklist backed by `config/forms/sir-actions.json`.
 - Source-backed forms and common documents reference.
-- State-by-state search availability status that stays privacy-safe.
+- State-by-state search availability status that stays privacy-safe and explains official schedule-provenance requirements.
 - Official portal link.
 - Source labels, source freshness, and launch-readiness warning.
 - UI language selector that shows English as available and non-English translations as planned until human review.

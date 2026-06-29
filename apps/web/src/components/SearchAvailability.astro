@@ -6,6 +6,9 @@ function capabilityLabel(capability: string): string {
 }
 
 function searchMessage(state: typeof states[number]): string {
+  if (state.scheduleProvenance.confidence !== 'official') {
+    return 'Indexed public search remains off until schedule provenance comes from an official source. Use official portals and local BLO/ERO channels for final verification.';
+  }
   if (!state.publicLaunchReady) {
     return 'Indexed public search is not launch-ready. Use official portals and local BLO/ERO channels for final verification.';
   }
@@ -28,6 +31,7 @@ function searchMessage(state: typeof states[number]): string {
         <div>
           <h3>{state.name}</h3>
           <p class="source-note">Capability: {capabilityLabel(state.capability)}</p>
+          <p class="source-note">Schedule provenance: {state.scheduleProvenance.confidence}</p>
         </div>
         <p>{searchMessage(state)}</p>
       </article>

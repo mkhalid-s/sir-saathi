@@ -116,6 +116,9 @@ def test_homepage_surfaces_privacy_safe_search_availability() -> None:
     assert "SearchAvailability" in page_source
     assert "../data/states" in component_source
     assert "Indexed public search is not launch-ready" in component_source
+    assert "Schedule provenance:" in component_source
+    assert "comes from an official source" in component_source
+    assert "state.scheduleProvenance.confidence !== 'official'" in component_source
     assert "rate limits" in component_source
     assert "publicLaunchReady" in component_source
 
