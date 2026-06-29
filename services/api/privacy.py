@@ -100,6 +100,8 @@ def assert_search_launch_allowed(
         raise ValueError("indexed search is not enabled for public launch in this state")
     if not state.is_search_enabled:
         raise ValueError("indexed search is not available for this state")
+    if state.schedule_provenance.confidence != "official":
+        raise ValueError("public search requires official schedule provenance")
     if policy.require_turnstile_for_public_search and not turnstile_verified:
         raise ValueError("public search requires abuse-prevention verification")
 

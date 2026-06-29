@@ -13,6 +13,7 @@ Before any public launch:
 - Privacy, methodology, and data-use pages are published.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
+- Public indexed search requires official schedule provenance, not reported-only dates.
 - Public search has rate limiting and abuse protection; production multi-process deployments use a shared limiter store.
 - Official links and source freshness are visible.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.

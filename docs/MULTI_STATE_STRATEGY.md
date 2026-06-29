@@ -14,11 +14,12 @@ SIR Saathi supports states in stages. Every state starts with guidance and offic
 A state can move from guidance to search only when:
 
 1. Official sources and dates are recorded in `config/states`.
-2. Source files are mapped by state, district, AC, part, year, language, and roll type.
-3. Parser output is validated against official metadata counts.
-4. Search is location-scoped and rate-limited.
-5. Full EPIC values, addresses, raw PDFs, and parsed exports are not exposed or committed.
-6. Public pages show source freshness and official verification fallback.
+2. Schedule provenance is marked `official`; `reported` dates can support guidance but not public indexed search launch.
+3. Source files are mapped by state, district, AC, part, year, language, and roll type.
+4. Parser output is validated against official metadata counts.
+5. Search is location-scoped and rate-limited.
+6. Full EPIC values, addresses, raw PDFs, and parsed exports are not exposed or committed.
+7. Public pages show source freshness and official verification fallback.
 
 ## Initial States
 
