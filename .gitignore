@@ -1,0 +1,45 @@
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Logs and runtime output
+*.log
+logs/
+tmp/
+temp/
+
+# Bulk electoral roll data and generated outputs.
+# Keep raw PDFs, parsed voter exports, and validation datasets local.
+data/**
+!data/README.md
+samples/**/*.pdf
+samples/**/*.png
+samples/**/*.jpg
+samples/**/*.jpeg
+samples/**/*.html
+samples/validation/**
+samples/regions/**
