@@ -1,0 +1,31 @@
+---
+import { commonDocuments, forms } from '../data/forms';
+
+const formList = Object.values(forms);
+const documentGroups = Object.entries(commonDocuments);
+---
+<section class="forms-reference" aria-labelledby="forms-reference-title">
+  <div>
+    <p class="eyebrow dark">Official form guide</p>
+    <h2 id="forms-reference-title">Know which form or document category may come up.</h2>
+    <p class="reference-copy">This reference is loaded from the same canonical forms catalogue used by guidance and the API.</p>
+  </div>
+
+  <div class="forms-list">
+    {formList.map((form) => (
+      <article class="form-card">
+        <h3>{form.label}</h3>
+        <p>{form.purpose}</p>
+      </article>
+    ))}
+  </div>
+
+  <div class="document-list">
+    <h3>Common document categories</h3>
+    <ul>
+      {documentGroups.map(([category, documents]) => (
+        <li><strong>{category}:</strong> {documents.join(', ')}</li>
+      ))}
+    </ul>
+  </div>
+</section>
