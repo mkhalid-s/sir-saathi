@@ -41,3 +41,22 @@ def test_web_guidance_escalates_sir_risk_signals() -> None:
     assert "baseRollFound === 'yes'" in source
     assert "bloVisited === 'no'" in source
     assert "enumerationFormReceived === 'yes'" in source
+
+
+def test_pwa_manifest_is_installable() -> None:
+    manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
+    assert manifest["display"] == "standalone"
+    assert manifest["scope"] == "/"
+    assert manifest["icons"]
+    assert manifest["icons"][0]["src"] == "/icons/icon.svg"
+    assert "maskable" in manifest["icons"][0]["purpose"]
+
+
+def test_pwa_registers_offline_app_shell_service_worker() -> None:
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    service_worker = (ROOT / "apps/web/public/sw.js").read_text(encoding="utf-8")
+    assert "serviceWorker" in layout
+    assert "register('/sw.js')" in layout
+    assert "APP_SHELL_URLS" in service_worker
+    assert "'/privacy/'" in service_worker
+    assert "url.pathname.startsWith('/api/')" in service_worker

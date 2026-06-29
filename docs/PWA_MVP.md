@@ -13,6 +13,8 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Official portal link.
 - Source labels, source freshness, and launch-readiness warning.
 - WhatsApp-shareable checklist.
+- Installable PWA manifest with app icon.
+- Service worker for offline app-shell fallback; API calls are not cached.
 
 ## Not Included Yet
 

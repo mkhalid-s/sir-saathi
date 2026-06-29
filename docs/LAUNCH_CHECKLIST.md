@@ -5,6 +5,8 @@ Before any public launch:
 - Sensitive-data scan passes.
 - Python tests pass.
 - Web build passes.
+- PWA manifest, icon, and service worker registration are present.
+- Service worker excludes `/api/*` from offline caching.
 - npm audit reports no vulnerabilities for the web workspace.
 - `python3 scripts/launch_gate.py` passes.
 - API routes are served under `/api/*` and match reverse-proxy configuration.

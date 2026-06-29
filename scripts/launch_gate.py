@@ -12,6 +12,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 REQUIRED_FILES = [
+    "apps/web/public/icons/icon.svg",
+    "apps/web/public/manifest.webmanifest",
+    "apps/web/public/sw.js",
     "apps/web/src/pages/privacy.astro",
     "apps/web/src/pages/methodology.astro",
     "apps/web/src/pages/data-use.astro",
@@ -72,6 +75,20 @@ def verify_source_freshness() -> None:
                 raise RuntimeError(f"missing source freshness in {path.name}: {source.get('label', 'unknown')}")
 
 
+def verify_pwa_installability() -> None:
+    manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    service_worker = (ROOT / "apps/web/public/sw.js").read_text(encoding="utf-8")
+    if manifest.get("display") != "standalone" or manifest.get("scope") != "/":
+        raise RuntimeError("PWA manifest must be standalone and scoped to the app root")
+    if not manifest.get("icons"):
+        raise RuntimeError("PWA manifest must include an icon")
+    if "navigator.serviceWorker.register('/sw.js')" not in layout:
+        raise RuntimeError("PWA layout must register the service worker")
+    if "APP_SHELL_URLS" not in service_worker or "url.pathname.startsWith('/api/')" not in service_worker:
+        raise RuntimeError("service worker must cache the app shell and avoid API caching")
+
+
 def main() -> int:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
     if missing:
@@ -83,6 +100,7 @@ def main() -> int:
     verify_deploy_templates()
     verify_abuse_protection()
     verify_source_freshness()
+    verify_pwa_installability()
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])
