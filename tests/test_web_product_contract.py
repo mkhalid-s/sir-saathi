@@ -82,6 +82,16 @@ def test_homepage_surfaces_canonical_forms_reference() -> None:
     assert "Common document categories" in component_source
 
 
+def test_homepage_surfaces_privacy_safe_search_availability() -> None:
+    page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    component_source = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
+    assert "SearchAvailability" in page_source
+    assert "../data/states" in component_source
+    assert "Indexed public search is not launch-ready" in component_source
+    assert "rate limits" in component_source
+    assert "publicLaunchReady" in component_source
+
+
 def test_pwa_manifest_is_installable() -> None:
     manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
     assert manifest["display"] == "standalone"

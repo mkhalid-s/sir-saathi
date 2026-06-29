@@ -11,6 +11,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Next-action checklist.
 - Document checklist backed by `config/forms/sir-actions.json`.
 - Source-backed forms and common documents reference.
+- State-by-state search availability status that stays privacy-safe.
 - Official portal link.
 - Source labels, source freshness, and launch-readiness warning.
 - WhatsApp-shareable checklist.

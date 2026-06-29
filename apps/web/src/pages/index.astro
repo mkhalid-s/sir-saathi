@@ -2,6 +2,7 @@
 import ActionWizard from '../components/ActionWizard';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FormsReference from '../components/FormsReference.astro';
+import SearchAvailability from '../components/SearchAvailability.astro';
 ---
 <BaseLayout title="SIR Saathi">
   <main class="shell">
@@ -11,6 +12,7 @@ import FormsReference from '../components/FormsReference.astro';
       <p class="hero-copy">A mobile-first guide for voters and helpers. Get a simple action checklist, official links, deadlines, and offline fallback steps.</p>
     </section>
     <ActionWizard client:load />
+    <SearchAvailability />
     <FormsReference />
     <section class="info-grid">
       <div class="info-card">

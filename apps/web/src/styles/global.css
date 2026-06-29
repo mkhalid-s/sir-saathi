@@ -69,7 +69,8 @@ a {
 
 .wizard,
 .info-card,
-.forms-reference {
+.forms-reference,
+.search-availability {
   border-radius: 1.5rem;
   background: #fff;
   padding: 1.25rem;
@@ -135,7 +136,8 @@ a {
 
 .action-grid,
 .info-grid,
-.forms-list {
+.forms-list,
+.search-status-list {
   display: grid;
   gap: 1.25rem;
   margin-top: 1.25rem;
@@ -151,7 +153,8 @@ a {
   margin-top: 1.5rem;
 }
 
-.forms-reference h2 {
+.forms-reference h2,
+.search-availability h2 {
   margin: 0.5rem 0 0;
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   line-height: 1.05;
@@ -159,12 +162,14 @@ a {
 
 .reference-copy,
 .form-card p,
-.document-list li {
+.document-list li,
+.search-status-card p {
   color: #475569;
   line-height: 1.6;
 }
 
-.form-card {
+.form-card,
+.search-status-card {
   border-radius: 1rem;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
@@ -172,8 +177,13 @@ a {
 }
 
 .form-card h3,
-.document-list h3 {
+.document-list h3,
+.search-status-card h3 {
   margin: 0;
+}
+
+.search-availability {
+  margin-top: 1.5rem;
 }
 
 .document-list {
@@ -233,7 +243,8 @@ a {
 @media (min-width: 768px) {
   .action-grid,
   .info-grid,
-  .forms-list {
+  .forms-list,
+  .search-status-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

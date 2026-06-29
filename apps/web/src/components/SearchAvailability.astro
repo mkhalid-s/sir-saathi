@@ -1,0 +1,36 @@
+---
+import { states } from '../data/states';
+
+function capabilityLabel(capability: string): string {
+  return capability.replaceAll('_', ' ');
+}
+
+function searchMessage(state: typeof states[number]): string {
+  if (!state.publicLaunchReady) {
+    return 'Indexed public search is not launch-ready. Use official portals and local BLO/ERO channels for final verification.';
+  }
+  if (state.capability === 'validated_indexed_search') {
+    return 'Validated indexed search can be enabled with abuse protection and scoped queries.';
+  }
+  return 'Guidance and official links are available; indexed search remains disabled.';
+}
+---
+<section class="search-availability" aria-labelledby="search-availability-title">
+  <div>
+    <p class="eyebrow dark">Search availability</p>
+    <h2 id="search-availability-title">Search stays off until a state is safe to launch.</h2>
+    <p class="reference-copy">SIR Saathi shows search capability transparently, but does not expose public indexed search until validation, privacy review, rate limits, and abuse checks pass.</p>
+  </div>
+
+  <div class="search-status-list">
+    {states.map((state) => (
+      <article class="search-status-card">
+        <div>
+          <h3>{state.name}</h3>
+          <p class="source-note">Capability: {capabilityLabel(state.capability)}</p>
+        </div>
+        <p>{searchMessage(state)}</p>
+      </article>
+    ))}
+  </div>
+</section>
