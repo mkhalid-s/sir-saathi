@@ -124,6 +124,16 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("wizard must show available and planned UI language status")
 
 
+def verify_safe_share_copy() -> None:
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    if "shareSafetyText" not in wizard or "encodeURIComponent(shareText)" not in wizard:
+        raise RuntimeError("wizard must use explicit safe checklist share text")
+    if "Confirm deadlines and eligibility on the official portal" not in wizard:
+        raise RuntimeError("shared checklist must ask users to confirm official deadlines")
+    if "Do not include EPIC, address, or other private details" not in wizard:
+        raise RuntimeError("shared checklist must warn against forwarding private voter details")
+
+
 def verify_forms_catalogue() -> None:
     from services.api.app import forms_payload
 
@@ -160,6 +170,7 @@ def main() -> int:
     verify_source_freshness()
     verify_pwa_installability()
     verify_ui_language_readiness()
+    verify_safe_share_copy()
     verify_forms_catalogue()
     verify_state_schedule_api()
     run([sys.executable, "scripts/check_sensitive.py"])

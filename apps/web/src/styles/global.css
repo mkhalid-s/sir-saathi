@@ -203,6 +203,14 @@ a {
   margin-top: 1.5rem;
 }
 
+.share-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .primary-button,
 .secondary-button {
   border-radius: 1rem;

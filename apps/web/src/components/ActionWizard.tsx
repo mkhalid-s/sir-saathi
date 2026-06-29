@@ -43,7 +43,13 @@ export default function ActionWizard() {
   const deadline = deadlineFor(state, answers.situation);
   const languageOptions = uiLanguageOptionsForState(state.languages);
   const languageReadiness = uiLanguageReadiness(state.languages);
-  const shareText = `SIR Saathi checklist for ${state.name}: ${guidance.title}. Next: ${guidance.actions[0]} Deadline: ${deadline ?? 'check official portal'}.`;
+  const shareSafetyText = 'Confirm deadlines and eligibility on the official portal. Do not include EPIC, address, or other private details when forwarding.';
+  const shareText = [
+    `SIR Saathi checklist for ${state.name}: ${guidance.title}.`,
+    `Next: ${guidance.actions[0]}`,
+    `Deadline: ${deadline ?? 'check official portal'}.`,
+    shareSafetyText
+  ].join(' ');
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const updateAnswer = <K extends keyof WizardAnswers>(key: K, value: WizardAnswers[K]) => {
     setAnswers((current) => ({ ...current, [key]: value }));
@@ -119,6 +125,7 @@ export default function ActionWizard() {
       </div>
 
       <div class="actions">
+        <p class="share-note">{shareSafetyText}</p>
         <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">Open official portal</a>
         <a class="secondary-button" href={shareUrl} target="_blank" rel="noreferrer">Share checklist</a>
       </div>

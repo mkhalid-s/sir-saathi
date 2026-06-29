@@ -32,6 +32,14 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
     assert "Indexed public search is not launch-ready" in source
 
 
+def test_web_share_checklist_includes_safety_reminder() -> None:
+    source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    assert "shareSafetyText" in source
+    assert "Confirm deadlines and eligibility on the official portal" in source
+    assert "Do not include EPIC, address, or other private details" in source
+    assert "encodeURIComponent(shareText)" in source
+
+
 def test_web_state_summary_surfaces_source_freshness() -> None:
     source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     assert "last_verified" in source
