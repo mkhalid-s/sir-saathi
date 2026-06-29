@@ -19,6 +19,7 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     mh = next(state for state in states if state["state_id"] == "IN-MH")
     assert mh["data_capability"] == "pilot_indexed_search"
     assert "final_roll_date" in mh
+    assert mh["official_sources"][0]["last_verified"] == "2026-06-29"
 
 
 def test_guidance_payload_returns_deadline_string() -> None:

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -59,6 +60,18 @@ def verify_abuse_protection() -> None:
         raise RuntimeError("public search route must apply client-scoped rate limiting")
 
 
+def verify_source_freshness() -> None:
+    web = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
+    if "Source freshness:" not in web or "last_verified" not in api:
+        raise RuntimeError("official source freshness must be visible in web and API surfaces")
+    for path in sorted((ROOT / "config/states").glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for source in data.get("official_sources", []):
+            if not source.get("last_verified"):
+                raise RuntimeError(f"missing source freshness in {path.name}: {source.get('label', 'unknown')}")
+
+
 def main() -> int:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
     if missing:
@@ -69,6 +82,7 @@ def main() -> int:
     verify_api_routes()
     verify_deploy_templates()
     verify_abuse_protection()
+    verify_source_freshness()
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])

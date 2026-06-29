@@ -23,12 +23,14 @@
       "label": "Maharashtra SIR schedule report",
       "url": "https://newsonair.gov.in/maharashtra-to-begin-verification-of-98-6-million-voters-from-june-30-under-special-intensive-revision/",
       "source_type": "public_report",
+      "last_verified": "2026-06-29",
       "notes": "Contains Maharashtra SIR Phase III dates and process summary."
     },
     {
       "label": "ECI voters portal",
       "url": "https://voters.eci.gov.in/",
       "source_type": "official_portal",
+      "last_verified": "2026-06-29",
       "notes": "Official portal for voter services and online forms."
     }
   ],

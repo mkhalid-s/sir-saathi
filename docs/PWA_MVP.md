@@ -11,7 +11,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Next-action checklist.
 - Document checklist.
 - Official portal link.
-- Source labels and launch-readiness warning.
+- Source labels, source freshness, and launch-readiness warning.
 - WhatsApp-shareable checklist.
 
 ## Not Included Yet

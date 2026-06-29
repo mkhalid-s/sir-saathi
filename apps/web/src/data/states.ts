@@ -7,6 +7,7 @@ interface SourceConfig {
   label: string;
   url: string;
   source_type: string;
+  last_verified: string;
   notes?: string;
 }
 
@@ -40,6 +41,7 @@ export interface StateSummary {
   finalRollDate?: string;
   officialLink: string;
   sourceLabels: string[];
+  sourceFreshness: string[];
 }
 
 const languageNames: Record<string, string> = {
@@ -77,7 +79,8 @@ function stateFromConfig(config: StateConfig): StateSummary {
     claimsEnd: displayDate(config.sir_schedule.claims_end),
     finalRollDate: displayDate(config.sir_schedule.final_roll_date),
     officialLink: officialLinkFor(config),
-    sourceLabels: config.official_sources.map((source) => source.label)
+    sourceLabels: config.official_sources.map((source) => source.label),
+    sourceFreshness: config.official_sources.map((source) => `${source.label}: verified ${displayDate(source.last_verified)}`)
   };
 }
 

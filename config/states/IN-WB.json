@@ -23,12 +23,14 @@
       "label": "CEO West Bengal SIR page",
       "url": "https://ceowestbengal.wb.gov.in/SIR",
       "source_type": "official_portal",
+      "last_verified": "2026-06-29",
       "notes": "SIR final roll, deletion/supplement lists, draft roll, FAQs, and enumeration forms."
     },
     {
       "label": "ECI voters portal",
       "url": "https://voters.eci.gov.in/",
       "source_type": "official_portal",
+      "last_verified": "2026-06-29",
       "notes": "Official portal for voter services and online forms."
     }
   ],

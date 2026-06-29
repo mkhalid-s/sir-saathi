@@ -46,6 +46,15 @@ def list_states_payload() -> list[dict[str, Any]]:
             "public_launch_ready": state.public_launch_ready,
             "sir_status": state.schedule.status,
             "final_roll_date": state.schedule.final_roll_date.isoformat() if state.schedule.final_roll_date else None,
+            "official_sources": [
+                {
+                    "label": source.label,
+                    "url": source.url,
+                    "source_type": source.source_type,
+                    "last_verified": source.last_verified.isoformat(),
+                }
+                for source in state.official_sources
+            ],
         }
         for state in states.values()
     ]

@@ -43,6 +43,7 @@ class DataSource:
     label: str
     url: str
     source_type: str
+    last_verified: date
     notes: str = ""
 
 
@@ -77,6 +78,13 @@ def _parse_date(value: str | None) -> date | None:
     return date.fromisoformat(value)
 
 
+def _require_date(data: dict[str, Any], key: str) -> date:
+    value = _parse_date(_require(data, key))
+    if value is None:
+        raise ValueError(f"missing required date: {key}")
+    return value
+
+
 def _require(data: dict[str, Any], key: str) -> Any:
     if key not in data:
         raise ValueError(f"missing required key: {key}")
@@ -106,6 +114,7 @@ def parse_state_config(data: dict[str, Any]) -> StateConfig:
             label=_require(source, "label"),
             url=_require(source, "url"),
             source_type=_require(source, "source_type"),
+            last_verified=_require_date(source, "last_verified"),
             notes=source.get("notes", ""),
         )
         for source in _require(data, "official_sources")
