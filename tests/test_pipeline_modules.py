@@ -1,3 +1,4 @@
+from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
 from pipeline.sir_saathi_pipeline.parsers.maharashtra_2002 import parse_voter_line
 from pipeline.sir_saathi_pipeline.sources import SourceManifest
 from pipeline.sir_saathi_pipeline.transliteration import virgo_to_devanagari, virgo_to_english
@@ -37,3 +38,10 @@ def test_source_manifest_marks_local_inputs() -> None:
         parser_hint="maharashtra_2002_virgod3",
     )
     assert manifest.is_local_only is False
+
+
+def test_forms_catalogue_loads_official_forms() -> None:
+    catalogue = load_forms_catalogue()
+    form_ids = {form.form_id for form in catalogue.forms}
+    assert {"enumeration_form", "form_6", "form_7", "form_8"} == form_ids
+    assert catalogue.common_documents["identity"] == ("Government-issued identity proof",)

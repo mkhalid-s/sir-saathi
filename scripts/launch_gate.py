@@ -18,6 +18,7 @@ REQUIRED_FILES = [
     "apps/web/src/pages/privacy.astro",
     "apps/web/src/pages/methodology.astro",
     "apps/web/src/pages/data-use.astro",
+    "config/forms/sir-actions.json",
     "docs/PRIVACY_AND_ABUSE.md",
     "docs/LAUNCH_CHECKLIST.md",
     "services/api/privacy.py",
@@ -37,7 +38,7 @@ def verify_api_routes() -> None:
     from services.api.app import api_route_paths
 
     paths = api_route_paths()
-    required = {"/api/health", "/api/states", "/api/guidance", "/api/search"}
+    required = {"/api/health", "/api/states", "/api/forms", "/api/guidance", "/api/search"}
     missing = sorted(required - paths)
     if missing:
         raise RuntimeError(f"missing API routes: {missing}")
@@ -89,6 +90,16 @@ def verify_pwa_installability() -> None:
         raise RuntimeError("service worker must cache the app shell and avoid API caching")
 
 
+def verify_forms_catalogue() -> None:
+    from services.api.app import forms_payload
+
+    payload = forms_payload()
+    form_ids = {form["form_id"] for form in payload["forms"]}
+    required = {"enumeration_form", "form_6", "form_7", "form_8"}
+    if required - form_ids:
+        raise RuntimeError("forms catalogue must expose all MVP SIR forms")
+
+
 def main() -> int:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
     if missing:
@@ -101,6 +112,7 @@ def main() -> int:
     verify_abuse_protection()
     verify_source_freshness()
     verify_pwa_installability()
+    verify_forms_catalogue()
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])

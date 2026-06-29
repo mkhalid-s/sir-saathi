@@ -1,5 +1,5 @@
 import pytest
-from services.api.app import api_route_paths, guidance_payload, list_states_payload, search_payload
+from services.api.app import api_route_paths, forms_payload, guidance_payload, list_states_payload, search_payload
 from services.api.models import InternalVoterRecord, redact_voter_record
 from services.api.privacy import InMemoryRateLimiter
 from services.api.schemas import ValidationError
@@ -9,6 +9,7 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
     paths = api_route_paths()
     assert "/api/health" in paths
     assert "/api/states" in paths
+    assert "/api/forms" in paths
     assert "/api/guidance" in paths
     assert "/api/search" in paths
     assert "/health" not in paths
@@ -20,6 +21,15 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     assert mh["data_capability"] == "pilot_indexed_search"
     assert "final_roll_date" in mh
     assert mh["official_sources"][0]["last_verified"] == "2026-06-29"
+
+
+def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:
+    payload = forms_payload()
+    labels = {form["form_id"]: form["label"] for form in payload["forms"]}
+    assert labels["enumeration_form"] == "SIR Enumeration Form"
+    assert labels["form_7"] == "Form 7"
+    assert "address" in payload["common_documents"]
+    assert "epic_number" not in str(payload).casefold()
 
 
 def test_guidance_payload_returns_deadline_string() -> None:

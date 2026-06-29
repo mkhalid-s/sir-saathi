@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
+from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 
@@ -32,7 +33,13 @@ except Exception:  # pragma: no cover - local environments may not have FastAPI 
     Request = object  # type: ignore[assignment]
 
 API_PREFIX = "/api"
-API_ROUTES = {f"{API_PREFIX}/health", f"{API_PREFIX}/states", f"{API_PREFIX}/guidance", f"{API_PREFIX}/search"}
+API_ROUTES = {
+    f"{API_PREFIX}/health",
+    f"{API_PREFIX}/states",
+    f"{API_PREFIX}/forms",
+    f"{API_PREFIX}/guidance",
+    f"{API_PREFIX}/search",
+}
 
 
 def list_states_payload() -> list[dict[str, Any]]:
@@ -58,6 +65,25 @@ def list_states_payload() -> list[dict[str, Any]]:
         }
         for state in states.values()
     ]
+
+
+def forms_payload() -> dict[str, Any]:
+    catalogue = load_forms_catalogue()
+    return {
+        "forms": [
+            {
+                "form_id": form.form_id,
+                "label": form.label,
+                "purpose": form.purpose,
+                "official_portal": form.official_portal,
+            }
+            for form in catalogue.forms
+        ],
+        "common_documents": {
+            category: list(documents)
+            for category, documents in catalogue.common_documents.items()
+        },
+    }
 
 
 def _guidance_request(payload: dict[str, Any] | GuidanceRequest) -> GuidanceRequest:
@@ -148,6 +174,10 @@ def create_app():
     @app.get(f"{API_PREFIX}/states")
     def states() -> list[dict[str, Any]]:
         return list_states_payload()
+
+    @app.get(f"{API_PREFIX}/forms")
+    def forms() -> dict[str, Any]:
+        return forms_payload()
 
     @app.post(f"{API_PREFIX}/guidance")
     def guidance(payload: dict[str, Any]) -> dict[str, Any]:
