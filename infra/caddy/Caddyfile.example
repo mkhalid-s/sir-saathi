@@ -1,7 +1,14 @@
 sir-saathi.example {
     encode zstd gzip
 
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+
     handle /api/* {
+        header Cache-Control "no-store"
         reverse_proxy 127.0.0.1:8000
     }
 

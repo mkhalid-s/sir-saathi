@@ -1,12 +1,14 @@
 # API And Database MVP
 
-The first API surface is intentionally small:
+The first API surface is intentionally small and served under the `/api` prefix:
 
-- `GET /health`
-- `GET /states`
-- `POST /guidance`
-- `POST /search`
+- `GET /api/health`
+- `GET /api/states`
+- `POST /api/guidance`
+- `POST /api/search`
 
-Name search must be scoped by Assembly Constituency or polling-station part. API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
+Name search fails closed unless the request is explicitly using the sanitized pilot fixture or a future state has passed public launch readiness. Public search must be scoped by Assembly Constituency; `part_number` can only narrow a search when `ac_number` is also present.
+
+API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 
 The initial PostgreSQL schema is in `db/schema.sql`; migration `db/migrations/0001_initial.sql` includes it for local database setup.

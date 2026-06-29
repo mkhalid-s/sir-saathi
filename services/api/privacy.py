@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from pipeline.sir_saathi_pipeline.state_registry import StateConfig
+
 
 @dataclass(frozen=True)
 class PublicSearchPolicy:
@@ -32,6 +34,25 @@ def assert_public_search_policy(policy: PublicSearchPolicy = DEFAULT_PUBLIC_SEAR
         raise ValueError("raw address reveal must be disabled")
     if policy.log_full_query:
         raise ValueError("full search query logging must be disabled")
+
+
+def assert_search_launch_allowed(
+    state: StateConfig,
+    *,
+    turnstile_verified: bool,
+    use_sanitized_pilot: bool,
+    policy: PublicSearchPolicy = DEFAULT_PUBLIC_SEARCH_POLICY,
+) -> None:
+    """Fail closed for indexed search unless a safe launch path is explicit."""
+    assert_public_search_policy(policy)
+    if use_sanitized_pilot:
+        return
+    if not state.public_launch_ready:
+        raise ValueError("indexed search is not enabled for public launch in this state")
+    if not state.is_search_enabled:
+        raise ValueError("indexed search is not available for this state")
+    if policy.require_turnstile_for_public_search and not turnstile_verified:
+        raise ValueError("public search requires abuse-prevention verification")
 
 
 def safe_log_query(query: str) -> str:

@@ -13,6 +13,8 @@ from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 
 from .models import InternalVoterRecord
 from .pilot_data import load_sanitized_pilot_records
+from .privacy import assert_search_launch_allowed
+from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
 from .search import SearchRequest, search_records
 
 try:  # FastAPI is installed in deployment/CI environments.
@@ -20,6 +22,9 @@ try:  # FastAPI is installed in deployment/CI environments.
 except Exception:  # pragma: no cover - local environments may not have FastAPI yet
     FastAPI = None  # type: ignore[assignment]
     HTTPException = Exception  # type: ignore[assignment]
+
+API_PREFIX = "/api"
+API_ROUTES = {f"{API_PREFIX}/health", f"{API_PREFIX}/states", f"{API_PREFIX}/guidance", f"{API_PREFIX}/search"}
 
 
 def list_states_payload() -> list[dict[str, Any]]:
@@ -38,15 +43,22 @@ def list_states_payload() -> list[dict[str, Any]]:
     ]
 
 
-def guidance_payload(payload: dict[str, Any]) -> dict[str, Any]:
+def _guidance_request(payload: dict[str, Any] | GuidanceRequest) -> GuidanceRequest:
+    if isinstance(payload, GuidanceRequest):
+        return payload
+    return GuidanceRequest.model_validate(payload)
+
+
+def guidance_payload(payload: dict[str, Any] | GuidanceRequest) -> dict[str, Any]:
+    validated = _guidance_request(payload)
     request = GuidanceInput(
-        state_id=payload["state_id"],
-        situation=payload["situation"],
-        blo_visited=payload.get("blo_visited", "unknown"),
-        enumeration_form_received=payload.get("enumeration_form_received", "unknown"),
-        enumeration_form_submitted=payload.get("enumeration_form_submitted", "unknown"),
-        current_roll_found=payload.get("current_roll_found", "unknown"),
-        base_roll_found=payload.get("base_roll_found", "unknown"),
+        state_id=validated.state_id,
+        situation=validated.situation,
+        blo_visited=validated.blo_visited,
+        enumeration_form_received=validated.enumeration_form_received,
+        enumeration_form_submitted=validated.enumeration_form_submitted,
+        current_roll_found=validated.current_roll_found,
+        base_roll_found=validated.base_roll_found,
     )
     result = get_guidance(request)
     data = asdict(result)
@@ -55,16 +67,45 @@ def guidance_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def search_payload(payload: dict[str, Any], records: list[InternalVoterRecord] | None = None) -> dict[str, Any]:
-    request = SearchRequest(
-        state_id=payload["state_id"],
-        query=payload["query"],
-        ac_number=payload.get("ac_number"),
-        part_number=payload.get("part_number"),
-        limit=payload.get("limit", 10),
+def _search_request(payload: dict[str, Any] | SearchRequestPayload) -> SearchRequestPayload:
+    if isinstance(payload, SearchRequestPayload):
+        return payload
+    return SearchRequestPayload.model_validate(payload)
+
+
+def search_payload(
+    payload: dict[str, Any] | SearchRequestPayload,
+    records: list[InternalVoterRecord] | None = None,
+) -> dict[str, Any]:
+    validated = _search_request(payload)
+    states = load_all_states()
+    if validated.state_id not in states:
+        raise ValueError(f"unknown state_id: {validated.state_id}")
+    assert_search_launch_allowed(
+        states[validated.state_id],
+        turnstile_verified=validated.turnstile_verified,
+        use_sanitized_pilot=validated.use_sanitized_pilot,
     )
-    results = search_records(request, list(records) if records is not None else list(load_sanitized_pilot_records()))
-    return {"results": [record.to_dict() for record in results], "count": len(results)}
+    request = SearchRequest(
+        state_id=validated.state_id,
+        query=validated.query,
+        ac_number=validated.ac_number,
+        part_number=validated.part_number,
+        limit=validated.limit,
+    )
+    if records is None:
+        if not validated.use_sanitized_pilot:
+            raise ValueError("no public search backend is enabled")
+        record_source = list(load_sanitized_pilot_records())
+    else:
+        record_source = list(records)
+    results = search_records(request, record_source)
+    response = SearchResponsePayload(results=[record.to_dict() for record in results], count=len(results))
+    return response.model_dump()
+
+
+def api_route_paths() -> set[str]:
+    return set(API_ROUTES)
 
 
 def create_app():
@@ -73,26 +114,26 @@ def create_app():
 
     app = FastAPI(title="SIR Saathi API", version="0.1.0")
 
-    @app.get("/health")
+    @app.get(f"{API_PREFIX}/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/states")
+    @app.get(f"{API_PREFIX}/states")
     def states() -> list[dict[str, Any]]:
         return list_states_payload()
 
-    @app.post("/guidance")
+    @app.post(f"{API_PREFIX}/guidance")
     def guidance(payload: dict[str, Any]) -> dict[str, Any]:
         try:
             return guidance_payload(payload)
-        except (KeyError, ValueError) as exc:
+        except (KeyError, ValueError, ValidationError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    @app.post("/search")
+    @app.post(f"{API_PREFIX}/search")
     def search(payload: dict[str, Any]) -> dict[str, Any]:
         try:
             return search_payload(payload)
-        except (KeyError, ValueError) as exc:
+        except (KeyError, ValueError, ValidationError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return app

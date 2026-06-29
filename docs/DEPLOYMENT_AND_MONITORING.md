@@ -3,7 +3,7 @@
 ## Target Shape
 
 - PWA: Cloudflare Pages from `apps/web`.
-- API: VM running FastAPI behind Caddy.
+- API: VM running FastAPI behind Caddy under `/api/*`.
 - Database: PostgreSQL 16 with `pg_trgm`.
 - Monitoring: health endpoint checks and uptime monitor.
 - Backups: encrypted database dumps or managed backups before public launch.
@@ -25,8 +25,12 @@ Cloudflare Pages settings:
 
 ```sh
 uvicorn services.api.app:create_app --factory --host 127.0.0.1 --port 8000
-curl -fsS http://127.0.0.1:8000/health
+curl -fsS http://127.0.0.1:8000/api/health
 ```
+
+## Local Database
+
+`infra/docker-compose.yml` is for local development only. It binds PostgreSQL to `127.0.0.1` and reads the database secret from an ignored file at `infra/.secrets/pg_secret`.
 
 ## VM Services
 

@@ -11,7 +11,10 @@ The Maharashtra search pilot proves the API contract with sanitized records only
 
 ## Rules
 
-- Search must be scoped by AC or polling-station part.
+- Search must be scoped by Assembly Constituency.
+- `part_number` is only a further narrowing field and must not be used without `ac_number`.
+- Public indexed search fails closed unless a state passes launch readiness and abuse-prevention checks.
+- The sanitized fixture path is available only when explicitly requested by tests/local demos.
 - Results are redacted by default.
 - No raw PDFs, parsed voter exports, full EPIC values, or addresses are committed.
 - Real local data can be loaded only from ignored paths after parser validation and privacy review.

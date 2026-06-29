@@ -6,8 +6,11 @@ Before any public launch:
 - Python tests pass.
 - Web build passes.
 - npm audit reports no vulnerabilities for the web workspace.
+- `python3 scripts/launch_gate.py` passes.
+- API routes are served under `/api/*` and match reverse-proxy configuration.
 - Privacy, methodology, and data-use pages are published.
-- Search is scoped and redacted.
+- Search is scoped by Assembly Constituency and redacted.
+- Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public search has rate limiting and abuse protection.
 - Official links and source freshness are visible.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.

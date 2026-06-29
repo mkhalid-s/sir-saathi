@@ -1,7 +1,16 @@
 import pytest
-
-from services.api.app import guidance_payload, list_states_payload, search_payload
+from services.api.app import api_route_paths, guidance_payload, list_states_payload, search_payload
 from services.api.models import InternalVoterRecord, redact_voter_record
+from services.api.schemas import ValidationError
+
+
+def test_api_routes_are_prefixed_for_proxy() -> None:
+    paths = api_route_paths()
+    assert "/api/health" in paths
+    assert "/api/states" in paths
+    assert "/api/guidance" in paths
+    assert "/api/search" in paths
+    assert "/health" not in paths
 
 
 def test_list_states_payload_exposes_registry_without_private_data() -> None:
@@ -17,12 +26,27 @@ def test_guidance_payload_returns_deadline_string() -> None:
     assert result["deadline"] == "2026-09-04"
 
 
-def test_search_requires_scope() -> None:
-    with pytest.raises(ValueError):
-        search_payload({"state_id": "IN-MH", "query": "sample"})
+def test_guidance_rejects_unknown_fields() -> None:
+    with pytest.raises(ValidationError):
+        guidance_payload({"state_id": "IN-MH", "situation": "missing_name", "extra": "nope"})
 
 
-def test_search_returns_redacted_records() -> None:
+def test_search_requires_ac_scope() -> None:
+    with pytest.raises(ValidationError):
+        search_payload({"state_id": "IN-MH", "query": "sample", "use_sanitized_pilot": True})
+
+
+def test_search_fails_closed_without_public_launch_or_pilot_flag() -> None:
+    with pytest.raises(ValueError, match="not enabled for public launch"):
+        search_payload({"state_id": "IN-MH", "query": "sample", "ac_number": 172})
+
+
+def test_search_requires_typed_query() -> None:
+    with pytest.raises(ValidationError):
+        search_payload({"state_id": "IN-MH", "query": 123, "ac_number": 172, "use_sanitized_pilot": True})
+
+
+def test_search_returns_redacted_records_with_explicit_pilot_flag() -> None:
     records = [
         InternalVoterRecord(
             state_id="IN-MH",
@@ -38,7 +62,10 @@ def test_search_returns_redacted_records() -> None:
             epic_last4="1234",
         )
     ]
-    result = search_payload({"state_id": "IN-MH", "query": "sample", "ac_number": 172}, records)
+    result = search_payload(
+        {"state_id": "IN-MH", "query": "sample", "ac_number": 172, "use_sanitized_pilot": True},
+        records,
+    )
     assert result["count"] == 1
     assert result["results"][0]["epic_hint"] == "***1234"
     assert "epic_number" not in result["results"][0]
