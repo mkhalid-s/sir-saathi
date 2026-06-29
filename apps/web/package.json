@@ -1,0 +1,17 @@
+{
+  "name": "@sir-saathi/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/preact": "^6.0.0",
+    "astro": "^7.0.3",
+    "preact": "^10.29.3",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "forms": {
+    "enumeration_form": {
+      "label": "SIR Enumeration Form",
+      "purpose": "Confirm or update existing elector details during SIR enumeration.",
+      "official_portal": "https://voters.eci.gov.in/"
+    },
+    "form_6": {
+      "label": "Form 6",
+      "purpose": "New voter registration for eligible Indian citizens.",
+      "official_portal": "https://voters.eci.gov.in/"
+    },
+    "form_7": {
+      "label": "Form 7",
+      "purpose": "Objection to inclusion or deletion-related request.",
+      "official_portal": "https://voters.eci.gov.in/"
+    },
+    "form_8": {
+      "label": "Form 8",
+      "purpose": "Correction, address shift, replacement EPIC, or PwD marking.",
+      "official_portal": "https://voters.eci.gov.in/"
+    }
+  },
+  "common_documents": {
+    "identity": ["Government-issued identity proof"],
+    "address": ["Current address proof"],
+    "age": ["Date-of-birth or age proof for new voters"],
+    "correction": ["Document supporting the corrected field"]
+  }
+}

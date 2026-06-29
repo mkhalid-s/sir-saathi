@@ -1,0 +1,41 @@
+[
+  {
+    "state_id": "IN-MH",
+    "ac_number": 172,
+    "part_number": 21,
+    "serial_number": 12,
+    "name": "Sample Voter",
+    "roll_year": 2002,
+    "roll_kind": "base_roll",
+    "data_quality": "ok",
+    "source_label": "sanitized Maharashtra pilot fixture",
+    "confidence": 0.99,
+    "epic_last4": "1234"
+  },
+  {
+    "state_id": "IN-MH",
+    "ac_number": 172,
+    "part_number": 21,
+    "serial_number": 13,
+    "name": "Example Citizen",
+    "roll_year": 2024,
+    "roll_kind": "current_roll",
+    "data_quality": "ok",
+    "source_label": "sanitized Maharashtra pilot fixture",
+    "confidence": 0.92,
+    "epic_last4": null
+  },
+  {
+    "state_id": "IN-MH",
+    "ac_number": 173,
+    "part_number": 5,
+    "serial_number": 8,
+    "name": "Demo Resident",
+    "roll_year": 2024,
+    "roll_kind": "current_roll",
+    "data_quality": "ok",
+    "source_label": "sanitized Maharashtra pilot fixture",
+    "confidence": 0.88,
+    "epic_last4": "6789"
+  }
+]

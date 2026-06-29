@@ -1,0 +1,33 @@
+---
+import ActionWizard from '../components/ActionWizard';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="SIR Saathi">
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">SIR Saathi</p>
+      <h1 class="hero-title">Know what to do next during SIR.</h1>
+      <p class="hero-copy">A mobile-first guide for voters and helpers. Get a simple action checklist, official links, deadlines, and offline fallback steps.</p>
+    </section>
+    <ActionWizard client:load />
+    <section class="info-grid">
+      <div class="info-card">
+        <h2>Guidance first</h2>
+        <p>Rules and official sources drive the answer. AI does not decide eligibility.</p>
+      </div>
+      <div class="info-card">
+        <h2>Search carefully</h2>
+        <p>Indexed search is added only state by state after validation and privacy checks.</p>
+      </div>
+      <div class="info-card">
+        <h2>Use official channels</h2>
+        <p>Final submission and status always happen through ECI, CEO, BLO, or ERO routes.</p>
+      </div>
+    </section>
+    <footer class="actions" aria-label="Project links">
+      <a class="secondary-button" href="/privacy">Privacy</a>
+      <a class="secondary-button" href="/methodology">Methodology</a>
+      <a class="secondary-button" href="/data-use">Data use</a>
+    </footer>
+  </main>
+</BaseLayout>

@@ -43,3 +43,20 @@ samples/**/*.jpeg
 samples/**/*.html
 samples/validation/**
 samples/regions/**
+
+# Node and frontend builds
+node_modules/
+.pnpm-store/
+.npm/
+dist/
+build/
+.astro/
+.vercel/
+.netlify/
+
+# Local databases and generated reports
+*.sqlite
+*.sqlite3
+*.db
+reports/
+coverage/

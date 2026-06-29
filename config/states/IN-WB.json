@@ -1,0 +1,42 @@
+{
+  "state_id": "IN-WB",
+  "eci_state_code": "S25",
+  "name": "West Bengal",
+  "short_name": "WB",
+  "languages": ["en", "bn", "hi"],
+  "scripts": ["Latin", "Bengali", "Devanagari"],
+  "default_language": "bn",
+  "sir_schedule": {
+    "phase": "Phase II",
+    "qualifying_date": "2026-01-01",
+    "enumeration_start": null,
+    "enumeration_end": null,
+    "draft_roll_date": null,
+    "claims_start": null,
+    "claims_end": null,
+    "final_roll_date": "2026-02-28",
+    "status": "final_roll_published"
+  },
+  "ceo_portal": "https://ceowestbengal.wb.gov.in/",
+  "official_sources": [
+    {
+      "label": "CEO West Bengal SIR page",
+      "url": "https://ceowestbengal.wb.gov.in/SIR",
+      "source_type": "official_portal",
+      "notes": "SIR final roll, deletion/supplement lists, draft roll, FAQs, and enumeration forms."
+    },
+    {
+      "label": "ECI voters portal",
+      "url": "https://voters.eci.gov.in/",
+      "source_type": "official_portal",
+      "notes": "Official portal for voter services and online forms."
+    }
+  ],
+  "base_roll_years": [2002],
+  "historical_source_shape": "CEO West Bengal historical roll PDFs and SIR-specific portal files.",
+  "current_roll_source_shape": "SIR 2026 portal files, final rolls, deletion lists, and supplementary lists.",
+  "data_capability": "guidance_only",
+  "parser_status": "Not started; use as contrast state for Bengali scripts and completed SIR workflow.",
+  "public_launch_ready": false,
+  "privacy_notes": "Start with guidance and official links only; do not index WB rolls until parser and privacy review pass."
+}

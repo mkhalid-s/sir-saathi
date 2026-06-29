@@ -23,9 +23,8 @@ from pathlib import Path
 
 try:
     import pdfplumber
-except ImportError:
-    print("pdfplumber required: pip install pdfplumber")
-    sys.exit(1)
+except ImportError:  # pragma: no cover - exercised only without optional dependency
+    pdfplumber = None
 
 
 # --- Structural markers (encoding-specific, not content-specific) ---
@@ -370,6 +369,8 @@ def extract_metadata_from_page1(pdf):
 
 def parse_pdf(pdf_path):
     """Parse a 2002 MH electoral roll PDF. Returns (metadata, voters, failures)."""
+    if pdfplumber is None:
+        raise RuntimeError("pdfplumber required: pip install pdfplumber")
     pdf = pdfplumber.open(pdf_path)
     metadata = extract_metadata_from_page1(pdf)
     voters = []

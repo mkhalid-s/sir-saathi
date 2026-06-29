@@ -1,0 +1,10 @@
+{
+  "name": "SIR Saathi",
+  "short_name": "SIR Saathi",
+  "description": "Mobile-first SIR guidance and voter-roll support.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": []
+}

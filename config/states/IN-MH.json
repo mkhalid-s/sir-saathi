@@ -1,0 +1,42 @@
+{
+  "state_id": "IN-MH",
+  "eci_state_code": "S13",
+  "name": "Maharashtra",
+  "short_name": "MH",
+  "languages": ["en", "hi", "mr"],
+  "scripts": ["Latin", "Devanagari"],
+  "default_language": "mr",
+  "sir_schedule": {
+    "phase": "Phase III",
+    "qualifying_date": "2026-10-01",
+    "enumeration_start": "2026-06-30",
+    "enumeration_end": "2026-07-29",
+    "draft_roll_date": "2026-08-05",
+    "claims_start": "2026-08-05",
+    "claims_end": "2026-09-04",
+    "final_roll_date": "2026-10-07",
+    "status": "enumeration_scheduled"
+  },
+  "ceo_portal": "https://ceoelection.maharashtra.gov.in/",
+  "official_sources": [
+    {
+      "label": "Maharashtra SIR schedule report",
+      "url": "https://newsonair.gov.in/maharashtra-to-begin-verification-of-98-6-million-voters-from-june-30-under-special-intensive-revision/",
+      "source_type": "public_report",
+      "notes": "Contains Maharashtra SIR Phase III dates and process summary."
+    },
+    {
+      "label": "ECI voters portal",
+      "url": "https://voters.eci.gov.in/",
+      "source_type": "official_portal",
+      "notes": "Official portal for voter services and online forms."
+    }
+  ],
+  "base_roll_years": [2002, 2003, 2004],
+  "historical_source_shape": "CEO Maharashtra historical PDFs, including legacy VirgoD3 font variants for some 2002 rolls.",
+  "current_roll_source_shape": "ECI/CEO PDF roll sources and portal-backed official search.",
+  "data_capability": "pilot_indexed_search",
+  "parser_status": "VirgoD3 parser validated for Trombay pilot; statewide parser routing still required.",
+  "public_launch_ready": false,
+  "privacy_notes": "Pilot search must remain scoped and redacted until parser validation, rate limits, and legal/privacy review pass."
+}
