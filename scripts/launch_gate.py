@@ -69,7 +69,7 @@ def verify_source_freshness() -> None:
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
     if "Sources last checked:" not in web or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
-    if "Schedule source:" not in web or "schedule_provenance" not in api:
+    if "Schedule source:" not in web or "Schedule note:" not in web or "schedule_provenance" not in api:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
@@ -78,6 +78,19 @@ def verify_source_freshness() -> None:
         provenance = data.get("schedule_provenance", {})
         if provenance.get("confidence") not in {"official", "reported"}:
             raise RuntimeError(f"missing schedule provenance confidence in {path.name}")
+        source_by_label = {
+            source.get("label"): source
+            for source in data.get("official_sources", [])
+        }
+        matching_source = source_by_label.get(provenance.get("label"))
+        if matching_source is None:
+            raise RuntimeError(f"schedule provenance source must be listed in {path.name}")
+        if matching_source.get("source_type") != provenance.get("source_type"):
+            raise RuntimeError(f"schedule provenance source_type must match listed source in {path.name}")
+        if provenance.get("confidence") == "official" and provenance.get("source_type") != "official_portal":
+            raise RuntimeError(f"official schedule provenance must use official_portal in {path.name}")
+        if not provenance.get("notes"):
+            raise RuntimeError(f"schedule provenance must include notes in {path.name}")
         for source in data.get("official_sources", []):
             if not source.get("last_verified"):
                 raise RuntimeError(f"missing source freshness in {path.name}: {source.get('label', 'unknown')}")

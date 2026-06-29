@@ -23,6 +23,7 @@ VALID_CAPABILITIES = {
     "pilot_indexed_search",
     "validated_indexed_search",
 }
+VALID_PROVENANCE_CONFIDENCE = {"official", "reported"}
 
 
 @dataclass(frozen=True)
@@ -129,10 +130,22 @@ def parse_state_config(data: dict[str, Any]) -> StateConfig:
         for source in _require(data, "official_sources")
     )
     provenance_raw = _require(data, "schedule_provenance")
+    provenance_confidence = _require(provenance_raw, "confidence")
+    if provenance_confidence not in VALID_PROVENANCE_CONFIDENCE:
+        raise ValueError(f"invalid schedule provenance confidence: {provenance_confidence}")
+    provenance_label = _require(provenance_raw, "label")
+    provenance_source_type = _require(provenance_raw, "source_type")
+    matching_source = next((source for source in sources if source.label == provenance_label), None)
+    if matching_source is None:
+        raise ValueError(f"schedule provenance source is not listed: {provenance_label}")
+    if provenance_source_type != matching_source.source_type:
+        raise ValueError("schedule provenance source_type must match the listed source")
+    if provenance_confidence == "official" and provenance_source_type != "official_portal":
+        raise ValueError("official schedule provenance must come from an official portal")
     provenance = ScheduleProvenance(
-        label=_require(provenance_raw, "label"),
-        source_type=_require(provenance_raw, "source_type"),
-        confidence=_require(provenance_raw, "confidence"),
+        label=provenance_label,
+        source_type=provenance_source_type,
+        confidence=provenance_confidence,
         notes=_require(provenance_raw, "notes"),
     )
 

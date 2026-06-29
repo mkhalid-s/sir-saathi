@@ -79,6 +79,7 @@ export default function ActionWizard() {
         <p class="deadline">Deadline: {deadline ?? 'Check official portal'}</p>
         <p class="source-note">Sources: {state.sourceLabels.join(', ')}</p>
         <p class="source-note">Schedule source: {state.scheduleProvenance.label} ({state.scheduleProvenance.confidence}).</p>
+        <p class="source-note">Schedule note: {state.scheduleProvenance.notes}</p>
         <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>
         <p class="source-note">Confirm deadlines and eligibility on the official portal before acting.</p>
         <p class="source-note">Languages planned: {state.languages.join(', ')}. Default: {state.defaultLanguage}.</p>

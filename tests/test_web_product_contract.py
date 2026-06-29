@@ -26,6 +26,7 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
         assert field in source
     assert "Sources:" in source
     assert "Schedule source:" in source
+    assert "Schedule note:" in source
     assert "Sources last checked:" in source
     assert "Confirm deadlines and eligibility on the official portal" in source
     assert "Indexed public search is not launch-ready" in source
