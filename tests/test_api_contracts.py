@@ -1,6 +1,7 @@
 import pytest
 from services.api.app import api_route_paths, guidance_payload, list_states_payload, search_payload
 from services.api.models import InternalVoterRecord, redact_voter_record
+from services.api.privacy import InMemoryRateLimiter
 from services.api.schemas import ValidationError
 
 
@@ -69,6 +70,29 @@ def test_search_returns_redacted_records_with_explicit_pilot_flag() -> None:
     assert result["count"] == 1
     assert result["results"][0]["epic_hint"] == "***1234"
     assert "epic_number" not in result["results"][0]
+
+
+def test_search_payload_applies_rate_limit_when_limiter_is_provided() -> None:
+    records = [
+        InternalVoterRecord(
+            state_id="IN-MH",
+            ac_number=172,
+            part_number=21,
+            serial_number=12,
+            name="Sample Voter",
+            roll_year=2002,
+            roll_kind="base_roll",
+            data_quality="ok",
+            source_label="sanitized fixture",
+            confidence=0.99,
+            epic_last4="1234",
+        )
+    ]
+    limiter = InMemoryRateLimiter(max_requests=1, window_seconds=60)
+    payload = {"state_id": "IN-MH", "query": "sample", "ac_number": 172, "use_sanitized_pilot": True}
+    assert search_payload(payload, records, rate_limiter=limiter, client_identity="client-a")["count"] == 1
+    with pytest.raises(ValueError, match="search rate limit exceeded"):
+        search_payload(payload, records, rate_limiter=limiter, client_identity="client-a")
 
 
 def test_redaction_does_not_expose_internal_epic_field() -> None:

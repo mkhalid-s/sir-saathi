@@ -50,6 +50,15 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("local compose must not expose unauthenticated Postgres")
 
 
+def verify_abuse_protection() -> None:
+    privacy = (ROOT / "services/api/privacy.py").read_text(encoding="utf-8")
+    app = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
+    if "InMemoryRateLimiter" not in privacy or "search_rate_limit_key" not in privacy:
+        raise RuntimeError("public search must define rate limiting helpers")
+    if "DEFAULT_SEARCH_RATE_LIMITER" not in app or "request.client.host" not in app:
+        raise RuntimeError("public search route must apply client-scoped rate limiting")
+
+
 def main() -> int:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
     if missing:
@@ -59,6 +68,7 @@ def main() -> int:
         return 1
     verify_api_routes()
     verify_deploy_templates()
+    verify_abuse_protection()
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])

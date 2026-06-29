@@ -13,15 +13,23 @@ from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 
 from .models import InternalVoterRecord
 from .pilot_data import load_sanitized_pilot_records
-from .privacy import assert_search_launch_allowed
+from .privacy import (
+    DEFAULT_SEARCH_RATE_LIMITER,
+    InMemoryRateLimiter,
+    RateLimitExceeded,
+    assert_rate_limit_allowed,
+    assert_search_launch_allowed,
+    search_rate_limit_key,
+)
 from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
 from .search import SearchRequest, search_records
 
 try:  # FastAPI is installed in deployment/CI environments.
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, Request
 except Exception:  # pragma: no cover - local environments may not have FastAPI yet
     FastAPI = None  # type: ignore[assignment]
     HTTPException = Exception  # type: ignore[assignment]
+    Request = object  # type: ignore[assignment]
 
 API_PREFIX = "/api"
 API_ROUTES = {f"{API_PREFIX}/health", f"{API_PREFIX}/states", f"{API_PREFIX}/guidance", f"{API_PREFIX}/search"}
@@ -76,6 +84,9 @@ def _search_request(payload: dict[str, Any] | SearchRequestPayload) -> SearchReq
 def search_payload(
     payload: dict[str, Any] | SearchRequestPayload,
     records: list[InternalVoterRecord] | None = None,
+    *,
+    rate_limiter: InMemoryRateLimiter | None = None,
+    client_identity: str | None = None,
 ) -> dict[str, Any]:
     validated = _search_request(payload)
     states = load_all_states()
@@ -93,6 +104,13 @@ def search_payload(
         part_number=validated.part_number,
         limit=validated.limit,
     )
+    if rate_limiter is not None:
+        key = search_rate_limit_key(
+            client_identity=client_identity,
+            state_id=request.state_id,
+            ac_number=request.ac_number,
+        )
+        assert_rate_limit_allowed(rate_limiter.check(key))
     if records is None:
         if not validated.use_sanitized_pilot:
             raise ValueError("no public search backend is enabled")
@@ -130,9 +148,12 @@ def create_app():
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post(f"{API_PREFIX}/search")
-    def search(payload: dict[str, Any]) -> dict[str, Any]:
+    def search(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         try:
-            return search_payload(payload)
+            client_host = request.client.host if request.client else None
+            return search_payload(payload, rate_limiter=DEFAULT_SEARCH_RATE_LIMITER, client_identity=client_host)
+        except RateLimitExceeded as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         except (KeyError, ValueError, ValidationError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
