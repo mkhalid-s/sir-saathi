@@ -17,6 +17,12 @@
     "final_roll_date": "2026-02-28",
     "status": "final_roll_published"
   },
+  "schedule_provenance": {
+    "label": "CEO West Bengal SIR page",
+    "source_type": "official_portal",
+    "confidence": "official",
+    "notes": "Dates and roll status are from the CEO West Bengal SIR page; confirm on the official page before acting."
+  },
   "ceo_portal": "https://ceowestbengal.wb.gov.in/",
   "official_sources": [
     {

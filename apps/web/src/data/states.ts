@@ -22,6 +22,12 @@ interface StateConfig {
     final_roll_date: string | null;
     status: string;
   };
+  schedule_provenance: {
+    label: string;
+    source_type: string;
+    confidence: 'official' | 'reported';
+    notes: string;
+  };
   ceo_portal: string;
   official_sources: SourceConfig[];
   data_capability: StateCapability;
@@ -42,6 +48,11 @@ export interface StateSummary {
   officialLink: string;
   sourceLabels: string[];
   sourceFreshness: string[];
+  scheduleProvenance: {
+    label: string;
+    confidence: 'official' | 'reported';
+    notes: string;
+  };
 }
 
 const languageNames: Record<string, string> = {
@@ -80,7 +91,12 @@ function stateFromConfig(config: StateConfig): StateSummary {
     finalRollDate: displayDate(config.sir_schedule.final_roll_date),
     officialLink: officialLinkFor(config),
     sourceLabels: config.official_sources.map((source) => source.label),
-    sourceFreshness: config.official_sources.map((source) => `${source.label}: last checked ${displayDate(source.last_verified)}`)
+    sourceFreshness: config.official_sources.map((source) => `${source.label}: last checked ${displayDate(source.last_verified)}`),
+    scheduleProvenance: {
+      label: config.schedule_provenance.label,
+      confidence: config.schedule_provenance.confidence,
+      notes: config.schedule_provenance.notes
+    }
   };
 }
 

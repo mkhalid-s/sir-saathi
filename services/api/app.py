@@ -68,6 +68,12 @@ def list_states_payload() -> list[dict[str, Any]]:
                 "final_roll_date": _date_payload(state.schedule.final_roll_date),
                 "status": state.schedule.status,
             },
+            "schedule_provenance": {
+                "label": state.schedule_provenance.label,
+                "source_type": state.schedule_provenance.source_type,
+                "confidence": state.schedule_provenance.confidence,
+                "notes": state.schedule_provenance.notes,
+            },
             "ceo_portal": state.ceo_portal,
             "final_roll_date": _date_payload(state.schedule.final_roll_date),
             "official_sources": [

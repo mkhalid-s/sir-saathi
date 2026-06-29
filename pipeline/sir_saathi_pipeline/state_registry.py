@@ -48,6 +48,14 @@ class DataSource:
 
 
 @dataclass(frozen=True)
+class ScheduleProvenance:
+    label: str
+    source_type: str
+    confidence: str
+    notes: str
+
+
+@dataclass(frozen=True)
 class StateConfig:
     state_id: str
     eci_state_code: str
@@ -57,6 +65,7 @@ class StateConfig:
     scripts: tuple[str, ...]
     default_language: str
     schedule: SirSchedule
+    schedule_provenance: ScheduleProvenance
     ceo_portal: str
     official_sources: tuple[DataSource, ...]
     base_roll_years: tuple[int, ...]
@@ -119,6 +128,13 @@ def parse_state_config(data: dict[str, Any]) -> StateConfig:
         )
         for source in _require(data, "official_sources")
     )
+    provenance_raw = _require(data, "schedule_provenance")
+    provenance = ScheduleProvenance(
+        label=_require(provenance_raw, "label"),
+        source_type=_require(provenance_raw, "source_type"),
+        confidence=_require(provenance_raw, "confidence"),
+        notes=_require(provenance_raw, "notes"),
+    )
 
     return StateConfig(
         state_id=_require(data, "state_id"),
@@ -129,6 +145,7 @@ def parse_state_config(data: dict[str, Any]) -> StateConfig:
         scripts=tuple(_require(data, "scripts")),
         default_language=_require(data, "default_language"),
         schedule=schedule,
+        schedule_provenance=provenance,
         ceo_portal=_require(data, "ceo_portal"),
         official_sources=sources,
         base_roll_years=tuple(int(year) for year in _require(data, "base_roll_years")),

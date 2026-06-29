@@ -18,11 +18,13 @@ The first version of SIR Saathi guidance is deterministic. It does not use an LL
 - Deadline from the state registry.
 - Source labels and warnings.
 - Last-checked source dates, not a guarantee that source content has not changed.
+- Schedule provenance, distinguishing official-source-backed dates from reported dates.
 
 ## Safety Rules
 
 - Always route final submission/status to official ECI, CEO, BLO, or ERO channels.
 - Ask users to confirm deadlines, eligibility, and final status on official portals before acting.
+- Treat dates marked `reported` as provisional until confirmed by an official ECI/CEO source.
 - Do not present guidance as legal advice.
 - Do not expose full EPIC values, addresses, or raw roll records in guidance examples.
 - If a deadline appears close or passed, tell the user to check official channels immediately.

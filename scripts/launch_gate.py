@@ -69,10 +69,15 @@ def verify_source_freshness() -> None:
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
     if "Sources last checked:" not in web or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
+    if "Schedule source:" not in web or "schedule_provenance" not in api:
+        raise RuntimeError("schedule provenance must be visible in web and API surfaces")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
     for path in sorted((ROOT / "config/states").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
+        provenance = data.get("schedule_provenance", {})
+        if provenance.get("confidence") not in {"official", "reported"}:
+            raise RuntimeError(f"missing schedule provenance confidence in {path.name}")
         for source in data.get("official_sources", []):
             if not source.get("last_verified"):
                 raise RuntimeError(f"missing source freshness in {path.name}: {source.get('label', 'unknown')}")

@@ -15,6 +15,8 @@ def test_maharashtra_registry_dates_and_capability() -> None:
     assert mh.data_capability == "pilot_indexed_search"
     assert mh.is_search_enabled is True
     assert all(source.last_verified == date(2026, 6, 29) for source in mh.official_sources)
+    assert mh.schedule_provenance.confidence == "reported"
+    assert mh.schedule_provenance.source_type == "public_report"
 
 
 def test_west_bengal_starts_guidance_only() -> None:
@@ -22,6 +24,7 @@ def test_west_bengal_starts_guidance_only() -> None:
     assert wb.eci_state_code == "S25"
     assert wb.data_capability == "guidance_only"
     assert wb.is_search_enabled is False
+    assert wb.schedule_provenance.confidence == "official"
 
 
 def test_all_official_sources_include_freshness_dates() -> None:

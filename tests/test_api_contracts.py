@@ -24,6 +24,8 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     assert mh["sir_schedule"]["enumeration_end"] == "2026-07-29"
     assert mh["sir_schedule"]["claims_end"] == "2026-09-04"
     assert mh["sir_schedule"]["final_roll_date"] == "2026-10-07"
+    assert mh["schedule_provenance"]["confidence"] == "reported"
+    assert mh["schedule_provenance"]["source_type"] == "public_report"
     assert mh["official_sources"][0]["last_verified"] == "2026-06-29"
 
 

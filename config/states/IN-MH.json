@@ -17,6 +17,12 @@
     "final_roll_date": "2026-10-07",
     "status": "enumeration_scheduled"
   },
+  "schedule_provenance": {
+    "label": "Maharashtra SIR schedule report",
+    "source_type": "public_report",
+    "confidence": "reported",
+    "notes": "Dates are from a public report; confirm against ECI/CEO sources before acting."
+  },
   "ceo_portal": "https://ceoelection.maharashtra.gov.in/",
   "official_sources": [
     {
