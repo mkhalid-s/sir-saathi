@@ -72,7 +72,11 @@ export default function ActionWizard() {
     setFindSubmitted(false);
   };
   const useMissingNameGuidance = () => {
-    updateAnswer('situation', 'missing_name');
+    setAnswers((current) => ({
+      ...current,
+      situation: 'missing_name',
+      currentRollFound: 'no'
+    }));
   };
 
   return (

@@ -160,8 +160,8 @@ def verify_safe_find_name_flow() -> None:
             raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
     if "call indexed search" not in wizard or "/api/search" in wizard:
         raise RuntimeError("find-name flow must not call indexed public search in the MVP fallback")
-    if "If not found, show missing-name steps" not in wizard or "updateAnswer('situation', 'missing_name')" not in wizard:
-        raise RuntimeError("find-name flow must hand off to missing-name guidance")
+    if "If not found, show missing-name steps" not in wizard or "situation: 'missing_name'" not in wizard or "currentRollFound: 'no'" not in wizard:
+        raise RuntimeError("find-name flow must hand off to missing-name guidance with current-roll-not-found status")
     if "Clear entered details" not in wizard or "clearFindNameHints" not in wizard:
         raise RuntimeError("find-name flow must let users clear local search hints")
     for setter in ["setNameQuery('')", "setDistrictHint('')", "setAcHint('')", "setPartHint('')"]:

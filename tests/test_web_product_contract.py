@@ -58,7 +58,8 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "setDistrictHint('')" in wizard_source
     assert "setAcHint('')" in wizard_source
     assert "setPartHint('')" in wizard_source
-    assert "updateAnswer('situation', 'missing_name')" in wizard_source
+    assert "situation: 'missing_name'" in wizard_source
+    assert "currentRollFound: 'no'" in wizard_source
     assert "/api/search" not in wizard_source
 
 
