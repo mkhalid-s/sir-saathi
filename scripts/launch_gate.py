@@ -216,6 +216,7 @@ def verify_ingestion_pipeline_contract() -> None:
     ingestion = (ROOT / "pipeline/sir_saathi_pipeline/ingestion.py").read_text(encoding="utf-8")
     ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
     db_loader = (ROOT / "pipeline/sir_saathi_pipeline/db_loader.py").read_text(encoding="utf-8")
+    local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
@@ -246,10 +247,20 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("Postgres loader must use idempotent upserts")
     if "psycopg.connect" not in db_loader or "psycopg[binary]" not in requirements:
         raise RuntimeError("Postgres loader must use psycopg v3 and declare the dependency")
-    if "public_launch_ready" in db_loader + ingest_cli or "/api/search" in db_loader + ingest_cli:
+    if "public_launch_ready" in db_loader + ingest_cli + local_search or "/api/search" in db_loader + ingest_cli + local_search:
         raise RuntimeError("local ingestion loaders must not change public search launch behavior")
     if "After a dry run passes" not in docs or "does not enable public search" not in docs:
         raise RuntimeError("API/DB docs must document local load boundaries")
+    if "LocalSearchRequest" not in local_search or "validate_local_search" not in local_search:
+        raise RuntimeError("pipeline must expose local loaded-roll search validation")
+    if "similarity(vr.name_normalized" not in local_search or "JOIN assembly_constituencies" not in local_search:
+        raise RuntimeError("local search validation must use scoped pg_trgm name similarity")
+    if "safe_for_public" not in local_search or "query_summary" not in local_search:
+        raise RuntimeError("local search validation must report safe local-only metadata")
+    if "MAX_LOCAL_SEARCH_LIMIT" not in local_search or "include_epic_last4" not in local_search:
+        raise RuntimeError("local search validation must cap results and hide EPIC last4 by default")
+    if "Local loaded-roll search can be validated" not in docs:
+        raise RuntimeError("API/DB docs must document the local loaded-roll search command")
 
 
 def main() -> int:

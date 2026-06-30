@@ -37,3 +37,11 @@ SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" SIR_SAATHI_DATABASE_URL="postgresq
 ```
 
 The loader uses a transaction and idempotent `INSERT ... ON CONFLICT ... DO UPDATE` statements. It requires the target `states` row to already exist, then loads AC, polling station, roll version, source document, extraction run, and voter rows. The load summary is safe JSON with counts and checksum only; it does not enable public search, change `public_launch_ready`, write generated voter exports, or expose raw EPIC values in output.
+
+Local loaded-roll search can be validated against Postgres without exposing the public API:
+
+```bash
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.local_search --state IN-MH --ac 172 --name "<name to test>"
+```
+
+The local search validator uses `pg_trgm` similarity on `name_normalized`, requires state and Assembly Constituency scope, caps results, and prints timing plus redacted match fields. It reports `safe_for_public: false`, does not print the raw query, excludes `epic_hash`, hides `epic_last4` unless explicitly requested with `--include-epic-last4`, and does not change `/api/search` launch behavior.
