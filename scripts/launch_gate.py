@@ -219,6 +219,7 @@ def verify_ingestion_pipeline_contract() -> None:
     seed_states = (ROOT / "pipeline/sir_saathi_pipeline/seed_states.py").read_text(encoding="utf-8")
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
     readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
+    workflow = (ROOT / "pipeline/sir_saathi_pipeline/operator_workflow.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
@@ -257,7 +258,7 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("state seed command must mirror launch flags from config and require DB URL")
     if "Before loading rolls, seed canonical state rows" not in docs:
         raise RuntimeError("API/DB docs must document local state seeding before roll loads")
-    if "public_launch_ready" in db_loader + ingest_cli + local_search or "/api/search" in db_loader + ingest_cli + local_search + readiness:
+    if "public_launch_ready" in db_loader + ingest_cli + local_search or "/api/search" in db_loader + ingest_cli + local_search + readiness + workflow:
         raise RuntimeError("local ingestion loaders must not change public search launch behavior")
     if "After a dry run passes" not in docs or "does not enable public search" not in docs:
         raise RuntimeError("API/DB docs must document local load boundaries")
@@ -281,6 +282,15 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("readiness report must summarize scoped loaded data quality")
     if "Loaded data readiness can be checked" not in docs:
         raise RuntimeError("API/DB docs must document the local readiness report command")
+    if "WorkflowRequest" not in workflow or "build_workflow" not in workflow:
+        raise RuntimeError("pipeline must expose a local operator workflow planner")
+    for expected_step in ["seed_states", "dry_run_pdf", "load_pdf", "validate_search", "readiness_report"]:
+        if expected_step not in workflow:
+            raise RuntimeError("operator workflow must include the full local onboarding sequence")
+    if "SIR_SAATHI_TEST_NAME" not in workflow or "does not print the raw query" not in docs:
+        raise RuntimeError("operator workflow must keep local search names out of reports")
+    if "Operators can generate the full local onboarding workflow" not in docs:
+        raise RuntimeError("API/DB docs must document the local operator workflow")
 
 
 def main() -> int:

@@ -61,3 +61,11 @@ SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" pyth
 ```
 
 The readiness report summarizes source documents, extraction runs, expected versus parsed counts, scoped voter-record counts, data-quality issue rates, and state configuration gates such as schedule provenance and `public_launch_ready`. It outputs safe JSON only, includes blockers, defaults `ready_for_public` to false unless all strict criteria pass, and never returns voter rows or changes public search settings.
+
+Operators can generate the full local onboarding workflow for one state/AC/PDF:
+
+```bash
+python -m pipeline.sir_saathi_pipeline.operator_workflow --state IN-MH --ac 172 --part 21 --pdf data/local/<file>.pdf
+```
+
+The workflow planner prints the safe command sequence for state seeding, PDF dry-run, explicit load, local search validation, and readiness reporting. It does not execute the commands, does not print a raw test name, keeps search names in `SIR_SAATHI_TEST_NAME`, and should be run before considering any public-search work.
