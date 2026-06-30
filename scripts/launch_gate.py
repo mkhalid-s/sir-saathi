@@ -214,6 +214,7 @@ def verify_state_schedule_api() -> None:
 
 def verify_ingestion_pipeline_contract() -> None:
     ingestion = (ROOT / "pipeline/sir_saathi_pipeline/ingestion.py").read_text(encoding="utf-8")
+    ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
         raise RuntimeError("pipeline must expose a DB-ready ingestion batch builder")
@@ -225,6 +226,14 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("initial ingestion mapper must not connect to the database")
     if "local-only staging mapper" not in docs:
         raise RuntimeError("API/DB docs must document local-only ingestion boundaries")
+    if "parse_pdf" not in ingest_cli or "build_ingestion_batch" not in ingest_cli:
+        raise RuntimeError("ingest CLI must reuse the parser and DB-ready staging mapper")
+    if "--dry-run" not in ingest_cli or "SIR_SAATHI_EPIC_HASH_SALT" not in ingest_cli:
+        raise RuntimeError("ingest CLI must require explicit dry-run mode and an EPIC hash salt")
+    if "save_results" in ingest_cli or "connect(" in ingest_cli or "psycopg" in ingest_cli:
+        raise RuntimeError("ingest CLI must not write exports or connect to the database")
+    if "Local PDF ingestion can be validated with a dry run" not in docs:
+        raise RuntimeError("API/DB docs must document the local PDF dry-run command")
 
 
 def main() -> int:
