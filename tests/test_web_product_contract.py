@@ -71,6 +71,20 @@ def test_web_copy_does_not_overstate_source_certainty() -> None:
     assert "confirm deadlines and eligibility" in combined
 
 
+def test_public_pages_surface_privacy_launch_rules() -> None:
+    privacy_doc = (ROOT / "docs/PRIVACY_AND_ABUSE.md").read_text(encoding="utf-8")
+    privacy = (ROOT / "apps/web/src/pages/privacy.astro").read_text(encoding="utf-8")
+    data_use = (ROOT / "apps/web/src/pages/data-use.astro").read_text(encoding="utf-8")
+    methodology = (ROOT / "apps/web/src/pages/methodology.astro").read_text(encoding="utf-8")
+    combined = "\n".join([privacy_doc, privacy, data_use, methodology])
+    assert "schedule provenance comes from an official source" in combined
+    assert "official schedule provenance" in combined
+    assert "Shared checklists must not include EPIC" in privacy_doc
+    assert "Shared checklists should not include EPIC, address" in privacy
+    assert "Forwarded checklists should stay generic" in data_use
+    assert "Keep shared checklists free of EPIC, address" in methodology
+
+
 def test_web_guidance_escalates_sir_risk_signals() -> None:
     source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     assert "currentRollFound === 'no'" in source

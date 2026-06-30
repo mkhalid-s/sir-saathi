@@ -10,8 +10,10 @@ SIR Saathi treats electoral roll data as public but sensitive.
 - No raw PDF or parsed voter export in Git.
 - No full EPIC value or raw address in public API responses.
 - Public search requires abuse protection before launch.
+- Public indexed search requires official schedule provenance before launch.
 - The API search route applies a fixed-window rate limit per hashed client/state/AC bucket.
 - Logs must not store full EPICs, addresses, phone numbers, documents, or complete search strings.
+- Shared checklists must not include EPIC, address, phone, document, or other private voter details.
 
 ## Abuse Protection MVP
 

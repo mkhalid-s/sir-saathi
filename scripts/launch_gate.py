@@ -134,6 +134,26 @@ def verify_safe_share_copy() -> None:
         raise RuntimeError("shared checklist must warn against forwarding private voter details")
 
 
+def verify_public_privacy_pages() -> None:
+    privacy_doc = (ROOT / "docs/PRIVACY_AND_ABUSE.md").read_text(encoding="utf-8")
+    privacy = (ROOT / "apps/web/src/pages/privacy.astro").read_text(encoding="utf-8")
+    data_use = (ROOT / "apps/web/src/pages/data-use.astro").read_text(encoding="utf-8")
+    methodology = (ROOT / "apps/web/src/pages/methodology.astro").read_text(encoding="utf-8")
+    combined = "\n".join([privacy_doc, privacy, data_use, methodology])
+    if "schedule provenance comes from an official source" not in combined:
+        raise RuntimeError("public pages must explain official schedule provenance requirement")
+    if "official schedule provenance before launch" not in privacy_doc:
+        raise RuntimeError("privacy policy must require official schedule provenance before launch")
+    if "Shared checklists must not include EPIC" not in privacy_doc:
+        raise RuntimeError("privacy policy must cover safe checklist forwarding")
+    if "Shared checklists should not include EPIC, address" not in privacy:
+        raise RuntimeError("privacy page must warn against forwarding private voter details")
+    if "Forwarded checklists should stay generic" not in data_use:
+        raise RuntimeError("data-use page must cover safe checklist forwarding")
+    if "Keep shared checklists free of EPIC, address" not in methodology:
+        raise RuntimeError("methodology page must cover safe checklist forwarding")
+
+
 def verify_forms_catalogue() -> None:
     from services.api.app import forms_payload
 
@@ -171,6 +191,7 @@ def main() -> int:
     verify_pwa_installability()
     verify_ui_language_readiness()
     verify_safe_share_copy()
+    verify_public_privacy_pages()
     verify_forms_catalogue()
     verify_state_schedule_api()
     run([sys.executable, "scripts/check_sensitive.py"])
