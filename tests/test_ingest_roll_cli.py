@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from pipeline.sir_saathi_pipeline.db_loader import LoadSummary
 from pipeline.sir_saathi_pipeline import ingest_roll
 
 
@@ -59,6 +60,28 @@ def mismatch_parser(_pdf_path: Path):
 def failing_parser(_pdf_path: Path):
     metadata, voters, _failures = synthetic_parser(_pdf_path)
     return metadata, voters, ["page 2 failed"]
+
+
+def fake_loader(calls: list[tuple[str, object]]):
+    def _load(database_url: str, batch):
+        calls.append((database_url, batch))
+        return LoadSummary(
+            loaded=True,
+            state_id=batch.roll_version["state_id"],
+            source_checksum=batch.source_document["checksum"],
+            expected_records=batch.extraction_run["expected_records"],
+            parsed_records=batch.extraction_run["parsed_records"],
+            row_counts={
+                "assembly_constituencies": 1,
+                "polling_stations": 1,
+                "roll_versions": 1,
+                "source_documents": 1,
+                "extraction_runs": 1,
+                "voter_records": len(batch.voter_records),
+            },
+        )
+
+    return _load
 
 
 def test_compute_sha256_returns_prefixed_digest(tmp_path: Path) -> None:
@@ -124,7 +147,7 @@ def test_main_fails_closed_when_dry_run_flag_is_missing(tmp_path: Path, capsys: 
 
     assert exit_code == 2
     assert output["safe_to_load"] is False
-    assert "--dry-run is required" in output["error"]
+    assert "choose --dry-run or explicit --load" in output["error"]
 
 
 def test_main_returns_failed_report_on_count_mismatch(
@@ -163,3 +186,129 @@ def test_main_returns_failed_report_on_parser_failures(
     assert exit_code == 1
     assert output["safe_to_load"] is False
     assert "parser reported 1 failure" in output["error"]
+
+
+def test_main_dry_run_does_not_call_loader(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+
+    def blocked_loader(_database_url, _batch):
+        raise AssertionError("dry-run must not call loader")
+
+    exit_code = ingest_roll.main(
+        ["--pdf", str(pdf_path), "--state", "IN-MH", "--dry-run"],
+        parser_fn=synthetic_parser,
+        loader_fn=blocked_loader,
+    )
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert output["dry_run"] is True
+    assert output["safe_to_load"] is True
+
+
+def test_main_load_requires_database_url(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+    monkeypatch.delenv(ingest_roll.DATABASE_URL_ENV, raising=False)
+
+    exit_code = ingest_roll.main(
+        ["--pdf", str(pdf_path), "--state", "IN-MH", "--load"],
+        parser_fn=synthetic_parser,
+    )
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert output["dry_run"] is False
+    assert output["loaded"] is False
+    assert output["safe_to_load"] is False
+    assert ingest_roll.DATABASE_URL_ENV in output["error"]
+
+
+def test_main_load_calls_loader_after_validation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    calls = []
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+    monkeypatch.setenv(ingest_roll.DATABASE_URL_ENV, "postgresql://local/sir_saathi")
+
+    exit_code = ingest_roll.main(
+        ["--pdf", str(pdf_path), "--state", "IN-MH", "--load"],
+        parser_fn=synthetic_parser,
+        loader_fn=fake_loader(calls),
+    )
+    output = json.loads(capsys.readouterr().out)
+    encoded = json.dumps(output)
+
+    assert exit_code == 0
+    assert output["dry_run"] is False
+    assert output["loaded"] is True
+    assert output["row_counts"]["voter_records"] == 2
+    assert calls and calls[0][0] == "postgresql://local/sir_saathi"
+    assert "sample-card" not in encoded
+    assert "voter_name" not in encoded
+
+
+def test_main_load_does_not_call_loader_when_validation_fails(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+    monkeypatch.setenv(ingest_roll.DATABASE_URL_ENV, "postgresql://local/sir_saathi")
+
+    def blocked_loader(_database_url, _batch):
+        raise AssertionError("loader must not run after validation failure")
+
+    exit_code = ingest_roll.main(
+        ["--pdf", str(pdf_path), "--state", "IN-MH", "--load"],
+        parser_fn=mismatch_parser,
+        loader_fn=blocked_loader,
+    )
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert output["dry_run"] is False
+    assert output["loaded"] is False
+    assert "parsed record count mismatch" in output["error"]
+
+
+def test_main_failed_load_returns_safe_failed_report(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+    monkeypatch.setenv(ingest_roll.DATABASE_URL_ENV, "postgresql://local/sir_saathi")
+
+    def failing_loader(_database_url, _batch):
+        raise RuntimeError("db unavailable")
+
+    exit_code = ingest_roll.main(
+        ["--pdf", str(pdf_path), "--state", "IN-MH", "--load"],
+        parser_fn=synthetic_parser,
+        loader_fn=failing_loader,
+    )
+    output = json.loads(capsys.readouterr().out)
+    encoded = json.dumps(output)
+
+    assert exit_code == 1
+    assert output["dry_run"] is False
+    assert output["loaded"] is False
+    assert output["safe_to_load"] is False
+    assert output["error"] == "db unavailable"
+    assert "sample-card" not in encoded
+    assert "Sample Voter" not in encoded

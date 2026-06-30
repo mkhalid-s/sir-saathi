@@ -215,7 +215,9 @@ def verify_state_schedule_api() -> None:
 def verify_ingestion_pipeline_contract() -> None:
     ingestion = (ROOT / "pipeline/sir_saathi_pipeline/ingestion.py").read_text(encoding="utf-8")
     ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
+    db_loader = (ROOT / "pipeline/sir_saathi_pipeline/db_loader.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
         raise RuntimeError("pipeline must expose a DB-ready ingestion batch builder")
     if "parsed record count mismatch" not in ingestion:
@@ -234,6 +236,20 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("ingest CLI must not write exports or connect to the database")
     if "Local PDF ingestion can be validated with a dry run" not in docs:
         raise RuntimeError("API/DB docs must document the local PDF dry-run command")
+    if "--load" not in ingest_cli or "SIR_SAATHI_DATABASE_URL" not in ingest_cli:
+        raise RuntimeError("ingest CLI must require an explicit local load mode and database URL")
+    if "load_ingestion_batch" not in db_loader or "load_batch_to_database" not in db_loader:
+        raise RuntimeError("pipeline must expose a local Postgres batch loader")
+    if "require_state_exists" not in db_loader or "transaction()" not in db_loader:
+        raise RuntimeError("Postgres loader must require a canonical state row and use a transaction")
+    if "ON CONFLICT" not in db_loader or "DO UPDATE" not in db_loader:
+        raise RuntimeError("Postgres loader must use idempotent upserts")
+    if "psycopg.connect" not in db_loader or "psycopg[binary]" not in requirements:
+        raise RuntimeError("Postgres loader must use psycopg v3 and declare the dependency")
+    if "public_launch_ready" in db_loader + ingest_cli or "/api/search" in db_loader + ingest_cli:
+        raise RuntimeError("local ingestion loaders must not change public search launch behavior")
+    if "After a dry run passes" not in docs or "does not enable public search" not in docs:
+        raise RuntimeError("API/DB docs must document local load boundaries")
 
 
 def main() -> int:
