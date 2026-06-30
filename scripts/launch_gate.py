@@ -212,6 +212,21 @@ def verify_state_schedule_api() -> None:
             raise RuntimeError("state payload must include CEO portal")
 
 
+def verify_ingestion_pipeline_contract() -> None:
+    ingestion = (ROOT / "pipeline/sir_saathi_pipeline/ingestion.py").read_text(encoding="utf-8")
+    docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
+    if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
+        raise RuntimeError("pipeline must expose a DB-ready ingestion batch builder")
+    if "parsed record count mismatch" not in ingestion:
+        raise RuntimeError("ingestion pipeline must validate parser counts before DB staging")
+    if "epic_fingerprint" not in ingestion or "epic_hash" not in ingestion or "epic_last4" not in ingestion:
+        raise RuntimeError("ingestion pipeline must hash EPIC values before DB staging")
+    if "connect(" in ingestion or "psycopg" in ingestion:
+        raise RuntimeError("initial ingestion mapper must not connect to the database")
+    if "local-only staging mapper" not in docs:
+        raise RuntimeError("API/DB docs must document local-only ingestion boundaries")
+
+
 def main() -> int:
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).exists()]
     if missing:
@@ -231,6 +246,7 @@ def main() -> int:
     verify_public_privacy_pages()
     verify_forms_catalogue()
     verify_state_schedule_api()
+    verify_ingestion_pipeline_contract()
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])

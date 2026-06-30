@@ -19,3 +19,5 @@ The deployed `/api/search` handler also applies a fixed-window rate limit keyed 
 API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 
 The initial PostgreSQL schema is in `db/schema.sql`; migration `db/migrations/0001_initial.sql` includes it for local database setup.
+
+Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
