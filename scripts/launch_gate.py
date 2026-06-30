@@ -134,6 +134,14 @@ def verify_safe_share_copy() -> None:
         raise RuntimeError("shared checklist must warn against forwarding private voter details")
 
 
+def verify_guidance_boundary_copy() -> None:
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    if "Guidance only: SIR Saathi does not decide voter eligibility" not in wizard:
+        raise RuntimeError("wizard must say guidance is not an eligibility decision")
+    if "replace official ECI, CEO, BLO, or ERO channels" not in wizard:
+        raise RuntimeError("wizard must direct final decisions to official channels")
+
+
 def verify_public_privacy_pages() -> None:
     privacy_doc = (ROOT / "docs/PRIVACY_AND_ABUSE.md").read_text(encoding="utf-8")
     privacy = (ROOT / "apps/web/src/pages/privacy.astro").read_text(encoding="utf-8")
@@ -191,6 +199,7 @@ def main() -> int:
     verify_pwa_installability()
     verify_ui_language_readiness()
     verify_safe_share_copy()
+    verify_guidance_boundary_copy()
     verify_public_privacy_pages()
     verify_forms_catalogue()
     verify_state_schedule_api()

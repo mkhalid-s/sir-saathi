@@ -9,6 +9,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Follow-up SIR questions for BLO visit, enumeration form receipt/submission, current roll match, and base/base-roll match.
 - SIR deadline card.
 - Next-action checklist.
+- Guidance boundary note that SIR Saathi does not decide eligibility or replace official channels.
 - Document checklist backed by `config/forms/sir-actions.json`.
 - Source-backed forms and common documents reference.
 - State-by-state search availability status that stays privacy-safe and explains official schedule-provenance requirements.

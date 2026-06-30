@@ -43,6 +43,7 @@ export default function ActionWizard() {
   const deadline = deadlineFor(state, answers.situation);
   const languageOptions = uiLanguageOptionsForState(state.languages);
   const languageReadiness = uiLanguageReadiness(state.languages);
+  const guidanceBoundaryText = 'Guidance only: SIR Saathi does not decide voter eligibility or replace official ECI, CEO, BLO, or ERO channels.';
   const shareSafetyText = 'Confirm deadlines and eligibility on the official portal. Do not include EPIC, address, or other private details when forwarding.';
   const shareText = [
     `SIR Saathi checklist for ${state.name}: ${guidance.title}.`,
@@ -92,6 +93,7 @@ export default function ActionWizard() {
         <p class="result-status">{state.status}</p>
         <h2 class="result-title">{guidance.title}</h2>
         <p class="result-summary">{guidance.summary}</p>
+        <p class="source-note">{guidanceBoundaryText}</p>
         <p class="deadline">Deadline: {deadline ?? 'Check official portal'}</p>
         <p class="source-note">Sources: {state.sourceLabels.join(', ')}</p>
         <p class="source-note">Schedule source: {state.scheduleProvenance.label} ({state.scheduleProvenance.confidence}).</p>

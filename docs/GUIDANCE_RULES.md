@@ -23,6 +23,7 @@ The first version of SIR Saathi guidance is deterministic. It does not use an LL
 ## Safety Rules
 
 - Always route final submission/status to official ECI, CEO, BLO, or ERO channels.
+- Show guidance as next-action support, not as a voter eligibility decision.
 - Ask users to confirm deadlines, eligibility, and final status on official portals before acting.
 - Treat dates marked `reported` as provisional until confirmed by an official ECI/CEO source.
 - Do not present guidance as legal advice.

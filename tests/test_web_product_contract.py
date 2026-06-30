@@ -30,6 +30,8 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
     assert "Sources last checked:" in source
     assert "Confirm deadlines and eligibility on the official portal" in source
     assert "Indexed public search is not launch-ready" in source
+    assert "Guidance only: SIR Saathi does not decide voter eligibility" in source
+    assert "replace official ECI, CEO, BLO, or ERO channels" in source
 
 
 def test_web_share_checklist_includes_safety_reminder() -> None:
