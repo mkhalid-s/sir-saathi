@@ -115,6 +115,12 @@ export default function ActionWizard() {
           <div class="find-result" aria-live="polite">
             <h3>Use official search first for {state.name}</h3>
             <p>Open the official portal and search with your name plus district, AC, or part number if you know them. Confirm any match on the official portal before acting.</p>
+            <ol class="official-check-steps">
+              <li>Select {state.name} or the matching state section on the official portal.</li>
+              <li>Search with the name as it may appear in the roll, then narrow with district, AC, or part number if known.</li>
+              <li>Try common spelling variations before assuming the name is missing.</li>
+              <li>If there is still no official match, use the missing-name steps below and contact BLO or ERO.</li>
+            </ol>
             <p>Indexed public search is not used here unless a state passes launch readiness, official schedule provenance, privacy, and abuse checks.</p>
             <div class="actions">
               <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">Open official portal</a>

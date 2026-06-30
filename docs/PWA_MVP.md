@@ -5,7 +5,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 ## Included
 
 - State selector backed by the canonical `config/states/*.json` registry.
-- Safe state-specific "Find my name" entry flow that routes users to official search first, does not call indexed public search in the MVP fallback, and lets users clear local hints.
+- Safe state-specific "Find my name" entry flow that routes users through official search steps first, does not call indexed public search in the MVP fallback, and lets users clear local hints.
 - Situation selector covering verification, missing name, new voter, shifted address, correction, deceased-family entry, duplicate entry, and portal failure.
 - Follow-up SIR questions for BLO visit, enumeration form receipt/submission, current roll match, and base/base-roll match.
 - SIR deadline card.

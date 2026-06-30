@@ -46,6 +46,10 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "setFindSubmitted(false)" in wizard_source
     assert "does not send these details to SIR Saathi servers" in wizard_source
     assert "call indexed search" in wizard_source
+    assert "official-check-steps" in wizard_source
+    assert "Search with the name as it may appear in the roll" in wizard_source
+    assert "Try common spelling variations" in wizard_source
+    assert "contact BLO or ERO" in wizard_source
     assert "Open official portal" in wizard_source
     assert "If not found, show missing-name steps" in wizard_source
     assert "Clear entered details" in wizard_source

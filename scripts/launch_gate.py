@@ -155,6 +155,9 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("find-name flow must hide stale official-check results when state changes")
     if "does not send these details to SIR Saathi servers" not in wizard:
         raise RuntimeError("find-name flow must explain local-only fallback behavior")
+    for expected in ["official-check-steps", "Search with the name as it may appear in the roll", "Try common spelling variations", "contact BLO or ERO"]:
+        if expected not in wizard:
+            raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
     if "call indexed search" not in wizard or "/api/search" in wizard:
         raise RuntimeError("find-name flow must not call indexed public search in the MVP fallback")
     if "If not found, show missing-name steps" not in wizard or "updateAnswer('situation', 'missing_name')" not in wizard:

@@ -139,6 +139,12 @@ a {
   margin: 0;
 }
 
+.official-check-steps {
+  color: #334155;
+  line-height: 1.6;
+  padding-left: 1.25rem;
+}
+
 .result-card {
   margin-top: 1.25rem;
   border-radius: 1.25rem;
