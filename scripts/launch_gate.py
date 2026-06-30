@@ -216,6 +216,7 @@ def verify_ingestion_pipeline_contract() -> None:
     ingestion = (ROOT / "pipeline/sir_saathi_pipeline/ingestion.py").read_text(encoding="utf-8")
     ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
     db_loader = (ROOT / "pipeline/sir_saathi_pipeline/db_loader.py").read_text(encoding="utf-8")
+    seed_states = (ROOT / "pipeline/sir_saathi_pipeline/seed_states.py").read_text(encoding="utf-8")
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
     readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
@@ -248,6 +249,14 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("Postgres loader must use idempotent upserts")
     if "psycopg.connect" not in db_loader or "psycopg[binary]" not in requirements:
         raise RuntimeError("Postgres loader must use psycopg v3 and declare the dependency")
+    if "seed_states" not in seed_states or "load_all_states" not in seed_states:
+        raise RuntimeError("pipeline must expose local canonical state seeding")
+    if "INSERT INTO states" not in seed_states or "ON CONFLICT (state_id) DO UPDATE" not in seed_states:
+        raise RuntimeError("state seed command must use idempotent state upserts")
+    if "public_launch_ready" not in seed_states or "SIR_SAATHI_DATABASE_URL" not in seed_states:
+        raise RuntimeError("state seed command must mirror launch flags from config and require DB URL")
+    if "Before loading rolls, seed canonical state rows" not in docs:
+        raise RuntimeError("API/DB docs must document local state seeding before roll loads")
     if "public_launch_ready" in db_loader + ingest_cli + local_search or "/api/search" in db_loader + ingest_cli + local_search + readiness:
         raise RuntimeError("local ingestion loaders must not change public search launch behavior")
     if "After a dry run passes" not in docs or "does not enable public search" not in docs:

@@ -20,6 +20,14 @@ API responses use redacted public records and do not expose full EPIC values, ra
 
 The initial PostgreSQL schema is in `db/schema.sql`; migration `db/migrations/0001_initial.sql` includes it for local database setup.
 
+Before loading rolls, seed canonical state rows from `config/states` into local Postgres:
+
+```bash
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.seed_states
+```
+
+The state seed command is local-only and idempotent. It upserts only the `states` table from reviewed config fields, including `public_launch_ready` exactly as configured, so later roll loads can satisfy foreign-key checks without inventing state metadata.
+
 Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
 Local PDF ingestion can be validated with a dry run:
