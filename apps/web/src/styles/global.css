@@ -16,6 +16,7 @@ body {
 }
 
 button,
+input,
 select {
   font: inherit;
 }
@@ -67,6 +68,13 @@ a {
   line-height: 1.65;
 }
 
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
 .wizard,
 .info-card,
 .forms-reference,
@@ -91,6 +99,7 @@ a {
   font-weight: 700;
 }
 
+.input,
 .select {
   width: 100%;
   border: 1px solid #cbd5e1;
@@ -98,6 +107,36 @@ a {
   background: #fff;
   padding: 0.875rem 1rem;
   color: #0f172a;
+}
+
+.find-flow {
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.find-flow h2 {
+  margin: 0.5rem 0 0;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.05;
+}
+
+.find-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.find-result {
+  margin-top: 1rem;
+  border-radius: 1rem;
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+  padding: 1rem;
+}
+
+.find-result h3 {
+  margin: 0;
 }
 
 .result-card {
@@ -230,6 +269,16 @@ a {
   color: #0f172a;
 }
 
+.primary-button.light {
+  background: #fff;
+  color: #0f172a;
+}
+
+.secondary-button.light {
+  border-color: #94a3b8;
+  color: #fff;
+}
+
 .info-grid {
   margin-top: 2rem;
 }
@@ -246,10 +295,15 @@ a {
   .actions {
     flex-direction: row;
   }
+
+  .hero-actions {
+    flex-direction: row;
+  }
 }
 
 @media (min-width: 768px) {
   .action-grid,
+  .find-form,
   .info-grid,
   .forms-list,
   .search-status-list {

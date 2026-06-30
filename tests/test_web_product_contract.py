@@ -34,6 +34,21 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
     assert "replace official ECI, CEO, BLO, or ERO channels" in source
 
 
+def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
+    page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    assert "Find my name safely" in page_source
+    assert 'href="#find-name"' in page_source
+    assert 'id="find-name"' in wizard_source
+    assert "Start with a safe official check" in wizard_source
+    assert "does not send these details to SIR Saathi servers" in wizard_source
+    assert "call indexed search" in wizard_source
+    assert "Open official portal" in wizard_source
+    assert "If not found, show missing-name steps" in wizard_source
+    assert "updateAnswer('situation', 'missing_name')" in wizard_source
+    assert "/api/search" not in wizard_source
+
+
 def test_web_share_checklist_includes_safety_reminder() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     assert "shareSafetyText" in source

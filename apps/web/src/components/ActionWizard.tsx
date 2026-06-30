@@ -37,6 +37,11 @@ function statusSelect(
 export default function ActionWizard() {
   const [stateId, setStateId] = useState('IN-MH');
   const [uiLanguage, setUiLanguage] = useState('en');
+  const [nameQuery, setNameQuery] = useState('');
+  const [districtHint, setDistrictHint] = useState('');
+  const [acHint, setAcHint] = useState('');
+  const [partHint, setPartHint] = useState('');
+  const [findSubmitted, setFindSubmitted] = useState(false);
   const [answers, setAnswers] = useState<WizardAnswers>(defaultAnswers);
   const state = states.find((item) => item.stateId === stateId) ?? states[0];
   const guidance = useMemo(() => guidanceFor(answers, state), [answers, state]);
@@ -55,10 +60,54 @@ export default function ActionWizard() {
   const updateAnswer = <K extends keyof WizardAnswers>(key: K, value: WizardAnswers[K]) => {
     setAnswers((current) => ({ ...current, [key]: value }));
   };
+  const useMissingNameGuidance = () => {
+    updateAnswer('situation', 'missing_name');
+  };
 
   return (
-    <section class="wizard">
-      <div class="form-grid">
+    <section class="wizard" id="find-name">
+      <div class="find-flow" aria-labelledby="find-name-title">
+        <div>
+          <p class="eyebrow dark">Find my name</p>
+          <h2 id="find-name-title">Start with a safe official check.</h2>
+          <p class="reference-copy">Enter only the hints you would use on the official portal. This MVP fallback does not send these details to SIR Saathi servers, call indexed search, or expose public voter records.</p>
+        </div>
+        <form class="find-form" onSubmit={(event) => {
+          event.preventDefault();
+          setFindSubmitted(true);
+        }}>
+          <label class="field">
+            Name to check
+            <input class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder="Name as it may appear in the roll" />
+          </label>
+          <label class="field">
+            District or city if known
+            <input class="input" value={districtHint} onInput={(event) => setDistrictHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
+          </label>
+          <label class="field">
+            Assembly Constituency if known
+            <input class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
+          </label>
+          <label class="field">
+            Part number if known
+            <input class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
+          </label>
+          <button class="primary-button" type="submit">Show official check steps</button>
+        </form>
+        {findSubmitted && (
+          <div class="find-result" aria-live="polite">
+            <h3>Use official search first for {state.name}</h3>
+            <p>Open the official portal and search with your name plus district, AC, or part number if you know them. Confirm any match on the official portal before acting.</p>
+            <p>Indexed public search is not used here unless a state passes launch readiness, official schedule provenance, privacy, and abuse checks.</p>
+            <div class="actions">
+              <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">Open official portal</a>
+              <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>If not found, show missing-name steps</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div class="form-grid" id="guidance">
         <label class="field">
           State
           <select class="select" value={stateId} onChange={(event) => setStateId((event.currentTarget as HTMLSelectElement).value)}>

@@ -142,6 +142,21 @@ def verify_guidance_boundary_copy() -> None:
         raise RuntimeError("wizard must direct final decisions to official channels")
 
 
+def verify_safe_find_name_flow() -> None:
+    homepage = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    if "Find my name safely" not in homepage or 'href="#find-name"' not in homepage:
+        raise RuntimeError("homepage must expose a clear safe find-name entry point")
+    if 'id="find-name"' not in wizard or "Start with a safe official check" not in wizard:
+        raise RuntimeError("wizard must contain the safe find-name flow")
+    if "does not send these details to SIR Saathi servers" not in wizard:
+        raise RuntimeError("find-name flow must explain local-only fallback behavior")
+    if "call indexed search" not in wizard or "/api/search" in wizard:
+        raise RuntimeError("find-name flow must not call indexed public search in the MVP fallback")
+    if "If not found, show missing-name steps" not in wizard or "updateAnswer('situation', 'missing_name')" not in wizard:
+        raise RuntimeError("find-name flow must hand off to missing-name guidance")
+
+
 def verify_public_privacy_pages() -> None:
     privacy_doc = (ROOT / "docs/PRIVACY_AND_ABUSE.md").read_text(encoding="utf-8")
     privacy = (ROOT / "apps/web/src/pages/privacy.astro").read_text(encoding="utf-8")
@@ -200,6 +215,7 @@ def main() -> int:
     verify_ui_language_readiness()
     verify_safe_share_copy()
     verify_guidance_boundary_copy()
+    verify_safe_find_name_flow()
     verify_public_privacy_pages()
     verify_forms_catalogue()
     verify_state_schedule_api()
