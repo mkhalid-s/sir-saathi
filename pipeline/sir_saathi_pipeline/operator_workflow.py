@@ -9,6 +9,7 @@ from pathlib import Path
 import shlex
 from typing import Any
 
+from pipeline.sir_saathi_pipeline.sources import SourceManifest, load_source_manifests, source_manifest_blockers
 from pipeline.sir_saathi_pipeline.state_registry import StateConfig, load_all_states
 
 DATABASE_URL_ENV = "SIR_SAATHI_DATABASE_URL"
@@ -23,8 +24,10 @@ class WorkflowRequest:
     pdf_path: Path
     part_number: int | None = None
     test_name_env: str = DEFAULT_TEST_NAME_ENV
+    manifest_path: Path | None = None
+    source_id: str | None = None
 
-    def validate(self, states: dict[str, StateConfig]) -> list[str]:
+    def validate(self, states: dict[str, StateConfig], source_manifest: SourceManifest | None = None) -> list[str]:
         blockers: list[str] = []
         if self.state_id not in states:
             blockers.append(f"unknown state_id: {self.state_id}")
@@ -38,6 +41,14 @@ class WorkflowRequest:
             blockers.append("pdf path must be repo-relative so raw local paths are not printed")
         if self.pdf_path.parts and self.pdf_path.parts[0] not in {"data", "samples"}:
             blockers.append("pdf path should stay under ignored data/ or samples/ directories")
+        if self.manifest_path is None or self.source_id is None:
+            blockers.append("source manifest and source id are required before onboarding")
+        if source_manifest is not None:
+            if source_manifest.state_id != self.state_id:
+                blockers.append("source manifest state_id must match workflow state")
+            if source_manifest.local_path != self.pdf_path:
+                blockers.append("source manifest local_path must match workflow PDF")
+            blockers.extend(source_manifest_blockers(source_manifest))
         return blockers
 
 
@@ -59,25 +70,57 @@ def step(step_id: str, title: str, command: str, *, requires_env: list[str], saf
     }
 
 
+def _source_manifest_for_request(request: WorkflowRequest) -> SourceManifest | None:
+    if request.manifest_path is None or request.source_id is None:
+        return None
+    manifests = load_source_manifests(request.manifest_path)
+    if request.source_id not in manifests:
+        raise ValueError(f"unknown source_id: {request.source_id}")
+    return manifests[request.source_id]
+
+
 def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] | None = None) -> dict[str, Any]:
     registry = states or load_all_states()
-    blockers = request.validate(registry)
+    source_manifest = _source_manifest_for_request(request)
+    blockers = request.validate(registry, source_manifest)
     state = registry.get(request.state_id)
     pdf_arg = request.pdf_path.as_posix()
+    manifest_arg = request.manifest_path.as_posix() if request.manifest_path else ""
+    source_id_arg = request.source_id or ""
+    roll_year = str(source_manifest.roll_year) if source_manifest else ""
+    roll_kind = source_manifest.roll_kind if source_manifest else ""
+    language = source_manifest.language or "" if source_manifest else ""
+    source_label = source_manifest.source_label if source_manifest else ""
+    source_uri = source_manifest.source_uri if source_manifest else ""
 
     seed_command = shell_join([
         "python", "-m", "pipeline.sir_saathi_pipeline.seed_states", "--state", request.state_id
+    ])
+    manifest_command = shell_join([
+        "python", "-m", "pipeline.sir_saathi_pipeline.sources",
+        "--manifest", manifest_arg,
+        "--source-id", source_id_arg,
     ])
     dry_run_command = shell_join([
         "python", "-m", "pipeline.sir_saathi_pipeline.ingest_roll",
         "--pdf", pdf_arg,
         "--state", request.state_id,
+        "--roll-year", roll_year,
+        "--roll-kind", roll_kind,
+        "--language", language,
+        "--source-label", source_label,
+        "--source-url", source_uri,
         "--dry-run",
     ])
     load_command = shell_join([
         "python", "-m", "pipeline.sir_saathi_pipeline.ingest_roll",
         "--pdf", pdf_arg,
         "--state", request.state_id,
+        "--roll-year", roll_year,
+        "--roll-kind", roll_kind,
+        "--language", language,
+        "--source-label", source_label,
+        "--source-url", source_uri,
         "--load",
     ])
     search_command = shell_join([
@@ -101,6 +144,13 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
             seed_command,
             requires_env=[DATABASE_URL_ENV],
             safety="Upserts reviewed state config only; does not invent metadata.",
+        ),
+        step(
+            "validate_source_manifest",
+            "Validate reviewed source manifest entry",
+            manifest_command,
+            requires_env=[],
+            safety="Requires reviewed source metadata before parsing or loading a local PDF.",
         ),
         step(
             "dry_run_pdf",
@@ -140,6 +190,8 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
         "ac_number": request.ac_number,
         "part_number": request.part_number,
         "pdf_path": pdf_arg,
+        "manifest_path": manifest_arg or None,
+        "source_id": request.source_id,
         "test_name_env": request.test_name_env,
         "required_env": env_exports() + [request.test_name_env],
         "state_config": None if state is None else {
@@ -148,6 +200,15 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
             "schedule_provenance": state.schedule_provenance.confidence,
         },
         "blockers": blockers,
+        "source_manifest": None if source_manifest is None else {
+            "source_id": source_manifest.source_id,
+            "reviewed": source_manifest.reviewed,
+            "source_label": source_manifest.source_label,
+            "source_uri": source_manifest.source_uri,
+            "roll_year": source_manifest.roll_year,
+            "roll_kind": source_manifest.roll_kind,
+            "language": source_manifest.language,
+        },
         "steps": workflow_steps,
         "next_decision": "Run readiness_report and resolve blockers before any public search work.",
     }
@@ -170,6 +231,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pdf", required=True, type=Path, help="Repo-relative raw PDF path under ignored data/ or samples/.")
     parser.add_argument("--part", type=int, help="Optional polling part number for readiness scope.")
     parser.add_argument("--test-name-env", default=DEFAULT_TEST_NAME_ENV, help="Env var containing local search test name.")
+    parser.add_argument("--manifest", type=Path, help="Reviewed source manifest JSON path.")
+    parser.add_argument("--source-id", help="Source manifest entry id.")
     return parser
 
 
@@ -181,6 +244,8 @@ def main(argv: list[str] | None = None) -> int:
         pdf_path=args.pdf,
         part_number=args.part,
         test_name_env=args.test_name_env,
+        manifest_path=args.manifest,
+        source_id=args.source_id,
     )
     try:
         report = build_workflow(request)

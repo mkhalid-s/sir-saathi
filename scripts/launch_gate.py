@@ -215,6 +215,7 @@ def verify_state_schedule_api() -> None:
 def verify_ingestion_pipeline_contract() -> None:
     ingestion = (ROOT / "pipeline/sir_saathi_pipeline/ingestion.py").read_text(encoding="utf-8")
     ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
+    sources = (ROOT / "pipeline/sir_saathi_pipeline/sources.py").read_text(encoding="utf-8")
     db_loader = (ROOT / "pipeline/sir_saathi_pipeline/db_loader.py").read_text(encoding="utf-8")
     seed_states = (ROOT / "pipeline/sir_saathi_pipeline/seed_states.py").read_text(encoding="utf-8")
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
@@ -240,6 +241,14 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("ingest CLI must not write exports or connect to the database")
     if "Local PDF ingestion can be validated with a dry run" not in docs:
         raise RuntimeError("API/DB docs must document the local PDF dry-run command")
+    if "validate_source_manifest" not in sources or "reviewed" not in sources:
+        raise RuntimeError("source manifests must require reviewed metadata before ingestion")
+    if "local_path must stay under ignored data/ or samples/" not in sources:
+        raise RuntimeError("source manifests must keep local PDFs under ignored paths")
+    if "parser_hint must be parse_2002" not in sources:
+        raise RuntimeError("source manifests must pin the current parser hint")
+    if "Before parsing a local PDF, validate a reviewed source manifest entry" not in docs:
+        raise RuntimeError("API/DB docs must document source manifest validation")
     if "--load" not in ingest_cli or "SIR_SAATHI_DATABASE_URL" not in ingest_cli:
         raise RuntimeError("ingest CLI must require an explicit local load mode and database URL")
     if "load_ingestion_batch" not in db_loader or "load_batch_to_database" not in db_loader:
@@ -284,7 +293,7 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("API/DB docs must document the local readiness report command")
     if "WorkflowRequest" not in workflow or "build_workflow" not in workflow:
         raise RuntimeError("pipeline must expose a local operator workflow planner")
-    for expected_step in ["seed_states", "dry_run_pdf", "load_pdf", "validate_search", "readiness_report"]:
+    for expected_step in ["seed_states", "validate_source_manifest", "dry_run_pdf", "load_pdf", "validate_search", "readiness_report"]:
         if expected_step not in workflow:
             raise RuntimeError("operator workflow must include the full local onboarding sequence")
     if "SIR_SAATHI_TEST_NAME" not in workflow or "does not print the raw query" not in docs:

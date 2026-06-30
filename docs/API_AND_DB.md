@@ -28,6 +28,14 @@ SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" pyth
 
 The state seed command is local-only and idempotent. It upserts only the `states` table from reviewed config fields, including `public_launch_ready` exactly as configured, so later roll loads can satisfy foreign-key checks without inventing state metadata.
 
+Before parsing a local PDF, validate a reviewed source manifest entry:
+
+```bash
+python -m pipeline.sir_saathi_pipeline.sources --manifest data/local/sources.json --source-id <source-id>
+```
+
+The source manifest records reviewed metadata such as state, roll year, roll kind, source label, official source URI, local ignored PDF path, parser hint, and language. The validator requires `reviewed: true`, a repo-relative `local_path` under ignored `data/` or `samples/`, and the current `parse_2002` parser hint before the operator workflow should parse or load the file.
+
 Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
 Local PDF ingestion can be validated with a dry run:
@@ -65,7 +73,7 @@ The readiness report summarizes source documents, extraction runs, expected vers
 Operators can generate the full local onboarding workflow for one state/AC/PDF:
 
 ```bash
-python -m pipeline.sir_saathi_pipeline.operator_workflow --state IN-MH --ac 172 --part 21 --pdf data/local/<file>.pdf
+python -m pipeline.sir_saathi_pipeline.operator_workflow --state IN-MH --ac 172 --part 21 --pdf data/local/<file>.pdf --manifest data/local/sources.json --source-id <source-id>
 ```
 
-The workflow planner prints the safe command sequence for state seeding, PDF dry-run, explicit load, local search validation, and readiness reporting. It does not execute the commands, does not print a raw test name, keeps search names in `SIR_SAATHI_TEST_NAME`, and should be run before considering any public-search work.
+The workflow planner prints the safe command sequence for state seeding, source manifest validation, PDF dry-run, explicit load, local search validation, and readiness reporting. It does not execute the commands, does not print a raw test name, keeps search names in `SIR_SAATHI_TEST_NAME`, and should be run before considering any public-search work.
