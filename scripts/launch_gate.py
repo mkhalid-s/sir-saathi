@@ -149,6 +149,10 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("homepage must expose a clear safe find-name entry point")
     if 'id="find-name"' not in wizard or "Start with a safe official check" not in wizard:
         raise RuntimeError("wizard must contain the safe find-name flow")
+    if "State for official check" not in wizard or "updateState" not in wizard:
+        raise RuntimeError("find-name flow must ask for state before official search steps")
+    if "setFindSubmitted(false)" not in wizard:
+        raise RuntimeError("find-name flow must hide stale official-check results when state changes")
     if "does not send these details to SIR Saathi servers" not in wizard:
         raise RuntimeError("find-name flow must explain local-only fallback behavior")
     if "call indexed search" not in wizard or "/api/search" in wizard:

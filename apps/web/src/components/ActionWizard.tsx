@@ -60,6 +60,10 @@ export default function ActionWizard() {
   const updateAnswer = <K extends keyof WizardAnswers>(key: K, value: WizardAnswers[K]) => {
     setAnswers((current) => ({ ...current, [key]: value }));
   };
+  const updateState = (value: string) => {
+    setStateId(value);
+    setFindSubmitted(false);
+  };
   const clearFindNameHints = () => {
     setNameQuery('');
     setDistrictHint('');
@@ -83,6 +87,12 @@ export default function ActionWizard() {
           event.preventDefault();
           setFindSubmitted(true);
         }}>
+          <label class="field">
+            State for official check
+            <select class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
+              {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
+            </select>
+          </label>
           <label class="field">
             Name to check
             <input class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder="Name as it may appear in the roll" />
@@ -118,7 +128,7 @@ export default function ActionWizard() {
       <div class="form-grid" id="guidance">
         <label class="field">
           State
-          <select class="select" value={stateId} onChange={(event) => setStateId((event.currentTarget as HTMLSelectElement).value)}>
+          <select class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
             {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
           </select>
         </label>

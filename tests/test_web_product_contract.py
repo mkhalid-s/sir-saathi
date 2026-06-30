@@ -41,6 +41,9 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert 'href="#find-name"' in page_source
     assert 'id="find-name"' in wizard_source
     assert "Start with a safe official check" in wizard_source
+    assert "State for official check" in wizard_source
+    assert "updateState" in wizard_source
+    assert "setFindSubmitted(false)" in wizard_source
     assert "does not send these details to SIR Saathi servers" in wizard_source
     assert "call indexed search" in wizard_source
     assert "Open official portal" in wizard_source
