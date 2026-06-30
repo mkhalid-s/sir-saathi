@@ -60,6 +60,13 @@ export default function ActionWizard() {
   const updateAnswer = <K extends keyof WizardAnswers>(key: K, value: WizardAnswers[K]) => {
     setAnswers((current) => ({ ...current, [key]: value }));
   };
+  const clearFindNameHints = () => {
+    setNameQuery('');
+    setDistrictHint('');
+    setAcHint('');
+    setPartHint('');
+    setFindSubmitted(false);
+  };
   const useMissingNameGuidance = () => {
     updateAnswer('situation', 'missing_name');
   };
@@ -102,6 +109,7 @@ export default function ActionWizard() {
             <div class="actions">
               <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">Open official portal</a>
               <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>If not found, show missing-name steps</button>
+              <button class="secondary-button" type="button" onClick={clearFindNameHints}>Clear entered details</button>
             </div>
           </div>
         )}

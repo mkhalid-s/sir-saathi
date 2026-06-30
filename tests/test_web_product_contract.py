@@ -45,6 +45,12 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "call indexed search" in wizard_source
     assert "Open official portal" in wizard_source
     assert "If not found, show missing-name steps" in wizard_source
+    assert "Clear entered details" in wizard_source
+    assert "clearFindNameHints" in wizard_source
+    assert "setNameQuery('')" in wizard_source
+    assert "setDistrictHint('')" in wizard_source
+    assert "setAcHint('')" in wizard_source
+    assert "setPartHint('')" in wizard_source
     assert "updateAnswer('situation', 'missing_name')" in wizard_source
     assert "/api/search" not in wizard_source
 

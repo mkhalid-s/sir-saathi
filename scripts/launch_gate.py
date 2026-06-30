@@ -155,6 +155,11 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("find-name flow must not call indexed public search in the MVP fallback")
     if "If not found, show missing-name steps" not in wizard or "updateAnswer('situation', 'missing_name')" not in wizard:
         raise RuntimeError("find-name flow must hand off to missing-name guidance")
+    if "Clear entered details" not in wizard or "clearFindNameHints" not in wizard:
+        raise RuntimeError("find-name flow must let users clear local search hints")
+    for setter in ["setNameQuery('')", "setDistrictHint('')", "setAcHint('')", "setPartHint('')"]:
+        if setter not in wizard:
+            raise RuntimeError("find-name flow must clear all local search hint fields")
 
 
 def verify_public_privacy_pages() -> None:
