@@ -45,3 +45,11 @@ SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" pyth
 ```
 
 The local search validator uses `pg_trgm` similarity on `name_normalized`, requires state and Assembly Constituency scope, caps results, and prints timing plus redacted match fields. It reports `safe_for_public: false`, does not print the raw query, excludes `epic_hash`, hides `epic_last4` unless explicitly requested with `--include-epic-last4`, and does not change `/api/search` launch behavior.
+
+Loaded data readiness can be checked with a local operator report:
+
+```bash
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.readiness_report --state IN-MH --ac 172
+```
+
+The readiness report summarizes source documents, extraction runs, expected versus parsed counts, scoped voter-record counts, data-quality issue rates, and state configuration gates such as schedule provenance and `public_launch_ready`. It outputs safe JSON only, includes blockers, defaults `ready_for_public` to false unless all strict criteria pass, and never returns voter rows or changes public search settings.

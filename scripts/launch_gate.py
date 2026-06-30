@@ -217,6 +217,7 @@ def verify_ingestion_pipeline_contract() -> None:
     ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
     db_loader = (ROOT / "pipeline/sir_saathi_pipeline/db_loader.py").read_text(encoding="utf-8")
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
+    readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
@@ -247,7 +248,7 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("Postgres loader must use idempotent upserts")
     if "psycopg.connect" not in db_loader or "psycopg[binary]" not in requirements:
         raise RuntimeError("Postgres loader must use psycopg v3 and declare the dependency")
-    if "public_launch_ready" in db_loader + ingest_cli + local_search or "/api/search" in db_loader + ingest_cli + local_search:
+    if "public_launch_ready" in db_loader + ingest_cli + local_search or "/api/search" in db_loader + ingest_cli + local_search + readiness:
         raise RuntimeError("local ingestion loaders must not change public search launch behavior")
     if "After a dry run passes" not in docs or "does not enable public search" not in docs:
         raise RuntimeError("API/DB docs must document local load boundaries")
@@ -261,6 +262,16 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("local search validation must cap results and hide EPIC last4 by default")
     if "Local loaded-roll search can be validated" not in docs:
         raise RuntimeError("API/DB docs must document the local loaded-roll search command")
+    if "ReadinessRequest" not in readiness or "validate_readiness" not in readiness:
+        raise RuntimeError("pipeline must expose a local readiness report")
+    if "ready_for_public" not in readiness or "safe_for_public" not in readiness:
+        raise RuntimeError("readiness report must distinguish local readiness from public safety")
+    if "readiness_blockers" not in readiness or "state.public_launch_ready" not in readiness:
+        raise RuntimeError("readiness report must include config and data blockers")
+    if "voter_records" not in readiness or "quality_issue_rate" not in readiness:
+        raise RuntimeError("readiness report must summarize scoped loaded data quality")
+    if "Loaded data readiness can be checked" not in docs:
+        raise RuntimeError("API/DB docs must document the local readiness report command")
 
 
 def main() -> int:
