@@ -36,6 +36,14 @@ python -m pipeline.sir_saathi_pipeline.sources --manifest data/local/sources.jso
 
 The source manifest records reviewed metadata such as state, roll year, roll kind, source label, official source URI, local ignored PDF path, `sha256:<64 lowercase hex>` checksum, parser hint, and language. The validator requires `reviewed: true`, a repo-relative `local_path` under ignored `data/` or `samples/`, a checksum match when `--verify-file` is used, and the current `parse_2002` parser hint before the operator workflow should parse or load the file.
 
+Operators can draft a manifest entry from a local ignored PDF without marking it reviewed:
+
+```bash
+python -m pipeline.sir_saathi_pipeline.sources --draft --source-id <source-id> --state IN-MH --roll-year 2002 --roll-kind historical_base_roll --source-label "<official source label>" --source-uri "<official PDF URL>" --local-path data/local/<file>.pdf --language mr
+```
+
+The draft command computes the local file checksum and prints a JSON entry with `reviewed: false`, `valid_for_ingestion: false`, and a review-required note. A human must verify the official source metadata and set `reviewed: true` in the local manifest before the validator or operator workflow will allow ingestion.
+
 Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
 Local PDF ingestion can be validated with a dry run:

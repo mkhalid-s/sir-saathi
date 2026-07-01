@@ -119,6 +119,57 @@ def test_validate_source_manifest_rejects_checksum_mismatch(tmp_path: Path) -> N
     assert "local file checksum does not match source manifest" in report["blockers"]
 
 
+def test_draft_source_manifest_entry_computes_checksum_and_requires_review(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+
+    report = sources.draft_source_manifest_entry(
+        sources.DraftSourceManifestRequest(
+            source_id="mh-2002-ac172-part21",
+            state_id="IN-MH",
+            roll_year=2002,
+            roll_kind="historical_base_roll",
+            source_label="Synthetic reviewed source",
+            source_uri="https://example.test/official.pdf",
+            local_path=Path("data/local/pilot.pdf"),
+            language="mr",
+        ),
+        repo_root=tmp_path,
+    )
+    encoded = json.dumps(report)
+
+    assert report["local_only"] is True
+    assert report["ready_for_review"] is True
+    assert report["valid_for_ingestion"] is False
+    assert report["entry"]["reviewed"] is False
+    assert report["entry"]["checksum"] == sources.compute_sha256(pdf_path)
+    assert report["entry"]["local_path"] == "data/local/pilot.pdf"
+    assert str(tmp_path) not in encoded
+    assert "synthetic pdf bytes" not in encoded
+
+
+def test_draft_source_manifest_rejects_paths_outside_ignored_roots(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "docs/pilot.pdf"
+    pdf_path.parent.mkdir()
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+
+    with pytest.raises(ValueError, match="ignored data/ or samples"):
+        sources.draft_source_manifest_entry(
+            sources.DraftSourceManifestRequest(
+                source_id="mh-2002-ac172-part21",
+                state_id="IN-MH",
+                roll_year=2002,
+                roll_kind="historical_base_roll",
+                source_label="Synthetic reviewed source",
+                source_uri="https://example.test/official.pdf",
+                local_path=Path("docs/pilot.pdf"),
+                language="mr",
+            ),
+            repo_root=tmp_path,
+        )
+
+
 def test_source_manifest_rejects_unknown_source_id(tmp_path: Path) -> None:
     manifest_path = write_manifest(tmp_path)
 
@@ -164,3 +215,29 @@ def test_main_verifies_file_when_requested(tmp_path: Path, capsys: pytest.Captur
 
     assert exit_code == 0
     assert output["checksum_verified"] is True
+
+
+def test_main_drafts_manifest_entry_without_marking_reviewed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+
+    exit_code = sources.main([
+        "--draft",
+        "--source-id", "mh-2002-ac172-part21",
+        "--state", "IN-MH",
+        "--roll-year", "2002",
+        "--roll-kind", "historical_base_roll",
+        "--source-label", "Synthetic reviewed source",
+        "--source-uri", "https://example.test/official.pdf",
+        "--local-path", "data/local/pilot.pdf",
+        "--language", "mr",
+        "--repo-root", str(tmp_path),
+    ])
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert output["ready_for_review"] is True
+    assert output["valid_for_ingestion"] is False
+    assert output["entry"]["reviewed"] is False
+    assert output["entry"]["checksum"] == sources.compute_sha256(pdf_path)

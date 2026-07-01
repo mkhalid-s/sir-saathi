@@ -42,6 +42,20 @@ class SourceManifest:
         return self.local_path is not None
 
 
+@dataclass(frozen=True)
+class DraftSourceManifestRequest:
+    source_id: str
+    state_id: str
+    roll_year: int
+    roll_kind: RollKind
+    source_label: str
+    source_uri: str
+    local_path: Path
+    language: str
+    parser_hint: str = "parse_2002"
+    notes: str = ""
+
+
 def parse_source_manifest(data: dict[str, Any]) -> SourceManifest:
     local_path = data.get("local_path")
     return SourceManifest(
@@ -83,6 +97,48 @@ def compute_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return f"{CHECKSUM_PREFIX}{digest.hexdigest()}"
+
+
+def require_repo_relative_local_path(path: Path) -> Path:
+    if path.is_absolute():
+        raise ValueError("local_path must be repo-relative")
+    if not path.parts or path.parts[0] not in ALLOWED_LOCAL_ROOTS:
+        raise ValueError("local_path must stay under ignored data/ or samples/ directories")
+    return path
+
+
+def draft_source_manifest_entry(
+    request: DraftSourceManifestRequest,
+    *,
+    repo_root: str | Path = ".",
+) -> dict[str, Any]:
+    local_path = require_repo_relative_local_path(request.local_path)
+    pdf_path = Path(repo_root) / local_path
+    if not pdf_path.exists():
+        raise ValueError("local_path file does not exist for manifest drafting")
+    checksum = compute_sha256(pdf_path)
+    entry = {
+        "source_id": request.source_id,
+        "state_id": request.state_id,
+        "roll_year": request.roll_year,
+        "roll_kind": request.roll_kind,
+        "source_label": request.source_label,
+        "source_uri": request.source_uri,
+        "local_path": local_path.as_posix(),
+        "checksum": checksum,
+        "parser_hint": request.parser_hint,
+        "language": request.language,
+        "reviewed": False,
+        "notes": request.notes or "TODO: human source review required before ingestion",
+    }
+    return {
+        "local_only": True,
+        "ready_for_review": True,
+        "valid_for_ingestion": False,
+        "review_required": True,
+        "entry": entry,
+        "next_step": "Review the source metadata, then set reviewed to true before ingestion.",
+    }
 
 
 def source_manifest_blockers(manifest: SourceManifest) -> list[str]:
@@ -166,26 +222,61 @@ def failure_report(message: str) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate a reviewed local source manifest entry.")
-    parser.add_argument("--manifest", required=True, type=Path)
-    parser.add_argument("--source-id", required=True)
+    parser.add_argument("--draft", action="store_true", help="Draft a reviewed:false manifest entry with a computed checksum.")
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--source-id")
     parser.add_argument("--verify-file", action="store_true", help="Hash the local ignored PDF and compare it with the manifest checksum.")
     parser.add_argument("--repo-root", type=Path, default=Path("."), help="Repository root used to resolve manifest local_path.")
+    parser.add_argument("--state", help="Canonical state id for draft entries.")
+    parser.add_argument("--roll-year", type=int, help="Roll year for draft entries.")
+    parser.add_argument("--roll-kind", default="historical_base_roll", help="Roll kind for draft entries.")
+    parser.add_argument("--source-label", help="Human-readable source label for draft entries.")
+    parser.add_argument("--source-uri", help="Official source URI for draft entries.")
+    parser.add_argument("--local-path", type=Path, help="Repo-relative local PDF path under ignored data/ or samples/.")
+    parser.add_argument("--language", help="Roll language code for draft entries.")
+    parser.add_argument("--parser-hint", default="parse_2002", help="Parser hint for draft entries.")
+    parser.add_argument("--notes", default="", help="Optional review notes for draft entries.")
     return parser
+
+
+def _require_arg(value: Any, name: str) -> Any:
+    if value in (None, ""):
+        raise ValueError(f"{name} is required")
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        report = validate_source_manifest(
-            args.manifest,
-            args.source_id,
-            verify_file=args.verify_file,
-            repo_root=args.repo_root,
-        )
+        if args.draft:
+            report = draft_source_manifest_entry(
+                DraftSourceManifestRequest(
+                    source_id=_require_arg(args.source_id, "--source-id"),
+                    state_id=_require_arg(args.state, "--state"),
+                    roll_year=_require_arg(args.roll_year, "--roll-year"),
+                    roll_kind=args.roll_kind,
+                    source_label=_require_arg(args.source_label, "--source-label"),
+                    source_uri=_require_arg(args.source_uri, "--source-uri"),
+                    local_path=_require_arg(args.local_path, "--local-path"),
+                    language=_require_arg(args.language, "--language"),
+                    parser_hint=args.parser_hint,
+                    notes=args.notes,
+                ),
+                repo_root=args.repo_root,
+            )
+        else:
+            report = validate_source_manifest(
+                _require_arg(args.manifest, "--manifest"),
+                _require_arg(args.source_id, "--source-id"),
+                verify_file=args.verify_file,
+                repo_root=args.repo_root,
+            )
     except Exception as exc:
         print(json.dumps(failure_report(str(exc)), indent=2, sort_keys=True))
         return 1
     print(json.dumps(report, indent=2, sort_keys=True))
+    if report.get("ready_for_review"):
+        return 0
     return 0 if report["valid_for_ingestion"] else 1
 
 

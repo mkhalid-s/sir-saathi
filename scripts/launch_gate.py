@@ -251,8 +251,14 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("source manifests must require sha256 checksums")
     if "--verify-file" not in sources or "local file checksum does not match source manifest" not in sources:
         raise RuntimeError("source manifest validation must be able to verify local files")
+    if "draft_source_manifest_entry" not in sources or '"reviewed": False' not in sources:
+        raise RuntimeError("source manifest drafting must never auto-mark entries as reviewed")
+    if "valid_for_ingestion" not in sources or "ready_for_review" not in sources:
+        raise RuntimeError("source manifest drafting must distinguish review from ingestion readiness")
     if "Before parsing a local PDF, validate a reviewed source manifest entry" not in docs:
         raise RuntimeError("API/DB docs must document source manifest validation")
+    if "Operators can draft a manifest entry" not in docs or "reviewed: false" not in docs:
+        raise RuntimeError("API/DB docs must document source manifest drafting")
     if "--expected-checksum" not in ingest_cli or "checksum does not match expected source manifest checksum" not in ingest_cli:
         raise RuntimeError("ingest CLI must fail closed on manifest checksum mismatches")
     if "--load" not in ingest_cli or "SIR_SAATHI_DATABASE_URL" not in ingest_cli:
