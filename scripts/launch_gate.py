@@ -259,10 +259,16 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("source manifest drafting must support safe local manifest writes without duplicates")
     if "--output-manifest" not in sources or "manifest path must stay under ignored data/ or samples/" not in sources:
         raise RuntimeError("source manifest write path must stay under ignored local roots")
+    if "source_manifest_review_report" not in sources or "ready_for_human_review" not in sources:
+        raise RuntimeError("source manifests must expose a local human-review readiness report")
+    if "--review" not in sources or "valid_for_ingestion" not in sources:
+        raise RuntimeError("source manifest review command must distinguish review readiness from ingestion readiness")
     if "Before parsing a local PDF, validate a reviewed source manifest entry" not in docs:
         raise RuntimeError("API/DB docs must document source manifest validation")
     if "Operators can draft a manifest entry" not in docs or "reviewed: false" not in docs or "--output-manifest" not in docs:
         raise RuntimeError("API/DB docs must document source manifest drafting")
+    if "Operators can generate a local review report" not in docs or "ready_for_human_review" not in docs:
+        raise RuntimeError("API/DB docs must document source manifest review reporting")
     if "--expected-checksum" not in ingest_cli or "checksum does not match expected source manifest checksum" not in ingest_cli:
         raise RuntimeError("ingest CLI must fail closed on manifest checksum mismatches")
     if "--load" not in ingest_cli or "SIR_SAATHI_DATABASE_URL" not in ingest_cli:

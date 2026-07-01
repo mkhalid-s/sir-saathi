@@ -251,6 +251,68 @@ def test_write_draft_source_manifest_rejects_manifest_outside_ignored_roots(tmp_
         )
 
 
+def test_source_manifest_review_report_marks_complete_draft_ready_for_human_review(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+    manifest_path = write_manifest(tmp_path, reviewed=False, checksum=sources.compute_sha256(pdf_path))
+
+    report = sources.source_manifest_review_report(
+        manifest_path,
+        "mh-2002-ac172-part21",
+        verify_file=True,
+        repo_root=tmp_path,
+    )
+    checklist = {item["id"]: item["passed"] for item in report["checklist"]}
+
+    assert report["local_only"] is True
+    assert report["ready_for_human_review"] is True
+    assert report["valid_for_ingestion"] is False
+    assert report["review_required"] is True
+    assert report["checksum_verified"] is True
+    assert report["blockers"] == []
+    assert checklist["human_review"] is False
+    assert checklist["checksum_verified"] is True
+
+
+def test_source_manifest_review_report_marks_reviewed_entry_valid_for_ingestion(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+    manifest_path = write_manifest(tmp_path, reviewed=True, checksum=sources.compute_sha256(pdf_path))
+
+    report = sources.source_manifest_review_report(
+        manifest_path,
+        "mh-2002-ac172-part21",
+        verify_file=True,
+        repo_root=tmp_path,
+    )
+
+    assert report["ready_for_human_review"] is False
+    assert report["valid_for_ingestion"] is True
+    assert report["review_required"] is False
+    assert report["blockers"] == []
+
+
+def test_source_manifest_review_report_returns_field_and_file_blockers(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"different bytes")
+    manifest_path = write_manifest(tmp_path, reviewed=False, checksum="bad")
+
+    report = sources.source_manifest_review_report(
+        manifest_path,
+        "mh-2002-ac172-part21",
+        verify_file=True,
+        repo_root=tmp_path,
+    )
+
+    assert report["ready_for_human_review"] is False
+    assert report["valid_for_ingestion"] is False
+    assert "checksum must be sha256:<64 lowercase hex>" in report["blockers"]
+    assert "local file checksum does not match source manifest" in report["blockers"]
+
+
 def test_source_manifest_rejects_unknown_source_id(tmp_path: Path) -> None:
     manifest_path = write_manifest(tmp_path)
 
@@ -350,3 +412,24 @@ def test_main_writes_draft_manifest_entry_without_marking_reviewed(tmp_path: Pat
     assert output["valid_for_ingestion"] is False
     assert manifest["sources"][0]["reviewed"] is False
     assert manifest["sources"][0]["source_id"] == "mh-2002-ac172-part21"
+
+
+def test_main_reports_source_manifest_review_status(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+    manifest_path = write_manifest(tmp_path, reviewed=False, checksum=sources.compute_sha256(pdf_path))
+
+    exit_code = sources.main([
+        "--review",
+        "--manifest", str(manifest_path),
+        "--source-id", "mh-2002-ac172-part21",
+        "--verify-file",
+        "--repo-root", str(tmp_path),
+    ])
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert output["ready_for_human_review"] is True
+    assert output["valid_for_ingestion"] is False
+    assert output["review_required"] is True

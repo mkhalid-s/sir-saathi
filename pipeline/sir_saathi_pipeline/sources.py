@@ -252,6 +252,61 @@ def validate_source_manifest(
     }
 
 
+def review_checklist(manifest: SourceManifest, *, checksum_verified: bool) -> list[dict[str, Any]]:
+    return [
+        {"id": "official_source_uri", "label": "Official source URI is recorded", "passed": bool(manifest.source_uri)},
+        {"id": "source_label", "label": "Human-readable source label is recorded", "passed": bool(manifest.source_label)},
+        {"id": "local_path", "label": "Local PDF path stays under ignored data/ or samples/", "passed": manifest.local_path is not None and not manifest.local_path.is_absolute() and bool(manifest.local_path.parts) and manifest.local_path.parts[0] in ALLOWED_LOCAL_ROOTS},
+        {"id": "checksum", "label": "Manifest checksum uses sha256:<64 lowercase hex>", "passed": is_sha256_checksum(manifest.checksum)},
+        {"id": "checksum_verified", "label": "Local PDF checksum matches manifest", "passed": checksum_verified},
+        {"id": "parser_hint", "label": "Current parser hint is parse_2002", "passed": manifest.parser_hint == "parse_2002"},
+        {"id": "language", "label": "Roll language is recorded", "passed": bool(manifest.language)},
+        {"id": "human_review", "label": "Human source review has marked reviewed true", "passed": manifest.reviewed},
+    ]
+
+
+def source_manifest_review_report(
+    path: str | Path,
+    source_id: str,
+    *,
+    verify_file: bool = False,
+    repo_root: str | Path = ".",
+) -> dict[str, Any]:
+    manifests = load_source_manifests(path)
+    if source_id not in manifests:
+        raise ValueError(f"unknown source_id: {source_id}")
+    manifest = manifests[source_id]
+    field_blockers = [
+        blocker
+        for blocker in source_manifest_blockers(manifest)
+        if blocker != "source manifest entry must be reviewed before ingestion"
+    ]
+    file_blockers = source_file_blockers(manifest, repo_root=Path(repo_root)) if verify_file else []
+    checksum_verified = verify_file and not file_blockers
+    blockers = field_blockers + file_blockers
+    return {
+        "local_only": True,
+        "source_id": manifest.source_id,
+        "state_id": manifest.state_id,
+        "roll_year": manifest.roll_year,
+        "roll_kind": manifest.roll_kind,
+        "source_label": manifest.source_label,
+        "source_uri": manifest.source_uri,
+        "local_path": manifest.local_path.as_posix() if manifest.local_path else None,
+        "checksum": manifest.checksum,
+        "parser_hint": manifest.parser_hint,
+        "language": manifest.language,
+        "reviewed": manifest.reviewed,
+        "checksum_verified": checksum_verified,
+        "ready_for_human_review": not blockers and not manifest.reviewed,
+        "valid_for_ingestion": not blockers and manifest.reviewed,
+        "review_required": not manifest.reviewed,
+        "blockers": blockers,
+        "checklist": review_checklist(manifest, checksum_verified=checksum_verified),
+        "next_step": "Human reviewer must verify source metadata and set reviewed true before ingestion.",
+    }
+
+
 def failure_report(message: str) -> dict[str, Any]:
     return {
         "local_only": True,
@@ -264,6 +319,7 @@ def failure_report(message: str) -> dict[str, Any]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate a reviewed local source manifest entry.")
     parser.add_argument("--draft", action="store_true", help="Draft a reviewed:false manifest entry with a computed checksum.")
+    parser.add_argument("--review", action="store_true", help="Report whether a manifest entry is ready for human review.")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--source-id")
     parser.add_argument("--verify-file", action="store_true", help="Hash the local ignored PDF and compare it with the manifest checksum.")
@@ -311,6 +367,15 @@ def main(argv: list[str] | None = None) -> int:
                 )
             else:
                 report = draft_source_manifest_entry(request, repo_root=args.repo_root)
+        elif args.review:
+            if args.output_manifest:
+                raise ValueError("--output-manifest can only be used with --draft")
+            report = source_manifest_review_report(
+                _require_arg(args.manifest, "--manifest"),
+                _require_arg(args.source_id, "--source-id"),
+                verify_file=args.verify_file,
+                repo_root=args.repo_root,
+            )
         else:
             if args.output_manifest:
                 raise ValueError("--output-manifest can only be used with --draft")
@@ -324,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(failure_report(str(exc)), indent=2, sort_keys=True))
         return 1
     print(json.dumps(report, indent=2, sort_keys=True))
-    if report.get("ready_for_review"):
+    if report.get("ready_for_review") or report.get("ready_for_human_review"):
         return 0
     return 0 if report["valid_for_ingestion"] else 1
 

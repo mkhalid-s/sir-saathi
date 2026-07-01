@@ -44,6 +44,14 @@ python -m pipeline.sir_saathi_pipeline.sources --draft --source-id <source-id> -
 
 The draft command computes the local file checksum and prints a JSON entry with `reviewed: false`, `valid_for_ingestion: false`, and a review-required note. With `--output-manifest`, it creates or appends to a local ignored manifest under `data/` or `samples/`, rejects duplicate `source_id` values, and still keeps the entry unreviewed. A human must verify the official source metadata and set `reviewed: true` in the local manifest before the validator or operator workflow will allow ingestion.
 
+Operators can generate a local review report before changing `reviewed`:
+
+```bash
+python -m pipeline.sir_saathi_pipeline.sources --review --manifest data/local/sources.json --source-id <source-id> --verify-file
+```
+
+The review report checks required fields, parser hint, ignored local paths, checksum format, and local checksum match. It can report `ready_for_human_review: true` for a complete draft while keeping `valid_for_ingestion: false` until a human explicitly sets `reviewed: true`.
+
 Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
 Local PDF ingestion can be validated with a dry run:

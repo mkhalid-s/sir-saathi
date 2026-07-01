@@ -78,6 +78,7 @@ The intended local flow is:
 
 ```sh
 python -m pipeline.sir_saathi_pipeline.sources --draft --source-id <source-id> --state IN-MH --roll-year 2002 --roll-kind historical_base_roll --source-label "<official source label>" --source-uri "<official PDF URL>" --local-path data/local/<file>.pdf --language mr --output-manifest data/local/sources.json
+python -m pipeline.sir_saathi_pipeline.sources --review --manifest data/local/sources.json --source-id <source-id> --verify-file
 python -m pipeline.sir_saathi_pipeline.sources --manifest data/local/sources.json --source-id <source-id> --verify-file
 SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.seed_states
 SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" python -m pipeline.sir_saathi_pipeline.ingest_roll --pdf data/local/<file>.pdf --state IN-MH --dry-run
