@@ -170,6 +170,87 @@ def test_draft_source_manifest_rejects_paths_outside_ignored_roots(tmp_path: Pat
         )
 
 
+def test_write_draft_source_manifest_entry_creates_local_manifest(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+
+    report = sources.write_draft_source_manifest_entry(
+        sources.DraftSourceManifestRequest(
+            source_id="mh-2002-ac172-part21",
+            state_id="IN-MH",
+            roll_year=2002,
+            roll_kind="historical_base_roll",
+            source_label="Synthetic reviewed source",
+            source_uri="https://example.test/official.pdf",
+            local_path=Path("data/local/pilot.pdf"),
+            language="mr",
+        ),
+        manifest_path=Path("data/local/sources.json"),
+        repo_root=tmp_path,
+    )
+    manifest = json.loads((tmp_path / "data/local/sources.json").read_text(encoding="utf-8"))
+    encoded = json.dumps(report)
+
+    assert report["wrote_manifest"] is True
+    assert report["valid_for_ingestion"] is False
+    assert report["manifest_path"] == "data/local/sources.json"
+    assert report["source_count"] == 1
+    assert manifest["sources"][0]["reviewed"] is False
+    assert manifest["sources"][0]["checksum"] == sources.compute_sha256(pdf_path)
+    assert str(tmp_path) not in encoded
+
+
+def test_write_draft_source_manifest_entry_rejects_duplicate_source_id(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+    request = sources.DraftSourceManifestRequest(
+        source_id="mh-2002-ac172-part21",
+        state_id="IN-MH",
+        roll_year=2002,
+        roll_kind="historical_base_roll",
+        source_label="Synthetic reviewed source",
+        source_uri="https://example.test/official.pdf",
+        local_path=Path("data/local/pilot.pdf"),
+        language="mr",
+    )
+    sources.write_draft_source_manifest_entry(
+        request,
+        manifest_path=Path("data/local/sources.json"),
+        repo_root=tmp_path,
+    )
+
+    with pytest.raises(ValueError, match="source_id already exists"):
+        sources.write_draft_source_manifest_entry(
+            request,
+            manifest_path=Path("data/local/sources.json"),
+            repo_root=tmp_path,
+        )
+
+
+def test_write_draft_source_manifest_rejects_manifest_outside_ignored_roots(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+
+    with pytest.raises(ValueError, match="manifest path must stay under ignored data/ or samples"):
+        sources.write_draft_source_manifest_entry(
+            sources.DraftSourceManifestRequest(
+                source_id="mh-2002-ac172-part21",
+                state_id="IN-MH",
+                roll_year=2002,
+                roll_kind="historical_base_roll",
+                source_label="Synthetic reviewed source",
+                source_uri="https://example.test/official.pdf",
+                local_path=Path("data/local/pilot.pdf"),
+                language="mr",
+            ),
+            manifest_path=Path("docs/sources.json"),
+            repo_root=tmp_path,
+        )
+
+
 def test_source_manifest_rejects_unknown_source_id(tmp_path: Path) -> None:
     manifest_path = write_manifest(tmp_path)
 
@@ -241,3 +322,31 @@ def test_main_drafts_manifest_entry_without_marking_reviewed(tmp_path: Path, cap
     assert output["valid_for_ingestion"] is False
     assert output["entry"]["reviewed"] is False
     assert output["entry"]["checksum"] == sources.compute_sha256(pdf_path)
+
+
+def test_main_writes_draft_manifest_entry_without_marking_reviewed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+
+    exit_code = sources.main([
+        "--draft",
+        "--source-id", "mh-2002-ac172-part21",
+        "--state", "IN-MH",
+        "--roll-year", "2002",
+        "--roll-kind", "historical_base_roll",
+        "--source-label", "Synthetic reviewed source",
+        "--source-uri", "https://example.test/official.pdf",
+        "--local-path", "data/local/pilot.pdf",
+        "--language", "mr",
+        "--output-manifest", "data/local/sources.json",
+        "--repo-root", str(tmp_path),
+    ])
+    output = json.loads(capsys.readouterr().out)
+    manifest = json.loads((tmp_path / "data/local/sources.json").read_text(encoding="utf-8"))
+
+    assert exit_code == 0
+    assert output["wrote_manifest"] is True
+    assert output["valid_for_ingestion"] is False
+    assert manifest["sources"][0]["reviewed"] is False
+    assert manifest["sources"][0]["source_id"] == "mh-2002-ac172-part21"

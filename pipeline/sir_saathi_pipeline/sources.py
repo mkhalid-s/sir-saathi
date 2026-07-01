@@ -107,6 +107,14 @@ def require_repo_relative_local_path(path: Path) -> Path:
     return path
 
 
+def require_repo_relative_manifest_path(path: Path) -> Path:
+    if path.is_absolute():
+        raise ValueError("manifest path must be repo-relative")
+    if not path.parts or path.parts[0] not in ALLOWED_LOCAL_ROOTS:
+        raise ValueError("manifest path must stay under ignored data/ or samples/ directories")
+    return path
+
+
 def draft_source_manifest_entry(
     request: DraftSourceManifestRequest,
     *,
@@ -138,6 +146,39 @@ def draft_source_manifest_entry(
         "review_required": True,
         "entry": entry,
         "next_step": "Review the source metadata, then set reviewed to true before ingestion.",
+    }
+
+
+def load_source_manifest_document(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {"sources": []}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data.get("sources"), list):
+        raise ValueError("source manifest must contain a sources list")
+    return data
+
+
+def write_draft_source_manifest_entry(
+    request: DraftSourceManifestRequest,
+    *,
+    manifest_path: Path,
+    repo_root: str | Path = ".",
+) -> dict[str, Any]:
+    relative_manifest_path = require_repo_relative_manifest_path(manifest_path)
+    resolved_manifest_path = Path(repo_root) / relative_manifest_path
+    draft = draft_source_manifest_entry(request, repo_root=repo_root)
+    document = load_source_manifest_document(resolved_manifest_path)
+    entry = draft["entry"]
+    if any(existing.get("source_id") == entry["source_id"] for existing in document["sources"]):
+        raise ValueError(f"source_id already exists in manifest: {entry['source_id']}")
+    document["sources"].append(entry)
+    resolved_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    resolved_manifest_path.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return {
+        **draft,
+        "manifest_path": relative_manifest_path.as_posix(),
+        "wrote_manifest": True,
+        "source_count": len(document["sources"]),
     }
 
 
@@ -233,6 +274,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-label", help="Human-readable source label for draft entries.")
     parser.add_argument("--source-uri", help="Official source URI for draft entries.")
     parser.add_argument("--local-path", type=Path, help="Repo-relative local PDF path under ignored data/ or samples/.")
+    parser.add_argument("--output-manifest", type=Path, help="Repo-relative manifest path to append a draft entry to.")
     parser.add_argument("--language", help="Roll language code for draft entries.")
     parser.add_argument("--parser-hint", default="parse_2002", help="Parser hint for draft entries.")
     parser.add_argument("--notes", default="", help="Optional review notes for draft entries.")
@@ -249,22 +291,29 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.draft:
-            report = draft_source_manifest_entry(
-                DraftSourceManifestRequest(
-                    source_id=_require_arg(args.source_id, "--source-id"),
-                    state_id=_require_arg(args.state, "--state"),
-                    roll_year=_require_arg(args.roll_year, "--roll-year"),
-                    roll_kind=args.roll_kind,
-                    source_label=_require_arg(args.source_label, "--source-label"),
-                    source_uri=_require_arg(args.source_uri, "--source-uri"),
-                    local_path=_require_arg(args.local_path, "--local-path"),
-                    language=_require_arg(args.language, "--language"),
-                    parser_hint=args.parser_hint,
-                    notes=args.notes,
-                ),
-                repo_root=args.repo_root,
+            request = DraftSourceManifestRequest(
+                source_id=_require_arg(args.source_id, "--source-id"),
+                state_id=_require_arg(args.state, "--state"),
+                roll_year=_require_arg(args.roll_year, "--roll-year"),
+                roll_kind=args.roll_kind,
+                source_label=_require_arg(args.source_label, "--source-label"),
+                source_uri=_require_arg(args.source_uri, "--source-uri"),
+                local_path=_require_arg(args.local_path, "--local-path"),
+                language=_require_arg(args.language, "--language"),
+                parser_hint=args.parser_hint,
+                notes=args.notes,
             )
+            if args.output_manifest:
+                report = write_draft_source_manifest_entry(
+                    request,
+                    manifest_path=args.output_manifest,
+                    repo_root=args.repo_root,
+                )
+            else:
+                report = draft_source_manifest_entry(request, repo_root=args.repo_root)
         else:
+            if args.output_manifest:
+                raise ValueError("--output-manifest can only be used with --draft")
             report = validate_source_manifest(
                 _require_arg(args.manifest, "--manifest"),
                 _require_arg(args.source_id, "--source-id"),

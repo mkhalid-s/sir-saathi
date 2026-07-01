@@ -39,10 +39,10 @@ The source manifest records reviewed metadata such as state, roll year, roll kin
 Operators can draft a manifest entry from a local ignored PDF without marking it reviewed:
 
 ```bash
-python -m pipeline.sir_saathi_pipeline.sources --draft --source-id <source-id> --state IN-MH --roll-year 2002 --roll-kind historical_base_roll --source-label "<official source label>" --source-uri "<official PDF URL>" --local-path data/local/<file>.pdf --language mr
+python -m pipeline.sir_saathi_pipeline.sources --draft --source-id <source-id> --state IN-MH --roll-year 2002 --roll-kind historical_base_roll --source-label "<official source label>" --source-uri "<official PDF URL>" --local-path data/local/<file>.pdf --language mr --output-manifest data/local/sources.json
 ```
 
-The draft command computes the local file checksum and prints a JSON entry with `reviewed: false`, `valid_for_ingestion: false`, and a review-required note. A human must verify the official source metadata and set `reviewed: true` in the local manifest before the validator or operator workflow will allow ingestion.
+The draft command computes the local file checksum and prints a JSON entry with `reviewed: false`, `valid_for_ingestion: false`, and a review-required note. With `--output-manifest`, it creates or appends to a local ignored manifest under `data/` or `samples/`, rejects duplicate `source_id` values, and still keeps the entry unreviewed. A human must verify the official source metadata and set `reviewed: true` in the local manifest before the validator or operator workflow will allow ingestion.
 
 Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
