@@ -92,6 +92,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
     language = source_manifest.language or "" if source_manifest else ""
     source_label = source_manifest.source_label if source_manifest else ""
     source_uri = source_manifest.source_uri if source_manifest else ""
+    checksum = source_manifest.checksum if source_manifest else ""
 
     seed_command = shell_join([
         "python", "-m", "pipeline.sir_saathi_pipeline.seed_states", "--state", request.state_id
@@ -100,6 +101,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
         "python", "-m", "pipeline.sir_saathi_pipeline.sources",
         "--manifest", manifest_arg,
         "--source-id", source_id_arg,
+        "--verify-file",
     ])
     dry_run_command = shell_join([
         "python", "-m", "pipeline.sir_saathi_pipeline.ingest_roll",
@@ -110,6 +112,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
         "--language", language,
         "--source-label", source_label,
         "--source-url", source_uri,
+        "--expected-checksum", checksum,
         "--dry-run",
     ])
     load_command = shell_join([
@@ -121,6 +124,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
         "--language", language,
         "--source-label", source_label,
         "--source-url", source_uri,
+        "--expected-checksum", checksum,
         "--load",
     ])
     search_command = shell_join([
@@ -205,6 +209,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
             "reviewed": source_manifest.reviewed,
             "source_label": source_manifest.source_label,
             "source_uri": source_manifest.source_uri,
+            "checksum": source_manifest.checksum,
             "roll_year": source_manifest.roll_year,
             "roll_kind": source_manifest.roll_kind,
             "language": source_manifest.language,

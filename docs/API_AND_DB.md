@@ -31,10 +31,10 @@ The state seed command is local-only and idempotent. It upserts only the `states
 Before parsing a local PDF, validate a reviewed source manifest entry:
 
 ```bash
-python -m pipeline.sir_saathi_pipeline.sources --manifest data/local/sources.json --source-id <source-id>
+python -m pipeline.sir_saathi_pipeline.sources --manifest data/local/sources.json --source-id <source-id> --verify-file
 ```
 
-The source manifest records reviewed metadata such as state, roll year, roll kind, source label, official source URI, local ignored PDF path, parser hint, and language. The validator requires `reviewed: true`, a repo-relative `local_path` under ignored `data/` or `samples/`, and the current `parse_2002` parser hint before the operator workflow should parse or load the file.
+The source manifest records reviewed metadata such as state, roll year, roll kind, source label, official source URI, local ignored PDF path, `sha256:<64 lowercase hex>` checksum, parser hint, and language. The validator requires `reviewed: true`, a repo-relative `local_path` under ignored `data/` or `samples/`, a checksum match when `--verify-file` is used, and the current `parse_2002` parser hint before the operator workflow should parse or load the file.
 
 Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
@@ -44,7 +44,7 @@ Local PDF ingestion can be validated with a dry run:
 SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" python -m pipeline.sir_saathi_pipeline.ingest_roll --pdf data/local/<file>.pdf --state IN-MH --dry-run
 ```
 
-The dry-run command computes the PDF checksum, calls the 2002 parser, builds an ingestion batch, and prints a safe JSON report with AC/part metadata, expected and parsed record counts, quality summary, and DB row counts. It requires `--dry-run` and `SIR_SAATHI_EPIC_HASH_SALT`, and its report does not include raw EPIC values, voter names, local file paths, CSV exports, JSON voter exports, or database writes.
+The dry-run command computes the PDF checksum, optionally compares it with `--expected-checksum` from the reviewed source manifest before parsing, calls the 2002 parser, builds an ingestion batch, and prints a safe JSON report with AC/part metadata, expected and parsed record counts, quality summary, and DB row counts. It requires `--dry-run` and `SIR_SAATHI_EPIC_HASH_SALT`, and its report does not include raw EPIC values, voter names, local file paths, CSV exports, JSON voter exports, or database writes.
 
 After a dry run passes, the same validated batch can be loaded into local Postgres with an explicit `--load`:
 

@@ -247,8 +247,14 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("source manifests must keep local PDFs under ignored paths")
     if "parser_hint must be parse_2002" not in sources:
         raise RuntimeError("source manifests must pin the current parser hint")
+    if "checksum must be sha256:<64 lowercase hex>" not in sources or "compute_sha256" not in sources:
+        raise RuntimeError("source manifests must require sha256 checksums")
+    if "--verify-file" not in sources or "local file checksum does not match source manifest" not in sources:
+        raise RuntimeError("source manifest validation must be able to verify local files")
     if "Before parsing a local PDF, validate a reviewed source manifest entry" not in docs:
         raise RuntimeError("API/DB docs must document source manifest validation")
+    if "--expected-checksum" not in ingest_cli or "checksum does not match expected source manifest checksum" not in ingest_cli:
+        raise RuntimeError("ingest CLI must fail closed on manifest checksum mismatches")
     if "--load" not in ingest_cli or "SIR_SAATHI_DATABASE_URL" not in ingest_cli:
         raise RuntimeError("ingest CLI must require an explicit local load mode and database URL")
     if "load_ingestion_batch" not in db_loader or "load_batch_to_database" not in db_loader:
@@ -298,6 +304,8 @@ def verify_ingestion_pipeline_contract() -> None:
             raise RuntimeError("operator workflow must include the full local onboarding sequence")
     if "SIR_SAATHI_TEST_NAME" not in workflow or "does not print the raw query" not in docs:
         raise RuntimeError("operator workflow must keep local search names out of reports")
+    if "--verify-file" not in workflow or "--expected-checksum" not in workflow:
+        raise RuntimeError("operator workflow must verify manifest checksums before parse/load")
     if "Operators can generate the full local onboarding workflow" not in docs:
         raise RuntimeError("API/DB docs must document the local operator workflow")
 

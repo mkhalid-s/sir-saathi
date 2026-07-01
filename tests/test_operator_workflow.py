@@ -4,6 +4,8 @@ from pathlib import Path
 from pipeline.sir_saathi_pipeline import operator_workflow
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 
+VALID_CHECKSUM = "sha256:" + "b" * 64
+
 
 def write_manifest(tmp_path: Path) -> Path:
     manifest_path = tmp_path / "sources.json"
@@ -21,6 +23,7 @@ def write_manifest(tmp_path: Path) -> Path:
                         "local_path": "data/local/pilot.pdf",
                         "parser_hint": "parse_2002",
                         "language": "mr",
+                        "checksum": VALID_CHECKSUM,
                         "reviewed": True,
                     }
                 ]
@@ -64,10 +67,13 @@ def test_build_workflow_outputs_ordered_local_commands_without_raw_name(tmp_path
     ]
     assert "pipeline.sir_saathi_pipeline.seed_states" in commands[0]
     assert "pipeline.sir_saathi_pipeline.sources" in commands[1]
+    assert "--verify-file" in commands[1]
     assert "--dry-run" in commands[2]
     assert "--roll-year 2002" in commands[2]
     assert "--source-label 'Synthetic reviewed source'" in commands[2]
+    assert f"--expected-checksum {VALID_CHECKSUM}" in commands[2]
     assert "--load" in commands[3]
+    assert f"--expected-checksum {VALID_CHECKSUM}" in commands[3]
     assert "pipeline.sir_saathi_pipeline.local_search" in commands[4]
     assert "pipeline.sir_saathi_pipeline.readiness_report" in commands[5]
     assert "--part 21" in commands[5]
@@ -90,6 +96,7 @@ def test_build_workflow_reports_state_config_and_required_env(tmp_path: Path) ->
     assert report["state_config"]["schedule_provenance"] == "reported"
     assert report["source_manifest"]["reviewed"] is True
     assert report["source_manifest"]["roll_year"] == 2002
+    assert report["source_manifest"]["checksum"] == VALID_CHECKSUM
 
 
 def test_workflow_request_validates_state_scope_and_local_pdf_path() -> None:

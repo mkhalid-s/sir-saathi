@@ -5,8 +5,16 @@ import pytest
 
 from pipeline.sir_saathi_pipeline import sources
 
+VALID_CHECKSUM = "sha256:" + "a" * 64
 
-def write_manifest(tmp_path: Path, *, reviewed: bool = True, local_path: str = "data/local/pilot.pdf") -> Path:
+
+def write_manifest(
+    tmp_path: Path,
+    *,
+    reviewed: bool = True,
+    local_path: str = "data/local/pilot.pdf",
+    checksum: str = VALID_CHECKSUM,
+) -> Path:
     manifest_path = tmp_path / "sources.json"
     manifest_path.write_text(
         json.dumps(
@@ -22,6 +30,7 @@ def write_manifest(tmp_path: Path, *, reviewed: bool = True, local_path: str = "
                         "local_path": local_path,
                         "parser_hint": "parse_2002",
                         "language": "mr",
+                        "checksum": checksum,
                         "reviewed": reviewed,
                         "notes": "synthetic test manifest",
                     }
@@ -43,6 +52,7 @@ def test_load_source_manifests_parses_reviewed_entries(tmp_path: Path) -> None:
     assert manifest.roll_year == 2002
     assert manifest.roll_kind == "historical_base_roll"
     assert manifest.local_path == Path("data/local/pilot.pdf")
+    assert manifest.checksum == VALID_CHECKSUM
     assert manifest.is_local_only is True
     assert manifest.reviewed is True
 
@@ -57,18 +67,56 @@ def test_validate_source_manifest_returns_safe_report(tmp_path: Path) -> None:
     assert report["valid_for_ingestion"] is True
     assert report["blockers"] == []
     assert report["local_path"] == "data/local/pilot.pdf"
+    assert report["checksum"] == VALID_CHECKSUM
+    assert report["checksum_verified"] is False
     assert "voter_name" not in encoded
     assert "epic" not in encoded.casefold()
 
 
 def test_source_manifest_blockers_require_reviewed_local_source(tmp_path: Path) -> None:
-    manifest_path = write_manifest(tmp_path, reviewed=False, local_path="docs/pilot.pdf")
+    manifest_path = write_manifest(tmp_path, reviewed=False, local_path="docs/pilot.pdf", checksum="bad")
     manifest = sources.load_source_manifests(manifest_path)["mh-2002-ac172-part21"]
 
     blockers = sources.source_manifest_blockers(manifest)
 
     assert "source manifest entry must be reviewed before ingestion" in blockers
     assert "local_path must stay under ignored data/ or samples/ directories" in blockers
+    assert "checksum must be sha256:<64 lowercase hex>" in blockers
+
+
+def test_validate_source_manifest_can_verify_local_file_checksum(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+    manifest_path = write_manifest(tmp_path, checksum=sources.compute_sha256(pdf_path))
+
+    report = sources.validate_source_manifest(
+        manifest_path,
+        "mh-2002-ac172-part21",
+        verify_file=True,
+        repo_root=tmp_path,
+    )
+
+    assert report["valid_for_ingestion"] is True
+    assert report["checksum_verified"] is True
+    assert report["blockers"] == []
+
+
+def test_validate_source_manifest_rejects_checksum_mismatch(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"different bytes")
+    manifest_path = write_manifest(tmp_path)
+
+    report = sources.validate_source_manifest(
+        manifest_path,
+        "mh-2002-ac172-part21",
+        verify_file=True,
+        repo_root=tmp_path,
+    )
+
+    assert report["valid_for_ingestion"] is False
+    assert "local file checksum does not match source manifest" in report["blockers"]
 
 
 def test_source_manifest_rejects_unknown_source_id(tmp_path: Path) -> None:
@@ -98,3 +146,21 @@ def test_main_returns_zero_for_valid_manifest(tmp_path: Path, capsys: pytest.Cap
     assert exit_code == 0
     assert output["valid_for_ingestion"] is True
     assert output["source_id"] == "mh-2002-ac172-part21"
+
+
+def test_main_verifies_file_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    pdf_path = tmp_path / "data/local/pilot.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"synthetic pdf bytes")
+    manifest_path = write_manifest(tmp_path, checksum=sources.compute_sha256(pdf_path))
+
+    exit_code = sources.main([
+        "--manifest", str(manifest_path),
+        "--source-id", "mh-2002-ac172-part21",
+        "--verify-file",
+        "--repo-root", str(tmp_path),
+    ])
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert output["checksum_verified"] is True

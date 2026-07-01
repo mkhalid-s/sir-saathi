@@ -112,10 +112,12 @@ def test_parsed_roll_from_pdf_adapts_parser_output(tmp_path: Path) -> None:
 
 def test_run_dry_run_reports_safe_counts_without_raw_epic(tmp_path: Path) -> None:
     pdf_path = write_pdf_placeholder(tmp_path)
+    checksum = ingest_roll.compute_sha256(pdf_path)
     report = ingest_roll.run_dry_run(
         pdf_path,
         state_id="IN-MH",
         hash_salt="unit-test-salt",
+        expected_checksum=checksum,
         parser_fn=synthetic_parser,
     )
     encoded = json.dumps(report)
@@ -127,6 +129,22 @@ def test_run_dry_run_reports_safe_counts_without_raw_epic(tmp_path: Path) -> Non
     assert report["quality_summary"] == {"ok": 1, "missing_age": 1, "review": 1}
     assert "sample-card" not in encoded
     assert "voter_name" not in encoded
+
+
+def test_run_dry_run_rejects_checksum_mismatch_before_parsing(tmp_path: Path) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+
+    def blocked_parser(_pdf_path: Path):
+        raise AssertionError("parser must not run after checksum mismatch")
+
+    with pytest.raises(ValueError, match="checksum does not match"):
+        ingest_roll.run_dry_run(
+            pdf_path,
+            state_id="IN-MH",
+            hash_salt="unit-test-salt",
+            expected_checksum="sha256:" + "0" * 64,
+            parser_fn=blocked_parser,
+        )
 
 
 def test_run_dry_run_requires_hash_salt(tmp_path: Path) -> None:
@@ -167,6 +185,30 @@ def test_main_returns_failed_report_on_count_mismatch(
     assert exit_code == 1
     assert output["safe_to_load"] is False
     assert "parsed record count mismatch" in output["error"]
+
+
+def test_main_returns_failed_report_on_checksum_mismatch(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+
+    exit_code = ingest_roll.main(
+        [
+            "--pdf", str(pdf_path),
+            "--state", "IN-MH",
+            "--dry-run",
+            "--expected-checksum", "sha256:" + "0" * 64,
+        ],
+        parser_fn=synthetic_parser,
+    )
+    output = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert output["safe_to_load"] is False
+    assert "checksum does not match" in output["error"]
 
 
 def test_main_returns_failed_report_on_parser_failures(

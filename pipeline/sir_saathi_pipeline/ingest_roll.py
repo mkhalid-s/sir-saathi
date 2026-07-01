@@ -45,6 +45,13 @@ def local_source_uri(path: Path) -> str:
     return f"local://{path.as_posix()}"
 
 
+def verify_expected_checksum(path: Path, expected_checksum: str | None) -> str:
+    actual_checksum = compute_sha256(path)
+    if expected_checksum and actual_checksum != expected_checksum:
+        raise ValueError("local PDF checksum does not match expected source manifest checksum")
+    return actual_checksum
+
+
 def parsed_roll_from_pdf(
     pdf_path: Path,
     *,
@@ -119,10 +126,12 @@ def build_batch_from_pdf(
     language: str = DEFAULT_LANGUAGE,
     source_label: str = "Local dry-run PDF",
     source_url: str | None = None,
+    expected_checksum: str | None = None,
     parser_fn: ParserFn = parse_pdf,
 ) -> IngestionBatch:
     if not hash_salt:
         raise ValueError(f"{EPIC_HASH_SALT_ENV} is required for dry-run ingestion")
+    verify_expected_checksum(pdf_path, expected_checksum)
     parsed_roll = parsed_roll_from_pdf(
         pdf_path,
         state_id=state_id,
@@ -146,6 +155,7 @@ def run_dry_run(
     language: str = DEFAULT_LANGUAGE,
     source_label: str = "Local dry-run PDF",
     source_url: str | None = None,
+    expected_checksum: str | None = None,
     parser_fn: ParserFn = parse_pdf,
 ) -> dict[str, Any]:
     batch = build_batch_from_pdf(
@@ -157,6 +167,7 @@ def run_dry_run(
         language=language,
         source_label=source_label,
         source_url=source_url,
+        expected_checksum=expected_checksum,
         parser_fn=parser_fn,
     )
     return safe_report(batch)
@@ -192,6 +203,7 @@ def run_load(
     language: str = DEFAULT_LANGUAGE,
     source_label: str = "Local dry-run PDF",
     source_url: str | None = None,
+    expected_checksum: str | None = None,
     parser_fn: ParserFn = parse_pdf,
     loader_fn: LoaderFn = load_batch_to_database,
 ) -> dict[str, Any]:
@@ -206,6 +218,7 @@ def run_load(
         language=language,
         source_label=source_label,
         source_url=source_url,
+        expected_checksum=expected_checksum,
         parser_fn=parser_fn,
     )
     summary = loader_fn(database_url, batch)
@@ -233,6 +246,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--language", default=DEFAULT_LANGUAGE)
     parser.add_argument("--source-label", default="Local dry-run PDF")
     parser.add_argument("--source-url")
+    parser.add_argument("--expected-checksum", help="Expected sha256 checksum from a reviewed source manifest.")
     return parser
 
 
@@ -256,6 +270,7 @@ def main(
             "language": args.language,
             "source_label": args.source_label,
             "source_url": args.source_url,
+            "expected_checksum": args.expected_checksum,
             "parser_fn": parser_fn,
         }
         if args.load:

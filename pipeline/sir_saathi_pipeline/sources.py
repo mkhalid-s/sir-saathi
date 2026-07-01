@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +19,7 @@ RollKind = Literal[
     "deletion",
 ]
 ALLOWED_LOCAL_ROOTS = {"data", "samples"}
+CHECKSUM_PREFIX = "sha256:"
 
 
 @dataclass(frozen=True)
@@ -29,6 +31,7 @@ class SourceManifest:
     local_path: Path | None = None
     parser_hint: str | None = None
     language: str | None = None
+    checksum: str = ""
     source_id: str = ""
     source_label: str = ""
     reviewed: bool = False
@@ -51,6 +54,7 @@ def parse_source_manifest(data: dict[str, Any]) -> SourceManifest:
         local_path=Path(local_path) if local_path else None,
         parser_hint=data.get("parser_hint"),
         language=data.get("language"),
+        checksum=str(data.get("checksum", "")),
         reviewed=bool(data.get("reviewed", False)),
         notes=data.get("notes", ""),
     )
@@ -66,6 +70,21 @@ def load_source_manifests(path: str | Path) -> dict[str, SourceManifest]:
     return {manifest.source_id: manifest for manifest in manifests}
 
 
+def is_sha256_checksum(value: str) -> bool:
+    if not value.startswith(CHECKSUM_PREFIX):
+        return False
+    digest = value.removeprefix(CHECKSUM_PREFIX)
+    return len(digest) == 64 and all(char in "0123456789abcdef" for char in digest)
+
+
+def compute_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return f"{CHECKSUM_PREFIX}{digest.hexdigest()}"
+
+
 def source_manifest_blockers(manifest: SourceManifest) -> list[str]:
     blockers: list[str] = []
     if not manifest.reviewed:
@@ -76,6 +95,8 @@ def source_manifest_blockers(manifest: SourceManifest) -> list[str]:
         blockers.append("source_label is required")
     if not manifest.source_uri:
         blockers.append("source_uri is required")
+    if not is_sha256_checksum(manifest.checksum):
+        blockers.append("checksum must be sha256:<64 lowercase hex>")
     if manifest.local_path is None:
         blockers.append("local_path is required for local ingestion")
     elif manifest.local_path.is_absolute():
@@ -89,12 +110,32 @@ def source_manifest_blockers(manifest: SourceManifest) -> list[str]:
     return blockers
 
 
-def validate_source_manifest(path: str | Path, source_id: str) -> dict[str, Any]:
+def source_file_blockers(manifest: SourceManifest, *, repo_root: Path) -> list[str]:
+    if manifest.local_path is None:
+        return ["local_path is required for checksum verification"]
+    pdf_path = repo_root / manifest.local_path
+    if not pdf_path.exists():
+        return ["local_path file does not exist for checksum verification"]
+    actual_checksum = compute_sha256(pdf_path)
+    if actual_checksum != manifest.checksum:
+        return ["local file checksum does not match source manifest"]
+    return []
+
+
+def validate_source_manifest(
+    path: str | Path,
+    source_id: str,
+    *,
+    verify_file: bool = False,
+    repo_root: str | Path = ".",
+) -> dict[str, Any]:
     manifests = load_source_manifests(path)
     if source_id not in manifests:
         raise ValueError(f"unknown source_id: {source_id}")
     manifest = manifests[source_id]
     blockers = source_manifest_blockers(manifest)
+    file_blockers = source_file_blockers(manifest, repo_root=Path(repo_root)) if verify_file else []
+    blockers.extend(file_blockers)
     return {
         "local_only": True,
         "source_id": manifest.source_id,
@@ -104,9 +145,11 @@ def validate_source_manifest(path: str | Path, source_id: str) -> dict[str, Any]
         "source_label": manifest.source_label,
         "source_uri": manifest.source_uri,
         "local_path": manifest.local_path.as_posix() if manifest.local_path else None,
+        "checksum": manifest.checksum,
         "parser_hint": manifest.parser_hint,
         "language": manifest.language,
         "reviewed": manifest.reviewed,
+        "checksum_verified": verify_file and not file_blockers,
         "valid_for_ingestion": not blockers,
         "blockers": blockers,
     }
@@ -125,13 +168,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate a reviewed local source manifest entry.")
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--source-id", required=True)
+    parser.add_argument("--verify-file", action="store_true", help="Hash the local ignored PDF and compare it with the manifest checksum.")
+    parser.add_argument("--repo-root", type=Path, default=Path("."), help="Repository root used to resolve manifest local_path.")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        report = validate_source_manifest(args.manifest, args.source_id)
+        report = validate_source_manifest(
+            args.manifest,
+            args.source_id,
+            verify_file=args.verify_file,
+            repo_root=args.repo_root,
+        )
     except Exception as exc:
         print(json.dumps(failure_report(str(exc)), indent=2, sort_keys=True))
         return 1
