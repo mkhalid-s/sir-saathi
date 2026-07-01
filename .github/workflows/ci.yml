@@ -28,12 +28,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install web dependencies
-        run: |
-          npm ci
-          ASTRO_COMPILER_VERSION="$(node -p "require('./node_modules/@astrojs/compiler-binding/package.json').version")"
-          ROLLDOWN_VERSION="$(node -p "require('./node_modules/rolldown/package.json').version")"
-          npm install --no-save --registry=https://registry.npmjs.org "@astrojs/compiler-binding-linux-x64-gnu@${ASTRO_COMPILER_VERSION}"
-          npm install --no-save --registry=https://registry.npmjs.org "@rolldown/binding-linux-x64-gnu@${ROLLDOWN_VERSION}"
+        run: npm ci
       - name: Build web PWA
         run: ASTRO_TELEMETRY_DISABLED=1 npm run web:build
       - name: Launch gate

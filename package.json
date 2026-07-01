@@ -8,5 +8,9 @@
     "web:dev": "npm --workspace apps/web run dev",
     "web:build": "npm --workspace apps/web run build",
     "web:preview": "npm --workspace apps/web run preview"
+  },
+  "optionalDependencies": {
+    "@astrojs/compiler-binding-linux-x64-gnu": "^0.2.3",
+    "@rolldown/binding-linux-x64-gnu": "^1.1.3"
   }
 }
