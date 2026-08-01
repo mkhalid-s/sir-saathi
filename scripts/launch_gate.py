@@ -30,6 +30,7 @@ REQUIRED_FILES = [
     "docs/ACCESSIBILITY.md",
     "docs/IMPLEMENTATION_STATUS.md",
     "services/api/privacy.py",
+    "services/api/body_limit.py",
     "services/api/readiness.py",
     "infra/caddy/Caddyfile.example",
     "infra/docker-compose.yml",
@@ -72,6 +73,8 @@ def verify_deploy_templates() -> None:
     systemd = (ROOT / "infra/systemd/sir-saathi-api.service").read_text(encoding="utf-8")
     if "handle /api/*" not in caddy or "reverse_proxy 127.0.0.1:8000" not in caddy:
         raise RuntimeError("Caddy template must proxy /api/* to the local API service")
+    if "request_body" not in caddy or "max_size 16KB" not in caddy:
+        raise RuntimeError("Caddy must reject oversized API request bodies before proxying")
     if "root * /srv/sir-saathi/web/current" not in caddy or "file_server" not in caddy:
         raise RuntimeError("Caddy must serve the built PWA on the same origin as /api/*")
     if "PWA is served by Cloudflare Pages" in caddy:

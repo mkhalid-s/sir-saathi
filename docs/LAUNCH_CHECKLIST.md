@@ -13,6 +13,7 @@ Before any public launch:
 - `python3 scripts/launch_gate.py` passes.
 - API routes are served under `/api/*` and match reverse-proxy configuration.
 - Caddy serves the reviewed PWA release and proxies `/api/*` on the same public HTTPS origin; no placeholder or static-only origin can intercept API requests.
+- Caddy validates with the 16 KiB `/api/*` request-body ceiling, and an oversized declared and chunked-body rehearsal returns 413 without reaching FastAPI; the independent ASGI limit remains enabled as the bypass-safe backstop.
 - The deployed origin returns the reviewed HSTS, anti-framing, referrer, permissions, cross-origin-resource, and deny-by-default CSP header plus Astro's generated hash-only inner policy; the generated CSP audit passes and Turnstile completes without CSP violations.
 - The systemd service reads `/etc/sir-saathi/api.env`, the file is `root:sir-saathi` mode `0640`, and the default monitor successfully probes deployment-mode-aware `/api/ready` with a bounded timeout.
 - A recoverable pre-migration backup exists; the migration dry run was reviewed, `--apply` completed under the advisory lock, and `python -m pipeline.sir_saathi_pipeline.migrations --check` reports no pending or drifted history.

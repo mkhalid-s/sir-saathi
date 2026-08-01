@@ -34,6 +34,8 @@ def test_caddy_routes_api_prefix_without_stripping() -> None:
     assert "handle /api/*" in caddy
     assert "reverse_proxy 127.0.0.1:8000" in caddy
     assert "Cache-Control" in caddy
+    assert "request_body" in caddy
+    assert "max_size 16KB" in caddy
 
 
 def test_caddy_serves_the_static_pwa_on_the_api_origin() -> None:

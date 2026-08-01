@@ -24,6 +24,7 @@ from .abuse_verification import (
     TURNSTILE_HOSTNAME_ENV,
     TURNSTILE_SECRET_ENV,
 )
+from .body_limit import BoundedApiBodyMiddleware, MAX_API_BODY_BYTES
 from .models import InternalVoterRecord
 from .pilot_data import load_sanitized_pilot_records
 from .privacy import (
@@ -278,6 +279,7 @@ def create_app(
         raise RuntimeError("FastAPI is required to create the API app")
 
     app = FastAPI(title="SIR Saathi API", version="0.1.0")
+    app.add_middleware(BoundedApiBodyMiddleware, max_bytes=MAX_API_BODY_BYTES)
 
     @app.get(f"{API_PREFIX}/health")
     def health() -> dict[str, str]:

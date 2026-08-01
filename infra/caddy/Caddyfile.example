@@ -16,6 +16,9 @@ sir-saathi.example {
     }
 
     handle /api/* {
+        request_body {
+            max_size 16KB
+        }
         header Cache-Control "no-store"
         reverse_proxy 127.0.0.1:8000
     }

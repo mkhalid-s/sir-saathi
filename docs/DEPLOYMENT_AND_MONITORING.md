@@ -9,6 +9,8 @@
 - Monitoring: health endpoint checks and uptime monitor.
 - Backups: encrypted database dumps or managed backups before public launch.
 
+Use a current Caddy release that supports the standard `request_body max_size` directive, and run `caddy validate --config <candidate-Caddyfile>` before every reload. The template caps `/api/*` bodies at 16 KiB; the API independently enforces the same limit before JSON parsing, including for chunked or misleadingly declared bodies.
+
 The same-origin topology is required by the browser client, which deliberately calls relative `/api/*` URLs. A CDN may proxy the complete public origin, but a static-only host must not be placed in front of the PWA unless it also routes `/api/*` to this Caddy origin without stripping the prefix.
 
 ## PWA Build

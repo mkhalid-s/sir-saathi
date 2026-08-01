@@ -23,6 +23,8 @@ The production adapter in `services/api/search_backend.py` reads PostgreSQL only
 
 The deployed `/api/search` handler checks launch policy and a hashed, client-global verification-attempt limit before calling the external challenge verifier. A separate fixed-window search limit uses the same client-global scope across all states and Assembly Constituencies, preventing invalid-token floods and scope rotation from resetting their respective allowances. Production indexed search requires the atomic shared Redis implementation; missing or unavailable Redis fails closed.
 
+Every body-bearing `/api/*` request is capped at 16 KiB twice: Caddy stops oversized proxy reads, and a small ASGI middleware verifies declared and actual streamed bytes before FastAPI parses JSON. Missing lengths and chunked bodies remain bounded; invalid or duplicate `Content-Length` values fail with HTTP 400, while oversized bodies fail with HTTP 413 and a no-store generic response.
+
 API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 
 The PostgreSQL schema is in `db/schema.sql`; ordered files in `db/migrations` are applied only through `python -m pipeline.sir_saathi_pipeline.migrations`. The command is dry-run-first, pins applied checksums in `schema_migrations`, rejects rewritten or unknown history, serializes concurrent operators with an advisory lock, and applies each pending file transactionally. `--apply` is explicit and `--check` is suitable for a deployment gate.

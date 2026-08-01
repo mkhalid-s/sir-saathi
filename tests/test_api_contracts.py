@@ -1,7 +1,8 @@
 from datetime import date
 
 import pytest
-from services.api.app import api_route_paths, forms_payload, guidance_payload, list_states_payload, search_payload
+from services.api.app import api_route_paths, create_app, forms_payload, guidance_payload, list_states_payload, search_payload
+from services.api.body_limit import BoundedApiBodyMiddleware, MAX_API_BODY_BYTES
 from services.api.models import InternalVoterRecord, redact_voter_record
 from services.api.privacy import InMemoryRateLimiter
 from services.api.schemas import ValidationError
@@ -16,6 +17,12 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
     assert "/api/guidance" in paths
     assert "/api/search" in paths
     assert "/health" not in paths
+
+
+def test_api_installs_the_preparser_request_body_limit() -> None:
+    app = create_app()
+    middleware = next(item for item in app.user_middleware if item.cls is BoundedApiBodyMiddleware)
+    assert middleware.kwargs["max_bytes"] == MAX_API_BODY_BYTES == 16 * 1024
 
 
 def test_list_states_payload_exposes_registry_without_private_data() -> None:
