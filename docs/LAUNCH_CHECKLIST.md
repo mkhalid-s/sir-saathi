@@ -10,6 +10,7 @@ Before any public launch:
 - npm audit reports no vulnerabilities for the web workspace.
 - `python3 scripts/launch_gate.py` passes.
 - API routes are served under `/api/*` and match reverse-proxy configuration.
+- The systemd service reads `/etc/sir-saathi/api.env`, the file is `root:sir-saathi` mode `0640`, and the default monitor successfully probes `/api/health` with a bounded timeout.
 - Privacy, methodology, and data-use pages are published.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.

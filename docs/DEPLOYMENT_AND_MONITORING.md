@@ -40,11 +40,12 @@ Real indexed search additionally requires runtime secrets/configuration outside 
 
 - Use `infra/systemd/sir-saathi-api.service` as the API service template.
 - Use `infra/caddy/Caddyfile.example` as the reverse proxy template.
-- Keep runtime configuration outside Git.
+- Create `/etc/sir-saathi/api.env` as `root:sir-saathi` with mode `0640`. Put the five server-owned `SIR_SAATHI_*` values listed above in that file; never add `PUBLIC_TURNSTILE_SITE_KEY` or shell `export` syntax. The systemd unit loads this exact file before starting the API.
+- Keep runtime configuration outside Git. After changing it, run `systemctl daemon-reload` when the unit changed and restart `sir-saathi-api`.
 
 ## Monitoring
 
-Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Alert on API health failure, PWA failure, disk pressure, database backup failure, and elevated error rates.
+Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the deployed `/api/health` route and every request has a 10-second timeout. Set `API_URL`, `WEB_URL`, and optionally `CURL_TIMEOUT_SECONDS` for the deployment. Alert on API health failure, PWA failure, disk pressure, database backup failure, and elevated error rates.
 
 ## Rollback
 

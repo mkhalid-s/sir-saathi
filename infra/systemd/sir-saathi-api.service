@@ -6,15 +6,28 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/sir-saathi
+EnvironmentFile=/etc/sir-saathi/api.env
+Environment=PYTHONDONTWRITEBYTECODE=1
 ExecStart=/opt/sir-saathi/.venv/bin/uvicorn services.api.app:create_configured_app --factory --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5
 User=sir-saathi
 Group=sir-saathi
+UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=full
+PrivateDevices=true
+ProtectSystem=strict
 ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target

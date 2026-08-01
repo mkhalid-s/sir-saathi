@@ -18,7 +18,10 @@ def test_deployment_reference_files_exist() -> None:
 def test_systemd_service_uses_localhost_only() -> None:
     service = (ROOT / "infra/systemd/sir-saathi-api.service").read_text(encoding="utf-8")
     assert "--host 127.0.0.1" in service
+    assert "EnvironmentFile=/etc/sir-saathi/api.env" in service
     assert "NoNewPrivileges=true" in service
+    assert "ProtectSystem=strict" in service
+    assert "CapabilityBoundingSet=" in service
 
 
 def test_caddy_routes_api_prefix_without_stripping() -> None:
@@ -34,3 +37,10 @@ def test_compose_is_local_only_and_not_trust_auth() -> None:
     assert '"127.0.0.1:5432:5432"' in compose
     assert "POSTGRES_HOST_AUTH_METHOD" not in compose
     assert "POSTGRES_PASSWORD_FILE" in compose
+
+
+def test_healthcheck_probes_the_deployed_api_route_with_a_timeout() -> None:
+    healthcheck = (ROOT / "infra/monitoring/healthcheck.sh").read_text(encoding="utf-8")
+    assert "http://127.0.0.1:8000/api/health" in healthcheck
+    assert "127.0.0.1:8000/health" not in healthcheck
+    assert "--max-time" in healthcheck
