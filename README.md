@@ -134,7 +134,7 @@ npm run web:dev
 
 ### Optional Local Database
 
-Use PostgreSQL 16 or compatible PostgreSQL with `pg_trgm` support. The schema is in `db/schema.sql`, with the initial migration in `db/migrations/0001_initial.sql`.
+Use PostgreSQL 16 or compatible PostgreSQL with `pg_trgm` support. The schema is in `db/schema.sql`; versioned migrations, including geographic-provenance support, are in `db/migrations`.
 
 Local pipeline commands that write to or read from Postgres require:
 

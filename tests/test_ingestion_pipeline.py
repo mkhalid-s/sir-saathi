@@ -65,6 +65,7 @@ def test_build_ingestion_batch_maps_parsed_roll_to_db_rows() -> None:
     assert batch.roll_version["roll_year"] == 2002
     assert batch.source_document["status"] == "registered"
     assert batch.assembly_constituency["ac_number"] == 172
+    assert batch.district is None
     assert batch.polling_station["part_number"] == 21
     assert batch.extraction_run["status"] == "validated"
     assert batch.extraction_run["expected_records"] == 2
@@ -78,6 +79,36 @@ def test_build_ingestion_batch_maps_parsed_roll_to_db_rows() -> None:
     assert first["epic_hash"] is not None
     assert first["epic_last4"] == "0001"
     assert "sample-card" not in first.values()
+
+
+def test_build_ingestion_batch_links_reviewed_district_metadata() -> None:
+    roll = sample_roll()
+    metadata = {
+        **roll.metadata,
+        "district_name": "Mumbai Suburban",
+        "district_code": "S1322",
+        "geography_source_label": "Reviewed CEO geography",
+        "geography_source_updated_at": "2026-08-01",
+    }
+    batch = build_ingestion_batch(
+        ParsedRollInput(
+            state_id=roll.state_id,
+            roll_year=roll.roll_year,
+            roll_kind=roll.roll_kind,
+            language=roll.language,
+            source_label=roll.source_label,
+            parser_name=roll.parser_name,
+            metadata=metadata,
+            voters=roll.voters,
+            source_document=roll.source_document,
+            source_url=roll.source_url,
+        ),
+        hash_salt="unit-test-salt",
+    )
+    assert batch.district is not None
+    assert batch.district["eci_district_code"] == "S1322"
+    assert batch.assembly_constituency["district_id"] == batch.district["district_id"]
+    assert batch.assembly_constituency["source_label"] == "Reviewed CEO geography"
 
 
 def test_build_ingestion_batch_rejects_count_mismatch() -> None:

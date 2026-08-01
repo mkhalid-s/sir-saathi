@@ -57,6 +57,7 @@ def load_ingestion_batch(connection: ConnectionLike, batch: IngestionBatch) -> L
     """Load an ingestion batch transactionally with idempotent upserts."""
 
     row_counts = {
+        "districts": 0,
         "assembly_constituencies": 0,
         "polling_stations": 0,
         "roll_versions": 0,
@@ -67,18 +68,45 @@ def load_ingestion_batch(connection: ConnectionLike, batch: IngestionBatch) -> L
     with connection.transaction():
         with connection.cursor() as cursor:
             require_state_exists(cursor, batch.roll_version["state_id"])
+            if batch.district is not None:
+                _execute(
+                    cursor,
+                    """
+                    INSERT INTO districts (
+                        district_id, state_id, eci_district_code, name, source_label, source_updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (district_id) DO UPDATE SET
+                        state_id = EXCLUDED.state_id,
+                        eci_district_code = EXCLUDED.eci_district_code,
+                        name = EXCLUDED.name,
+                        source_label = EXCLUDED.source_label,
+                        source_updated_at = EXCLUDED.source_updated_at
+                    """,
+                    (
+                        batch.district["district_id"],
+                        batch.district["state_id"],
+                        batch.district["eci_district_code"],
+                        batch.district["name"],
+                        batch.district["source_label"],
+                        batch.district["source_updated_at"],
+                    ),
+                )
+                row_counts["districts"] = 1
             _execute(
                 cursor,
                 """
                 INSERT INTO assembly_constituencies (
-                    ac_id, state_id, district_id, ac_number, name, reservation_status
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                    ac_id, state_id, district_id, ac_number, name, reservation_status,
+                    source_label, source_updated_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (ac_id) DO UPDATE SET
                     state_id = EXCLUDED.state_id,
                     district_id = EXCLUDED.district_id,
                     ac_number = EXCLUDED.ac_number,
                     name = EXCLUDED.name,
-                    reservation_status = EXCLUDED.reservation_status
+                    reservation_status = EXCLUDED.reservation_status,
+                    source_label = EXCLUDED.source_label,
+                    source_updated_at = EXCLUDED.source_updated_at
                 """,
                 (
                     batch.assembly_constituency["ac_id"],
@@ -87,6 +115,8 @@ def load_ingestion_batch(connection: ConnectionLike, batch: IngestionBatch) -> L
                     batch.assembly_constituency["ac_number"],
                     batch.assembly_constituency["name"],
                     batch.assembly_constituency["reservation_status"],
+                    batch.assembly_constituency["source_label"],
+                    batch.assembly_constituency["source_updated_at"],
                 ),
             )
             row_counts["assembly_constituencies"] = 1

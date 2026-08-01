@@ -18,7 +18,7 @@ The deployed `/api/search` handler also applies a fixed-window rate limit keyed 
 
 API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 
-The initial PostgreSQL schema is in `db/schema.sql`; migration `db/migrations/0001_initial.sql` includes it for local database setup.
+The PostgreSQL schema is in `db/schema.sql`; `db/migrations/0001_initial.sql` creates a fresh database and `db/migrations/0002_geography_provenance.sql` upgrades existing databases with geographic source fields.
 
 Before loading rolls, seed canonical state rows from `config/states` into local Postgres:
 
@@ -52,7 +52,7 @@ python -m pipeline.sir_saathi_pipeline.sources --review --manifest data/local/so
 
 The review report checks required fields, parser hint, ignored local paths, checksum format, and local checksum match. It can report `ready_for_human_review: true` for a complete draft while keeping `valid_for_ingestion: false` until a human explicitly sets `reviewed: true`.
 
-Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for `source_documents`, `roll_versions`, `extraction_runs`, and `voter_records`, validates parsed counts against source metadata, normalizes names for search, and stores EPIC only as a hash plus last four characters. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
+Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saathi_pipeline/ingestion.py`. It converts parser output into DB-shaped rows for districts, Assembly Constituencies, polling stations, source documents, roll versions, extraction runs, and voter records; validates parsed counts against source metadata; normalizes names for search; and stores EPIC only as a hash plus last four characters. Reviewed parser metadata can supply `district_name`, `district_code`, `geography_source_label`, and `geography_source_updated_at`. If district metadata is absent, ingestion remains backward compatible and does not invent a district relationship. It does not download PDFs, write raw exports, connect to Postgres, or enable public indexed search by itself.
 
 Local PDF ingestion can be validated with a dry run:
 
@@ -68,7 +68,7 @@ After a dry run passes, the same validated batch can be loaded into local Postgr
 SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.ingest_roll --pdf data/local/<file>.pdf --state IN-MH --load
 ```
 
-The loader uses a transaction and idempotent `INSERT ... ON CONFLICT ... DO UPDATE` statements. It requires the target `states` row to already exist, then loads AC, polling station, roll version, source document, extraction run, and voter rows. The load summary is safe JSON with counts and checksum only; it does not enable public search, change `public_launch_ready`, write generated voter exports, or expose raw EPIC values in output.
+The loader uses a transaction and idempotent `INSERT ... ON CONFLICT ... DO UPDATE` statements. It requires the target `states` row to already exist, then loads an optional reviewed district before its AC, polling station, roll version, source document, extraction run, and voter rows. The load summary is safe JSON with counts and checksum only; it does not enable public search, change `public_launch_ready`, write generated voter exports, or expose raw EPIC values in output.
 
 Local loaded-roll search can be validated against Postgres without exposing the public API:
 

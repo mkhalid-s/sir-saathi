@@ -238,6 +238,7 @@ def verify_ingestion_pipeline_contract() -> None:
     ingest_cli = (ROOT / "pipeline/sir_saathi_pipeline/ingest_roll.py").read_text(encoding="utf-8")
     sources = (ROOT / "pipeline/sir_saathi_pipeline/sources.py").read_text(encoding="utf-8")
     db_loader = (ROOT / "pipeline/sir_saathi_pipeline/db_loader.py").read_text(encoding="utf-8")
+    schema = (ROOT / "db/schema.sql").read_text(encoding="utf-8")
     seed_states = (ROOT / "pipeline/sir_saathi_pipeline/seed_states.py").read_text(encoding="utf-8")
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
     readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
@@ -252,6 +253,10 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("ingestion pipeline must hash EPIC values before DB staging")
     if "connect(" in ingestion or "psycopg" in ingestion:
         raise RuntimeError("initial ingestion mapper must not connect to the database")
+    if '"district":' not in ingestion and "district=district" not in ingestion:
+        raise RuntimeError("ingestion must preserve reviewed district relationships")
+    if "INSERT INTO districts" not in db_loader or "source_updated_at" not in schema:
+        raise RuntimeError("database loading must preserve geographic source provenance")
     if "local-only staging mapper" not in docs:
         raise RuntimeError("API/DB docs must document local-only ingestion boundaries")
     if "parse_pdf" not in ingest_cli or "build_ingestion_batch" not in ingest_cli:

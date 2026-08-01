@@ -41,6 +41,7 @@ class ParsedRollInput:
 class IngestionBatch:
     source_document: dict[str, Any]
     roll_version: dict[str, Any]
+    district: dict[str, Any] | None
     assembly_constituency: dict[str, Any]
     polling_station: dict[str, Any]
     extraction_run: dict[str, Any]
@@ -104,6 +105,15 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
     )
     source_document_id = stable_id("srcdoc", parsed_roll.state_id, parsed_roll.source_document.checksum)
     ac_id = stable_id("ac", parsed_roll.state_id, ac_number)
+    district_name = str(metadata.get("district_name") or "").strip()
+    district_code = str(metadata.get("district_code") or "").strip() or None
+    geography_source_label = str(metadata.get("geography_source_label") or parsed_roll.source_label)
+    geography_source_updated_at = metadata.get("geography_source_updated_at") or None
+    district_id = (
+        stable_id("district", parsed_roll.state_id, district_code or normalize_name(district_name))
+        if district_name
+        else None
+    )
     polling_station_id = stable_id("ps", parsed_roll.state_id, ac_number, part_number)
     extraction_run_id = stable_id("extract", source_document_id, parsed_roll.parser_name, len(parsed_roll.voters))
 
@@ -126,13 +136,27 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
         "source_label": parsed_roll.source_label,
         "source_url": parsed_roll.source_url,
     }
+    district = (
+        {
+            "district_id": district_id,
+            "state_id": parsed_roll.state_id,
+            "eci_district_code": district_code,
+            "name": district_name,
+            "source_label": geography_source_label,
+            "source_updated_at": geography_source_updated_at,
+        }
+        if district_id
+        else None
+    )
     assembly_constituency = {
         "ac_id": ac_id,
         "state_id": parsed_roll.state_id,
-        "district_id": None,
+        "district_id": district_id,
         "ac_number": ac_number,
         "name": str(metadata.get("ac_name_encoded") or f"AC {ac_number}"),
         "reservation_status": metadata.get("ac_reservation_encoded") or None,
+        "source_label": geography_source_label,
+        "source_updated_at": geography_source_updated_at,
     }
     polling_station = {
         "polling_station_id": polling_station_id,
@@ -140,7 +164,7 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
         "part_number": part_number,
         "name": metadata.get("polling_station_name_encoded") or None,
         "address_redacted": None,
-        "source_updated_at": None,
+        "source_updated_at": geography_source_updated_at,
     }
     extraction_run = {
         "extraction_run_id": extraction_run_id,
@@ -184,6 +208,7 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
     return IngestionBatch(
         source_document=source_document,
         roll_version=roll_version,
+        district=district,
         assembly_constituency=assembly_constituency,
         polling_station=polling_station,
         extraction_run=extraction_run,

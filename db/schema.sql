@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS districts (
     district_id TEXT PRIMARY KEY,
     state_id TEXT NOT NULL REFERENCES states(state_id),
     eci_district_code TEXT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    source_label TEXT,
+    source_updated_at DATE
 );
 
 CREATE TABLE IF NOT EXISTS assembly_constituencies (
@@ -27,6 +29,8 @@ CREATE TABLE IF NOT EXISTS assembly_constituencies (
     ac_number INTEGER NOT NULL,
     name TEXT NOT NULL,
     reservation_status TEXT,
+    source_label TEXT,
+    source_updated_at DATE,
     UNIQUE (state_id, ac_number)
 );
 

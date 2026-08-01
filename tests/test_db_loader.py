@@ -66,6 +66,10 @@ def sample_batch():
             "total_voters": 2,
             "ac_name_encoded": "Trombay",
             "ac_reservation_encoded": "general",
+            "district_name": "Mumbai Suburban",
+            "district_code": "S1322",
+            "geography_source_label": "Synthetic reviewed geography",
+            "geography_source_updated_at": "2026-08-01",
             "polling_station_name_encoded": "Pilot polling station",
         },
         voters=(
@@ -111,6 +115,7 @@ def test_load_ingestion_batch_uses_transaction_and_safe_summary() -> None:
     assert connection.transaction_failed is False
     assert summary.loaded is True
     assert summary.row_counts == {
+        "districts": 1,
         "assembly_constituencies": 1,
         "polling_stations": 1,
         "roll_versions": 1,
@@ -141,6 +146,7 @@ def test_load_ingestion_batch_uses_fk_order_and_idempotent_upserts() -> None:
     executed_sql = [query for query, _params in connection.cursor_obj.executed]
     inserts = [query for query in executed_sql if query.startswith("INSERT INTO")]
     expected_order = [
+        "INSERT INTO districts",
         "INSERT INTO assembly_constituencies",
         "INSERT INTO polling_stations",
         "INSERT INTO roll_versions",
@@ -153,3 +159,5 @@ def test_load_ingestion_batch_uses_fk_order_and_idempotent_upserts() -> None:
     assert [query.split(" (")[0] for query in inserts] == expected_order
     assert all("ON CONFLICT" in query and "DO UPDATE" in query for query in inserts)
     assert any("quality_summary" in query and "%s::jsonb" in query for query in inserts)
+    district_params = next(params for query, params in connection.cursor_obj.executed if query.startswith("INSERT INTO districts"))
+    assert district_params[2:] == ("S1322", "Mumbai Suburban", "Synthetic reviewed geography", "2026-08-01")
