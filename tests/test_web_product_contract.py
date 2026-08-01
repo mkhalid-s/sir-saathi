@@ -177,6 +177,20 @@ def test_web_surfaces_reviewed_ui_language_readiness() -> None:
     assert "locale.status === 'available'" in i18n_source
 
 
+def test_reviewed_locale_selection_updates_document_language_and_direction() -> None:
+    locales = json.loads((ROOT / "config/locales.json").read_text(encoding="utf-8"))["locales"]
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    states = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    assert {locale["direction"] for locale in locales} == {"ltr", "rtl"}
+    assert next(locale for locale in locales if locale["code"] == "ur")["direction"] == "rtl"
+    assert "document.documentElement.lang = uiLanguage" in wizard
+    assert "document.documentElement.dir = uiLanguageDirection(uiLanguage)" in wizard
+    assert "item.status === 'available'" in wizard
+    assert "uiLanguageDirection" in states
+    assert '<html lang={lang} dir={dir}>' in layout
+
+
 def test_wizard_controls_and_generated_guidance_are_catalogue_driven() -> None:
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")

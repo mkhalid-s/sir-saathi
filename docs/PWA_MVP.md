@@ -22,8 +22,27 @@ The first web app is a mobile-first Astro + Preact PWA.
 - UI language selector that shows English as available and non-English translations as planned until human review.
 - Canonical locale governance in `config/locales.json`; every language tracked by the nationwide catalogue must have an explicit availability and review state.
 - Canonical English message keys in `config/translations/en.json` and a fail-closed readiness report. A non-English locale can be marked available only when it has the exact key set, preserves named placeholders, and records a fluent human reviewer and review date.
+- Locale direction is governed alongside availability. The hydrated wizard updates the document `lang` and `dir` attributes for reviewed selections, including right-to-left rendering for Urdu.
 
 Run `python -m pipeline.sir_saathi_pipeline.translation_catalog --fail-on-invalid-available` in review and deployment workflows. Missing planned catalogues are reported as pending, while any locale marked available without a complete reviewed catalogue fails the command.
+
+Start a human translation review without placing draft copy in the runtime catalogue:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.translation_catalog \
+  --create-review-packet mr \
+  --output data/translation-review/mr.json
+```
+
+The packet records every English source string, required placeholder, and a digest of the complete source catalogue. A fluent reviewer fills `translation`, changes the packet review status to `reviewed`, and records `reviewed_by` plus an ISO `reviewed_at` date. Compile it only after that review:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.translation_catalog \
+  --compile-reviewed-packet data/translation-review/mr.json \
+  --output config/translations/mr.json
+```
+
+Compilation rejects incomplete strings, changed keys or source copy, lost placeholders, missing reviewer accountability, and stale source digests. It does not activate the locale: `config/locales.json` must still be changed from `planned` to `available` in a reviewed code change. This keeps draft or stale translations fail-closed.
 
 The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalogue discovery is automatic at build time, but only locales marked `available` in the governed registry can render. Safety text, all form controls, official and indexed-search instructions, every situation-specific guidance title/summary/action/document, status, deadline, provenance, and checklist sharing use keyed messages with checked placeholders. Draft or missing catalogues cannot be selected and fall back to the reviewed English source copy.
 

@@ -2,11 +2,13 @@
 import '../styles/global.css';
 const {
   title = 'SIR Saathi',
-  description = 'Privacy-conscious voter guidance, official links, and state-specific SIR status for India.'
+  description = 'Privacy-conscious voter guidance, official links, and state-specific SIR status for India.',
+  lang = 'en',
+  dir = 'ltr'
 } = Astro.props;
 ---
 <!doctype html>
-<html lang="en">
+<html lang={lang} dir={dir}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

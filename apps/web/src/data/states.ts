@@ -84,13 +84,19 @@ export interface StateSummary {
 export interface UiLanguageOption {
   code: string;
   label: string;
+  direction: 'ltr' | 'rtl';
   status: UiLanguageStatus;
 }
 
 const localeByCode = localeCatalogue.locales.reduce<Record<string, UiLanguageOption>>(
   (locales, locale) => ({
     ...locales,
-    [locale.code]: { code: locale.code, label: locale.label, status: locale.status as UiLanguageStatus }
+    [locale.code]: {
+      code: locale.code,
+      label: locale.label,
+      direction: locale.direction as 'ltr' | 'rtl',
+      status: locale.status as UiLanguageStatus
+    }
   }),
   {}
 );
@@ -151,6 +157,10 @@ export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLangu
   return ['en', ...stateLanguageCodes.filter((language) => language !== 'en')]
     .map((code) => localeByCode[code])
     .filter((locale): locale is UiLanguageOption => Boolean(locale));
+}
+
+export function uiLanguageDirection(locale: string): 'ltr' | 'rtl' {
+  return localeByCode[locale]?.direction ?? 'ltr';
 }
 
 function stateFromConfig(config: StateConfig): StateSummary {

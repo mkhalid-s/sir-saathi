@@ -93,9 +93,18 @@ def test_every_nationwide_language_has_a_governed_locale() -> None:
     locales = {locale["code"]: locale for locale in locale_data["locales"]}
     state_languages = {language for state in load_all_states().values() for language in state.languages}
     assert state_languages <= set(locales)
-    assert locales["en"] == {"code": "en", "label": "English", "status": "available", "review": "reviewed"}
+    assert locales["en"] == {
+        "code": "en",
+        "label": "English",
+        "direction": "ltr",
+        "status": "available",
+        "review": "reviewed",
+    }
+    assert locales["ur"]["direction"] == "rtl"
     assert all(
-        locale["status"] == "planned" and locale["review"] == "required"
+        locale["status"] == "planned"
+        and locale["review"] == "required"
+        and locale["direction"] in {"ltr", "rtl"}
         for code, locale in locales.items()
         if code != "en"
     )

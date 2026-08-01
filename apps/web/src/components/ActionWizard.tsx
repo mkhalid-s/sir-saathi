@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { states, uiLanguageOptionsForState } from '../data/states';
+import { states, uiLanguageDirection, uiLanguageOptionsForState } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
 import { translate, type MessageKey, type MessageValues } from '../lib/i18n';
 import IndexedSearch from './IndexedSearch';
@@ -78,6 +78,19 @@ export default function ActionWizard() {
       updateState(requestedState);
     }
   }, []);
+  useEffect(() => {
+    if (!languageOptions.some((item) => item.code === uiLanguage && item.status === 'available')) {
+      setUiLanguage('en');
+    }
+  }, [stateId, uiLanguage]);
+  useEffect(() => {
+    document.documentElement.lang = uiLanguage;
+    document.documentElement.dir = uiLanguageDirection(uiLanguage);
+    return () => {
+      document.documentElement.lang = 'en';
+      document.documentElement.dir = 'ltr';
+    };
+  }, [uiLanguage]);
   const clearFindNameHints = () => {
     setNameQuery('');
     setDistrictHint('');
