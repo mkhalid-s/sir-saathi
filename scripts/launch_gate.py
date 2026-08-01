@@ -203,6 +203,7 @@ def verify_guidance_boundary_copy() -> None:
 def verify_safe_find_name_flow() -> None:
     homepage = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    indexed = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     if "Find my name safely" not in homepage or 'href="#find-name"' not in homepage:
         raise RuntimeError("homepage must expose a clear safe find-name entry point")
@@ -217,8 +218,13 @@ def verify_safe_find_name_flow() -> None:
     for expected in ["official-check-steps", "Search with the name as it may appear in the roll", "Try common spelling variations", "contact BLO or ERO"]:
         if expected not in wizard:
             raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
-    if "call indexed search" not in messages["find.privacy_notice"] or "/api/search" in wizard:
-        raise RuntimeError("find-name flow must not call indexed public search in the MVP fallback")
+    if "call indexed search" not in messages["find.privacy_notice"]:
+        raise RuntimeError("official fallback must explain that it does not call indexed search")
+    if "state.publicLaunchReady" not in wizard or "fetch('/api/search'" not in indexed:
+        raise RuntimeError("indexed-search client must render only for launch-ready jurisdictions")
+    for expected in ["turnstile_response: challengeResponse", "action: 'voter_search'", "expired-callback", "window.turnstile.reset"]:
+        if expected not in indexed:
+            raise RuntimeError("indexed-search client must use a fresh action-bound Turnstile response")
     if "find.not_found" not in wizard or "situation: 'missing_name'" not in wizard or "currentRollFound: 'no'" not in wizard:
         raise RuntimeError("find-name flow must hand off to missing-name guidance with current-roll-not-found status")
     if "Clear entered details" not in wizard or "clearFindNameHints" not in wizard:

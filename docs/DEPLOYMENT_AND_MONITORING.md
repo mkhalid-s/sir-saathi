@@ -21,6 +21,7 @@ Cloudflare Pages settings:
 - Build command: `npm run web:build`
 - Build output directory: `apps/web/dist`
 - Node version: `22`
+- Build variable: `PUBLIC_TURNSTILE_SITE_KEY` set to the public site key paired with the API's server-side secret and allowed production hostname.
 
 ## API Smoke Check
 
@@ -29,7 +30,7 @@ uvicorn services.api.app:create_configured_app --factory --host 127.0.0.1 --port
 curl -fsS http://127.0.0.1:8000/api/health
 ```
 
-Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all five. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
+Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all five. `PUBLIC_TURNSTILE_SITE_KEY` is intentionally public and belongs in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
 
 ## Local Database
 

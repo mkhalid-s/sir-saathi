@@ -5,7 +5,8 @@ The first web app is a mobile-first Astro + Preact PWA.
 ## Included
 
 - State selector and 36 shareable state/UT pages backed by `config/jurisdictions.json` plus reviewed `config/states/*.json` overrides.
-- Safe state-specific "Find my name" entry flow that routes users through official search steps first, does not call indexed public search in the MVP fallback, lets users clear local hints, and hands not-found cases to missing-name guidance.
+- Safe state-specific "Find my name" entry flow that routes users through official search steps first, lets users clear local hints, and hands not-found cases to missing-name guidance.
+- A dormant-by-default indexed-search client that renders only for a jurisdiction marked launch-ready. It requires AC scope, explicitly renders Turnstile with the `voter_search` action, submits only after the user's search action, resets the single-use response, and displays only bounded redacted API fields.
 - Situation selector covering verification, missing name, new voter, shifted address, correction, deceased-family entry, duplicate entry, and portal failure.
 - Follow-up SIR questions for BLO visit, enumeration form receipt/submission, current roll match, and base/base-roll match.
 - SIR deadline card.
@@ -23,6 +24,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 Run `python -m pipeline.sir_saathi_pipeline.translation_catalog --fail-on-invalid-available` in review and deployment workflows. Missing planned catalogues are reported as pending, while any locale marked available without a complete reviewed catalogue fails the command.
 
 The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalogue discovery is automatic at build time, but only locales marked `available` in the governed registry can render. Core safety, official-search, status, deadline, source, and checklist labels use keyed messages with checked placeholders. Draft or missing catalogues cannot be selected and fall back to the reviewed English source copy.
+
 - WhatsApp-shareable checklist with official-confirmation and no-private-details reminder.
 - Installable PWA manifest with app icon.
 - Service worker for offline app-shell fallback; API calls are not cached.

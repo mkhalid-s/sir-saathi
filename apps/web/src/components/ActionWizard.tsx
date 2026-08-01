@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { states, uiLanguageOptionsForState, uiLanguageReadiness } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
 import { translate, type MessageKey, type MessageValues } from '../lib/i18n';
+import IndexedSearch from './IndexedSearch';
 
 const situations: { value: Situation; label: string }[] = [
   { value: 'existing_voter', label: 'I am already a voter and want to verify' },
@@ -122,6 +123,9 @@ export default function ActionWizard() {
             Part number if known
             <input class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
           </label>
+          {state.publicLaunchReady && (
+            <IndexedSearch stateId={state.stateId} query={nameQuery} acHint={acHint} partHint={partHint} locale={uiLanguage} />
+          )}
           <button class="primary-button" type="submit">Show official check steps</button>
         </form>
         {findSubmitted && (

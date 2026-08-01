@@ -39,6 +39,7 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
 def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
     wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    indexed_source = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "Find my name safely" in page_source
     assert 'href="#find-name"' in page_source
@@ -63,7 +64,13 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "setPartHint('')" in wizard_source
     assert "situation: 'missing_name'" in wizard_source
     assert "currentRollFound: 'no'" in wizard_source
-    assert "/api/search" not in wizard_source
+    assert "state.publicLaunchReady" in wizard_source
+    assert "fetch('/api/search'" in indexed_source
+    assert "turnstile_response: challengeResponse" in indexed_source
+    assert "action: 'voter_search'" in indexed_source
+    assert "expired-callback" in indexed_source
+    assert "window.turnstile.reset" in indexed_source
+    assert "aria-live=\"polite\"" in indexed_source
 
 
 def test_web_share_checklist_includes_safety_reminder() -> None:

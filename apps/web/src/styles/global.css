@@ -150,6 +150,27 @@ a {
   margin-top: 1rem;
 }
 
+.indexed-search {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0.75rem;
+  border: 1px solid #bae6fd;
+  border-radius: 1rem;
+  background: #f0f9ff;
+  padding: 1rem;
+}
+
+.indexed-search h3,
+.indexed-search p {
+  margin: 0;
+}
+
+.indexed-search ul {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.25rem;
+}
+
 .find-result {
   margin-top: 1rem;
   border-radius: 1rem;

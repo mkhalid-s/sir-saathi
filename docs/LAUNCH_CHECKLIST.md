@@ -17,6 +17,7 @@ Before any public launch:
 - Real public search uses the atomic shared Redis limiter configured by `SIR_SAATHI_REDIS_URL`; missing or unavailable Redis fails closed before database search.
 - `SIR_SAATHI_TRUSTED_PROXY_HOPS` matches the deployed proxy chain, and direct client access to the API is blocked before forwarded IP headers are trusted.
 - Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
+- The PWA build has the matching `PUBLIC_TURNSTILE_SITE_KEY`; the indexed client is visible only for launch-ready states and resets every single-use or expired response.
 - Every enabled database search scope pins an exact roll version and versioned AC in `public_search_scopes`, with reviewer identity and timestamp; ingestion never enables it.
 - Official links and source freshness are visible.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
