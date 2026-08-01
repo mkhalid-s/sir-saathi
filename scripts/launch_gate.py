@@ -85,7 +85,7 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("Caddy must not return a placeholder instead of the PWA")
     if "handle_errors" not in caddy or "404.html" not in caddy or "http.error.status_code" not in caddy:
         raise RuntimeError("Caddy must serve the accessible 404 document with error status")
-    if 'path /sw.js /manifest.webmanifest' not in caddy or 'Cache-Control "no-cache"' not in caddy:
+    if 'path /sw.js /manifest.webmanifest /release-manifest.json' not in caddy or 'Cache-Control "no-cache"' not in caddy:
         raise RuntimeError("service-worker control files must remain revalidatable")
     required_headers = {
         "Strict-Transport-Security",

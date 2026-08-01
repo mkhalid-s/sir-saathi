@@ -44,7 +44,7 @@ def test_caddy_serves_the_static_pwa_on_the_api_origin() -> None:
     assert "root * /srv/sir-saathi/web/current" in caddy
     assert "file_server" in caddy
     assert "PWA is served by Cloudflare Pages" not in caddy
-    assert "path /sw.js /manifest.webmanifest" in caddy
+    assert "path /sw.js /manifest.webmanifest /release-manifest.json" in caddy
     assert 'Cache-Control "no-cache"' in caddy
     assert "handle_errors" in caddy
     assert "http.error.status_code" in caddy

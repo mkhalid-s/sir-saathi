@@ -638,6 +638,10 @@ def test_web_build_finalizes_the_complete_offline_asset_list() -> None:
     finalizer = (ROOT / "scripts/finalize_service_worker.mjs").read_text(encoding="utf-8")
 
     assert "finalize_service_worker.mjs" in package["scripts"]["build"]
+    assert "release-manifest.json" in finalizer
+    assert "createHash('sha256')" in finalizer
+    assert "htmlFiles.length" in finalizer
+    assert "built homepage is missing the governed release identity" in finalizer
     assert "filesUnder(dist)" in finalizer
     assert "eligibleExtensions" in finalizer
     assert "index.html" in finalizer

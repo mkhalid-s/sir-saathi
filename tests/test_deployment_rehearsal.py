@@ -17,8 +17,8 @@ def completed_evidence() -> dict:
         "public_search_disabled_attestation": True,
         "deployment_probe": {
             "ready": True,
-            "checks_passed": 42,
-            "checks_total": 42,
+            "checks_passed": 89,
+            "checks_total": 89,
             "blockers": [],
             "release_commit": "b" * 40,
             "values_redacted": True,

@@ -24,7 +24,7 @@ sir-saathi.example {
     }
 
     handle {
-        @pwaControl path /sw.js /manifest.webmanifest
+        @pwaControl path /sw.js /manifest.webmanifest /release-manifest.json
         header @pwaControl Cache-Control "no-cache"
 
         @hashedAssets path /_astro/*

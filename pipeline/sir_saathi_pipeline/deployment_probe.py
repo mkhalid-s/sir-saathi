@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 import re
@@ -14,9 +16,13 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
 from .deployment_preflight import PUBLIC_SITE_URL_ENV, _public_origin
+from .state_registry import load_all_states
 
 MAX_RESPONSE_BYTES = 1_048_576
 NOT_FOUND_PATH = "/.well-known/sir-saathi-deployment-probe-not-found"
+RELEASE_MANIFEST_PATH = "/release-manifest.json"
+BASE_PUBLIC_ROUTES = ("/", "/data-use/", "/languages/", "/methodology/", "/privacy/")
+ROUTE_AUDIT_WORKERS = 8
 CSP_META = re.compile(
     r'<meta\s+http-equiv="content-security-policy"\s+content="([^"]+)"',
     re.IGNORECASE,
@@ -25,6 +31,7 @@ RELEASE_META = re.compile(
     r'<meta\s+name="sir-saathi-release"\s+content="([0-9a-f]{40})"', re.IGNORECASE
 )
 RELEASE_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -36,6 +43,15 @@ class ProbeResponse:
 
 
 Fetcher = Callable[[str, float], ProbeResponse]
+
+
+def expected_nationwide_routes() -> tuple[str, ...]:
+    state_routes = (f"/states/{state_id.casefold()}/" for state_id in load_all_states())
+    return tuple(sorted((*BASE_PUBLIC_ROUTES, *state_routes)))
+
+
+def _route_check_id(path: str) -> str:
+    return "home" if path == "/" else path.strip("/").replace("/", "_")
 
 
 def fetch(url: str, timeout_seconds: float) -> ProbeResponse:
@@ -207,6 +223,68 @@ def probe(
         candidate = payload.get("release_commit") if isinstance(payload, dict) else None
         api_release_commit = candidate if isinstance(candidate, str) and RELEASE_COMMIT_PATTERN.fullmatch(candidate) else None
         check("api_version.payload", api_release_commit is not None and payload == {"release_commit": api_release_commit})
+
+    expected_routes = expected_nationwide_routes()
+    route_hashes: dict[str, str] | None = None
+    release_manifest = request_surface("release_manifest", RELEASE_MANIFEST_PATH)
+    if release_manifest:
+        headers = {name.casefold(): value for name, value in release_manifest.headers.items()}
+        check("release_manifest.status_200", release_manifest.status == 200)
+        check(
+            "release_manifest.json_content_type",
+            "application/json" in headers.get("content-type", "").casefold(),
+        )
+        check("release_manifest.revalidatable", "no-cache" in headers.get("cache-control", "").casefold())
+        try:
+            payload = json.loads(release_manifest.body)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            payload = None
+        routes = payload.get("routes") if isinstance(payload, dict) else None
+        candidate_hashes = {
+            item.get("path"): item.get("sha256")
+            for item in routes
+            if isinstance(item, dict)
+        } if isinstance(routes, list) else {}
+        manifest_structurally_valid = (
+            isinstance(payload, dict)
+            and set(payload) == {"schema_version", "release_commit", "route_count", "routes"}
+            and payload.get("schema_version") == 1
+            and isinstance(payload.get("release_commit"), str)
+            and RELEASE_COMMIT_PATTERN.fullmatch(payload["release_commit"])
+            and payload.get("route_count") == len(expected_routes)
+            and isinstance(routes, list)
+            and len(routes) == len(expected_routes)
+            and all(isinstance(item, dict) and set(item) == {"path", "sha256"} for item in routes)
+            and set(candidate_hashes) == set(expected_routes)
+            and all(isinstance(value, str) and SHA256_PATTERN.fullmatch(value) for value in candidate_hashes.values())
+        )
+        manifest_valid = manifest_structurally_valid and payload.get("release_commit") == expected_commit
+        check("release_manifest.payload", manifest_valid)
+        if manifest_structurally_valid:
+            route_hashes = candidate_hashes
+
+    def audit_route(path: str) -> bool:
+        if route_hashes is None:
+            return False
+        try:
+            response = fetcher(urljoin(f"{normalized_origin}/", path.lstrip("/")), timeout_seconds)
+        except Exception:
+            return False
+        headers = {name.casefold(): value for name, value in response.headers.items()}
+        return (
+            response.status == 200
+            and _same_origin(normalized_origin, response.final_url)
+            and "text/html" in headers.get("content-type", "").casefold()
+            and hashlib.sha256(response.body).hexdigest() == route_hashes[path]
+        )
+
+    if route_hashes is None:
+        route_results = (False for _path in expected_routes)
+    else:
+        with ThreadPoolExecutor(max_workers=ROUTE_AUDIT_WORKERS) as executor:
+            route_results = tuple(executor.map(audit_route, expected_routes))
+    for path, passed in zip(expected_routes, route_results, strict=True):
+        check(f"nationwide_route.{_route_check_id(path)}", passed)
 
     verified_release_commit = None
     if home and version:
