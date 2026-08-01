@@ -8,6 +8,8 @@ The current product direction is deliberately practical: guide users through off
 
 This repository is an MVP/prototype. It includes:
 
+For the detailed implemented/pending review and ordered path to production, see `docs/IMPLEMENTATION_STATUS.md`.
+
 - A mobile-first Astro + Preact PWA in `apps/web`.
 - A FastAPI service in `services/api`.
 - A nationwide catalogue covering all 36 states and union territories, plus reviewed state and forms configuration in `config`.

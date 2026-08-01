@@ -27,6 +27,7 @@ REQUIRED_FILES = [
     "docs/PRIVACY_AND_ABUSE.md",
     "docs/LAUNCH_CHECKLIST.md",
     "docs/ACCESSIBILITY.md",
+    "docs/IMPLEMENTATION_STATUS.md",
     "services/api/privacy.py",
     "infra/caddy/Caddyfile.example",
     "infra/docker-compose.yml",
