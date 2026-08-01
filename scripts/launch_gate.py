@@ -50,6 +50,7 @@ REQUIRED_FILES = [
     "scripts/check_csp.py",
     "scripts/check_visual_accessibility.py",
     "scripts/check_discoverability.py",
+    "scripts/check_postgres_integration.py",
     ".github/workflows/release-artifact.yml",
 ]
 
@@ -191,6 +192,18 @@ def verify_deploy_templates() -> None:
     ]:
         if contract not in release_workflow:
             raise RuntimeError(f"release workflow is missing artifact contract: {contract}")
+    ci_workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    postgres_integration = (ROOT / "scripts/check_postgres_integration.py").read_text(encoding="utf-8")
+    if "image: postgres:16" not in ci_workflow or "check_postgres_integration.py" not in ci_workflow:
+        raise RuntimeError("CI must apply the real schema to disposable PostgreSQL 16")
+    for contract in [
+        "integration.dual_control_constraint",
+        "integration.append_only_event_trigger",
+        '"voter_record_count": 0',
+        "values_redacted",
+    ]:
+        if contract not in postgres_integration:
+            raise RuntimeError(f"PostgreSQL integration is missing safety contract: {contract}")
     accessibility_evidence = (ROOT / "pipeline/sir_saathi_pipeline/accessibility_evidence.py").read_text(encoding="utf-8")
     for contract in [
         "ready_for_accessibility_signoff",

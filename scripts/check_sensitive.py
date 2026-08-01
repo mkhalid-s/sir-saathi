@@ -81,8 +81,16 @@ def is_text_candidate(path: str) -> bool:
     return Path(path).suffix.lower() in TEXT_SUFFIXES or Path(path).name in {"Makefile", "Dockerfile"}
 
 
-def is_reviewed_workflow_permission(path: str, line: str) -> bool:
-    return path.startswith(".github/workflows/") and bool(re.fullmatch(r"\s*id-token:\s*write\s*", line))
+def is_reviewed_non_secret_assignment(path: str, line: str) -> bool:
+    if not path.startswith(".github/workflows/"):
+        return False
+    return bool(
+        re.fullmatch(r"\s*id-token:\s*write\s*", line)
+        or (
+            path == ".github/workflows/ci.yml"
+            and re.fullmatch(r"\s*POSTGRES_PASSWORD:\s*sir-saathi-ci-only\s*", line)
+        )
+    )
 
 
 def main() -> int:
@@ -114,7 +122,7 @@ def main() -> int:
             continue
         for line_no, line in enumerate(text.splitlines(), 1):
             for label, pattern in CONTENT_PATTERNS:
-                if label == "inline secret assignment" and is_reviewed_workflow_permission(rel_path, line):
+                if label == "inline secret assignment" and is_reviewed_non_secret_assignment(rel_path, line):
                     continue
                 if pattern.search(line):
                     findings.append(f"{rel_path}:{line_no}: {label}: {line[:160]}")

@@ -85,6 +85,8 @@ curl -fsS http://127.0.0.1:8000/api/ready
 
 Deploy the reviewed `requirements.lock`, not a freshly resolved `requirements.txt`, so CI and the VM run the same Python dependency graph.
 
+CI also starts an empty disposable PostgreSQL 16 service and runs `scripts/check_postgres_integration.py`. The check first proves all eight migrations are pending, applies them through the production migration runner, proves the follow-up plan is clean, verifies `pg_trgm` and the required tables, and exercises the independently reviewed enable constraint and append-only authorization-event trigger with synthetic jurisdiction metadata. It asserts that the voter table remains empty and emits only stable redacted results. This is real schema-execution evidence on PostgreSQL 16; it does not replace the production migration dry run, pre-migration backup, restore drill, or operator review.
+
 Before restarting a release, inspect the schema plan and then apply it explicitly:
 
 ```sh

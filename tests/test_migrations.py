@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from pipeline.sir_saathi_pipeline import migrations
+from scripts import check_postgres_integration
 
 
 def test_migration_catalogue_is_ordered_and_has_a_self_contained_baseline() -> None:
@@ -51,3 +52,26 @@ def test_migration_files_never_contain_transaction_control() -> None:
         sql = path.read_text(encoding="utf-8").upper()
         assert "BEGIN;" not in sql
         assert "COMMIT;" not in sql
+
+
+def test_postgres_integration_check_requires_an_environment_owned_url(monkeypatch, capsys) -> None:
+    monkeypatch.delenv(migrations.DATABASE_URL_ENV, raising=False)
+
+    assert check_postgres_integration.main() == 1
+    output = capsys.readouterr().out
+    assert "integration.database_url_missing" in output
+    assert "postgresql://" not in output
+
+
+def test_ci_applies_real_migrations_to_disposable_postgres_16() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    integration = (Path(__file__).resolve().parents[1] / "scripts/check_postgres_integration.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "image: postgres:16" in workflow
+    assert "python scripts/check_postgres_integration.py" in workflow
+    assert "voter_record_count" in integration
+    assert "integration.dual_control_constraint" in integration
+    assert "integration.append_only_event_trigger" in integration
+    assert "values_redacted" in integration

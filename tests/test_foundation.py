@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from scripts.check_sensitive import is_reviewed_workflow_permission
+from scripts.check_sensitive import is_reviewed_non_secret_assignment
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,10 +21,18 @@ def test_sensitive_scanner_allows_only_exact_reviewed_public_binary_assets() -> 
 def test_sensitive_scanner_allows_only_the_exact_oidc_workflow_permission() -> None:
     workflow = ".github/workflows/release-artifact.yml"
     permission = "id-" + "token"
-    assert is_reviewed_workflow_permission(workflow, f"  {permission}: write") is True
-    assert is_reviewed_workflow_permission(workflow, f"  {permission}: secret-value") is False
-    assert is_reviewed_workflow_permission("docs/example.yml", f"{permission}: write") is False
-    assert is_reviewed_workflow_permission(workflow, f"api-{permission}: write") is False
+    assert is_reviewed_non_secret_assignment(workflow, f"  {permission}: write") is True
+    assert is_reviewed_non_secret_assignment(workflow, f"  {permission}: secret-value") is False
+    assert is_reviewed_non_secret_assignment("docs/example.yml", f"{permission}: write") is False
+    assert is_reviewed_non_secret_assignment(workflow, f"api-{permission}: write") is False
+
+
+def test_sensitive_scanner_allows_only_the_exact_disposable_ci_database_password() -> None:
+    key = "POSTGRES_" + "PASSWORD"
+    workflow = ".github/workflows/ci.yml"
+    assert is_reviewed_non_secret_assignment(workflow, f"  {key}: sir-saathi-ci-only") is True
+    assert is_reviewed_non_secret_assignment(workflow, f"  {key}: production-value") is False
+    assert is_reviewed_non_secret_assignment("docs/example.yml", f"{key}: sir-saathi-ci-only") is False
 
 
 def test_raw_data_paths_are_ignored() -> None:
