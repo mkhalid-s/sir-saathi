@@ -15,6 +15,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Document checklist backed by `config/forms/sir-actions.json`, with a device-neutral print/save view that excludes entered name and location fields.
 - Source-backed forms and common documents reference.
 - State-by-state search availability status that stays privacy-safe and explains official schedule-provenance requirements.
+- A progressively enhanced keyboard-labelled directory filter searches localized jurisdiction names and canonical `IN-*` codes, announces the visible count, and leaves all 36 guide rows in the static no-JavaScript page.
 - Separate governed links for each jurisdiction's CEO portal and its schedule evidence, so an action button never labels a PDF or evidence subpage as the CEO homepage.
 - Source labels, source freshness, and launch-readiness warning.
 - Shared, source-governed Phase III dates for all 19 jurisdictions named in the official ECI schedule; remaining schedules fail closed as unverified until reviewed evidence is added.

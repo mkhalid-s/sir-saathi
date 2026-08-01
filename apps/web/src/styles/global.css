@@ -369,11 +369,24 @@ a {
   margin-top: 1rem;
 }
 
+.directory-filter {
+  margin-top: 1rem;
+  max-width: 32rem;
+}
+
+.directory-filter .source-note {
+  margin-top: 0.5rem;
+}
+
 .jurisdiction-row {
   display: grid;
   gap: 0.75rem;
   border-top: 1px solid #e2e8f0;
   padding: 1rem 0;
+}
+
+.jurisdiction-row[hidden] {
+  display: none !important;
 }
 
 .jurisdiction-row:first-child {

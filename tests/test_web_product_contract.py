@@ -483,6 +483,23 @@ def test_homepage_surfaces_privacy_safe_search_availability() -> None:
     assert messages["directory.view_all"].startswith("View status for all")
 
 
+def test_nationwide_directory_has_progressive_accessible_filtering() -> None:
+    component = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
+    styles = (ROOT / "apps/web/src/styles/global.css").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    assert 'for="jurisdiction-filter"' in component
+    assert 'type="search"' in component
+    assert 'aria-controls="jurisdiction-list"' in component
+    assert 'aria-live="polite"' in component
+    assert "data-jurisdiction-row" in component
+    assert "row.hidden = !matches" in component
+    assert "input.addEventListener('input', update)" in component
+    assert ".jurisdiction-row[hidden]" in styles
+    assert messages["directory.filter_label"] == "Filter states and union territories"
+    assert "{count}" in messages["directory.filter_count"]
+    assert "No state or union territory" in messages["directory.filter_empty"]
+
+
 def test_pwa_manifest_is_installable() -> None:
     manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
     assert manifest["display"] == "standalone"

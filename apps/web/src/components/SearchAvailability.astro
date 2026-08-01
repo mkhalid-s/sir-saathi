@@ -44,9 +44,33 @@ const reviewedScheduleCount = states.filter((state) => state.scheduleProvenance.
 
   <details class="jurisdiction-directory">
     <summary>{message('directory.view_all', { count: states.length })}</summary>
-    <div class="jurisdiction-list">
+    <div class="directory-filter">
+      <label class="field" for="jurisdiction-filter">{message('directory.filter_label')}</label>
+      <input
+        class="input"
+        id="jurisdiction-filter"
+        type="search"
+        placeholder={message('directory.filter_placeholder')}
+        aria-controls="jurisdiction-list"
+        aria-describedby="jurisdiction-filter-status"
+        autocomplete="off"
+      />
+      <p
+        class="source-note"
+        id="jurisdiction-filter-status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-count-template={message('directory.filter_count', { count: '__COUNT__' })}
+      >{message('directory.filter_count', { count: states.length })}</p>
+    </div>
+    <p class="warning-note" id="jurisdiction-filter-empty" hidden>{message('directory.filter_empty')}</p>
+    <div class="jurisdiction-list" id="jurisdiction-list">
       {states.map((state) => (
-        <article class="jurisdiction-row">
+        <article
+          class="jurisdiction-row"
+          data-jurisdiction-row
+          data-search-text={`${jurisdictionName(locale, state.stateId)} ${state.stateId}`.toLocaleLowerCase()}
+        >
           <div>
             <h3>{jurisdictionName(locale, state.stateId)}</h3>
             <p class="source-note">{message(`status.${state.currentPhase}` as MessageKey)} · {message('directory.capability', { capability: capabilityLabel(state.capability) })}</p>
@@ -64,3 +88,25 @@ const reviewedScheduleCount = states.filter((state) => state.scheduleProvenance.
     </div>
   </details>
 </section>
+
+<script>
+  const input = document.querySelector('#jurisdiction-filter');
+  const status = document.querySelector('#jurisdiction-filter-status');
+  const empty = document.querySelector('#jurisdiction-filter-empty');
+  const rows = [...document.querySelectorAll('[data-jurisdiction-row]')];
+  if (input instanceof HTMLInputElement && status instanceof HTMLElement && empty instanceof HTMLElement) {
+    const update = () => {
+      const query = input.value.trim().toLocaleLowerCase();
+      let visible = 0;
+      for (const row of rows) {
+        if (!(row instanceof HTMLElement)) continue;
+        const matches = !query || (row.dataset.searchText ?? '').includes(query);
+        row.hidden = !matches;
+        if (matches) visible += 1;
+      }
+      status.textContent = (status.dataset.countTemplate ?? '__COUNT__').replace('__COUNT__', String(visible));
+      empty.hidden = visible !== 0;
+    };
+    input.addEventListener('input', update);
+  }
+</script>

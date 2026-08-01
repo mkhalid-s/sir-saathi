@@ -222,6 +222,10 @@ def verify_source_freshness() -> None:
         raise RuntimeError("web source freshness copy must not imply official verification")
     if "directory.provenance" not in search_availability or "directory.search.unverified" not in search_availability:
         raise RuntimeError("search availability must show official schedule provenance requirement")
+    if 'type="search"' not in search_availability or 'aria-controls="jurisdiction-list"' not in search_availability:
+        raise RuntimeError("nationwide jurisdiction directory must expose an accessible filter")
+    if "data-jurisdiction-row" not in search_availability or "row.hidden = !matches" not in search_availability:
+        raise RuntimeError("jurisdiction filtering must progressively enhance the complete static list")
     schedule_source = schedule_catalogue.get("source", {})
     if schedule_source.get("source_type") != "official_portal" or not schedule_source.get("last_verified"):
         raise RuntimeError("shared nationwide schedule must retain official provenance and freshness")
