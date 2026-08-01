@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PolicyContent from '../components/PolicyContent.astro';
+import { translate } from '../lib/i18n';
+---
+<BaseLayout title={translate('en', 'policy.meta.title', { title: translate('en', 'accessibility.title') })} path="/accessibility/">
+  <PolicyContent page="accessibility" locale="en" />
+</BaseLayout>

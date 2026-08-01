@@ -24,6 +24,7 @@ REQUIRED_FILES = [
     "apps/web/src/pages/methodology.astro",
     "apps/web/src/pages/data-use.astro",
     "apps/web/src/pages/languages.astro",
+    "apps/web/src/pages/accessibility.astro",
     "apps/web/src/pages/states/[stateId].astro",
     "config/forms/sir-actions.json",
     "config/official-assistance.json",

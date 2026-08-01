@@ -2,7 +2,7 @@
 import { localizedPath, translate, type MessageKey } from '../lib/i18n';
 import LocaleSwitcher from './LocaleSwitcher.astro';
 
-type PolicyPage = 'privacy' | 'methodology' | 'data-use';
+type PolicyPage = 'privacy' | 'methodology' | 'data-use' | 'accessibility';
 
 interface Props {
   page: PolicyPage;
@@ -18,6 +18,14 @@ const privacyItems: MessageKey[] = [
 const methodologyItems: MessageKey[] = [
   'methodology.item.sources', 'methodology.item.confirm', 'methodology.item.guidance',
   'methodology.item.promote', 'methodology.item.fallback', 'methodology.item.share'
+];
+const accessibilityFeatures: MessageKey[] = [
+  'accessibility.feature.keyboard', 'accessibility.feature.structure', 'accessibility.feature.reflow',
+  'accessibility.feature.visual', 'accessibility.feature.motion', 'accessibility.feature.offline',
+  'accessibility.feature.language'
+];
+const accessibilityLimitations: MessageKey[] = [
+  'accessibility.limitation.manual', 'accessibility.limitation.languages', 'accessibility.limitation.external'
 ];
 ---
 <main class="shell content-page" id="main-content">
@@ -45,6 +53,28 @@ const methodologyItems: MessageKey[] = [
       <p>{message('data_use.purpose')}</p>
       <p>{message('data_use.launch')}</p>
       <p>{message('data_use.share')}</p>
+    </>
+  )}
+  {page === 'accessibility' && (
+    <>
+      <h1>{message('accessibility.title')}</h1>
+      <p>{message('accessibility.intro')}</p>
+      <p>{message('accessibility.target')}</p>
+      <p class="notice">{message('accessibility.not_conformance')}</p>
+      <h2>{message('accessibility.features_title')}</h2>
+      <ul>{accessibilityFeatures.map((key) => <li>{message(key)}</li>)}</ul>
+      <h2>{message('accessibility.limitations_title')}</h2>
+      <ul>{accessibilityLimitations.map((key) => <li>{message(key)}</li>)}</ul>
+      <h2>{message('accessibility.report_title')}</h2>
+      <p>{message('accessibility.report_intro')}</p>
+      <p class="notice">{message('accessibility.report_unavailable')}</p>
+      <p class="notice">{message('accessibility.report_privacy')}</p>
+      <p><a href={`${localizedPath('/', locale)}#official-assistance-title`}>{message('accessibility.official_help')}</a></p>
+      <h2>{message('accessibility.standards_title')}</h2>
+      <ul>
+        <li><a href="https://guidelines.india.gov.in/help/" target="_blank" rel="noreferrer">{message('accessibility.gigw')}</a></li>
+        <li><a href="https://www.w3.org/TR/WCAG22/" target="_blank" rel="noreferrer">{message('accessibility.wcag')}</a></li>
+      </ul>
     </>
   )}
   <p><a href={localizedPath('/', locale)}>{message('nav.back_home')}</a></p>

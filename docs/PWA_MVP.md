@@ -86,7 +86,7 @@ The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalog
 - Service worker for offline app-shell fallback; API calls are not cached.
 - Keyboard skip navigation, visible focus indicators, semantic main landmarks, and status announcements for interactive results.
 - Assistive-technology announcements when guidance changes, labelled language-readiness help, automatic direction for voter names, 44px interactive targets, reduced-motion safeguards, and forced-colour focus visibility.
-- A generated-site structural audit covering all 42 HTML pages, including the error page. It verifies language and direction metadata, titles, main and heading landmarks, skip targets, unique IDs, ARIA references, form-control labels, and safe new-tab links. This deterministic check complements rather than replaces manual screen-reader, zoom, reflow, and contrast review.
+- A generated-site structural audit covering all 43 HTML pages, including the error page. It verifies language and direction metadata, titles, main and heading landmarks, skip targets, unique IDs, ARIA references, form-control labels, and safe new-tab links. This deterministic check complements rather than replaces manual screen-reader, zoom, reflow, and contrast review.
 - An executable browser-guidance matrix bundles the production TypeScript and checks all 36 jurisdictions across all eight situations, phase-aware deadlines, completed and unavailable schedules, and adversarial stale-answer combinations.
 
 ## Not Included Yet

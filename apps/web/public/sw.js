@@ -1,9 +1,10 @@
-const CACHE_NAME = 'sir-saathi-app-shell-v4';
+const CACHE_NAME = 'sir-saathi-app-shell-v5';
 const APP_SHELL_URLS = [
   '/',
   '/privacy/',
   '/methodology/',
   '/data-use/',
+  '/accessibility/',
   '/manifest.webmanifest',
   '/icons/icon.svg',
   '/icons/icon-192.png',

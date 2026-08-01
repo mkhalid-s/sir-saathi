@@ -103,7 +103,7 @@ def validate_evidence(evidence: dict[str, Any], *, today: date | None = None) ->
         and probe.get("release_commit") == commit
         and isinstance(probe.get("checks_passed"), int)
         and probe.get("checks_passed") == probe.get("checks_total")
-        and probe.get("checks_total", 0) >= 89
+        and probe.get("checks_total", 0) >= 90
         and probe.get("values_redacted") is True
     ):
         blockers.append("evidence.deployment_probe_release_binding")

@@ -10,6 +10,7 @@ const basePaths = [
   '/methodology/',
   '/data-use/',
   '/languages/',
+  '/accessibility/',
   ...states.map((state) => `/states/${state.stateId.toLowerCase()}/`)
 ];
 

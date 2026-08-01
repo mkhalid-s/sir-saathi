@@ -106,7 +106,7 @@ def test_deployment_probe_accepts_complete_same_origin_surface() -> None:
 
     assert report["ready"] is True
     assert report["checks_passed"] == report["checks_total"]
-    assert report["checks_total"] == 89
+    assert report["checks_total"] == 90
     assert report["blockers"] == []
     assert report["release_commit"] == RELEASE_COMMIT
     assert report["values_redacted"] is True
@@ -154,7 +154,7 @@ def test_deployment_probe_fails_closed_for_invalid_origin_and_network_failure() 
 
     failed = probe("https://sirsaathi.org", expected_commit=RELEASE_COMMIT, fetcher=failed_fetcher)
     assert failed["ready"] is False
-    assert failed["checks_total"] == 47
+    assert failed["checks_total"] == 48
     assert failed["blockers"][:5] == [
         "home.request_succeeded",
         "api_health.request_succeeded",
@@ -163,7 +163,7 @@ def test_deployment_probe_fails_closed_for_invalid_origin_and_network_failure() 
         "release_manifest.request_succeeded",
     ]
     nationwide_blockers = [item for item in failed["blockers"] if item.startswith("nationwide_route.")]
-    assert len(nationwide_blockers) == len(expected_nationwide_routes()) == 41
+    assert len(nationwide_blockers) == len(expected_nationwide_routes()) == 42
     assert failed["blockers"][-1] == "not_found.request_succeeded"
     assert "private network detail" not in str(failed)
 

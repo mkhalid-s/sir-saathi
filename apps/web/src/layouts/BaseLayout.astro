@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import ConnectivityStatus from '../components/ConnectivityStatus';
-import { availableLocales, localizedPath } from '../lib/i18n';
+import { availableLocales, localizedPath, translate } from '../lib/i18n';
 const {
   title = 'SIR Saathi',
   description = 'Privacy-conscious voter guidance, official links, and state-specific SIR status for India.',
@@ -45,6 +45,9 @@ const releaseCommit = import.meta.env.PUBLIC_RELEASE_COMMIT ?? 'development';
   <body>
     <a class="skip-link" href="#main-content">{skipLabel}</a>
     <ConnectivityStatus locale={lang} client:load />
+    <nav class="utility-nav" aria-label={translate(lang, 'nav.project_links')}>
+      <a href={localizedPath('/accessibility/', lang)}>{translate(lang, 'nav.accessibility')}</a>
+    </nav>
     <slot />
     <script>
       if ('serviceWorker' in navigator) {

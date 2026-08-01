@@ -48,6 +48,29 @@ def test_unknown_routes_have_an_accessible_noindex_recovery_page() -> None:
     assert "all 36 state and union-territory guides" in messages["not_found.copy"]
 
 
+def test_accessibility_help_is_available_from_every_page_without_collecting_private_data() -> None:
+    page = (ROOT / "apps/web/src/pages/accessibility.astro").read_text(encoding="utf-8")
+    content = (ROOT / "apps/web/src/components/PolicyContent.astro").read_text(encoding="utf-8")
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+
+    assert 'path="/accessibility/"' in page
+    assert "localizedPath('/accessibility/', lang)" in layout
+    assert "nav.accessibility" in layout
+    assert "WCAG 2.2 Level AA" in messages["accessibility.target"]
+    assert "not a certification or conformance claim" in messages["accessibility.not_conformance"]
+    assert "manual testing" in messages["accessibility.limitation.manual"]
+    assert "English is the only reviewed public interface" in messages["accessibility.limitation.languages"]
+    assert "issues/new" not in content
+    assert "does not yet have an authorized public accessibility-feedback inbox" in messages[
+        "accessibility.report_unavailable"
+    ]
+    assert "must omit your name, EPIC, address" in messages["accessibility.report_privacy"]
+    assert "#official-assistance-title" in content
+    assert "guidelines.india.gov.in/help/" in content
+    assert "www.w3.org/TR/WCAG22/" in content
+
+
 def test_web_wizard_collects_sir_followup_questions() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
@@ -627,6 +650,7 @@ def test_pwa_registers_offline_app_shell_service_worker() -> None:
     assert "BUILD_ASSET_URLS = []" in service_worker
     assert "PRECACHE_URLS" in service_worker
     assert "'/privacy/'" in service_worker
+    assert "'/accessibility/'" in service_worker
     assert "url.pathname.startsWith('/api/')" in service_worker
     assert "response.ok && response.type === 'basic'" in service_worker
     assert "localizedHome" in service_worker

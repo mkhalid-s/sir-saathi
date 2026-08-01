@@ -97,6 +97,21 @@ a {
   padding: 2rem 1rem;
 }
 
+.utility-nav {
+  display: flex;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 0;
+  justify-content: flex-end;
+}
+
+.utility-nav a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  font-weight: 700;
+}
+
 .locale-switcher {
   display: flex;
   flex-wrap: wrap;
@@ -771,6 +786,7 @@ a {
   .hero,
   .skip-link,
   .locale-switcher,
+  .utility-nav,
   .find-flow,
   .form-grid,
   .question-grid,

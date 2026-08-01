@@ -21,7 +21,7 @@ from .state_registry import load_all_states
 MAX_RESPONSE_BYTES = 1_048_576
 NOT_FOUND_PATH = "/.well-known/sir-saathi-deployment-probe-not-found"
 RELEASE_MANIFEST_PATH = "/release-manifest.json"
-BASE_PUBLIC_ROUTES = ("/", "/data-use/", "/languages/", "/methodology/", "/privacy/")
+BASE_PUBLIC_ROUTES = ("/", "/accessibility/", "/data-use/", "/languages/", "/methodology/", "/privacy/")
 ROUTE_AUDIT_WORKERS = 8
 CSP_META = re.compile(
     r'<meta\s+http-equiv="content-security-policy"\s+content="([^"]+)"',

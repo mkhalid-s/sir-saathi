@@ -14,6 +14,8 @@ import tarfile
 import tempfile
 from typing import Any
 
+from .deployment_probe import expected_nationwide_routes
+
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 BUNDLE_METADATA = "sir-saathi-release-bundle.json"
@@ -54,6 +56,7 @@ def _route_file(path: str) -> str | None:
 
 
 def _validate_release_manifest(files: dict[str, bytes], expected_commit: str) -> None:
+    expected_routes = set(expected_nationwide_routes())
     try:
         payload = json.loads(files["release-manifest.json"])
     except (KeyError, json.JSONDecodeError, UnicodeDecodeError):
@@ -66,11 +69,10 @@ def _validate_release_manifest(files: dict[str, bytes], expected_commit: str) ->
         and payload.get("release_commit") == expected_commit
         and isinstance(payload.get("route_count"), int)
         and isinstance(routes, list)
-        and payload["route_count"] == len(routes) == 41
+        and payload["route_count"] == len(routes) == len(expected_routes)
     ):
         raise ReleaseBundleError("release_manifest.invalid")
     seen: set[str] = set()
-    state_route_count = 0
     for route in routes:
         if not isinstance(route, dict) or set(route) != {"path", "sha256"}:
             raise ReleaseBundleError("release_manifest.invalid")
@@ -87,8 +89,7 @@ def _validate_release_manifest(files: dict[str, bytes], expected_commit: str) ->
         ):
             raise ReleaseBundleError("release_manifest.invalid")
         seen.add(path)
-        state_route_count += int(path.startswith("/states/"))
-    if state_route_count != 36:
+    if seen != expected_routes:
         raise ReleaseBundleError("release_manifest.invalid_nationwide_scope")
 
 

@@ -34,5 +34,5 @@ def test_generated_nationwide_site_passes_structural_audit() -> None:
     if not (dist / "404.html").exists():
         return
     report = audit_directory(dist)
-    assert report["page_count"] == 42
+    assert report["page_count"] == 43
     assert report["issues"] == []
