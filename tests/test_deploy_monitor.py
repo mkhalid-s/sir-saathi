@@ -15,6 +15,7 @@ def test_deployment_reference_files_exist() -> None:
         "pipeline/sir_saathi_pipeline/backups.py",
         "pipeline/sir_saathi_pipeline/deployment_preflight.py",
         "pipeline/sir_saathi_pipeline/deployment_probe.py",
+        "pipeline/sir_saathi_pipeline/deployment_rehearsal.py",
     ]:
         assert (ROOT / rel).is_file()
 

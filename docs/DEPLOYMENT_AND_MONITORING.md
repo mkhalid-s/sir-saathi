@@ -39,6 +39,20 @@ python -m pipeline.sir_saathi_pipeline.deployment_probe --origin "$PUBLIC_SITE_U
 
 The value-redacting probe follows normal redirects and checks 32 transport-level contracts: the final URL stays on the requested HTTPS origin, the homepage identifies the PWA, required browser-security headers and deny-by-default/Turnstile CSP directives are present, `/api/health` and `/api/ready` are same-origin JSON with `Cache-Control: no-store`, readiness is green for the selected runtime mode, and an unknown route returns the no-index HTML recovery page with HTTP 404. It reports stable check IDs rather than response bodies, redirect destinations, or network exception details. Passing the probe is deployed-release evidence, but is not a substitute for the browser, accessibility, backup/restore, or indexed-search rehearsal.
 
+## Guidance-Only Production Rehearsal
+
+Create one private evidence record for the candidate commit before the first public guidance release. Templates created inside the repository are restricted to ignored `reports/` or `data/` paths; an operator-owned path outside the repository is also supported:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.deployment_rehearsal \
+  --create-template --output reports/deployment-rehearsal.json
+
+python -m pipeline.sir_saathi_pipeline.deployment_rehearsal \
+  --validate reports/deployment-rehearsal.json --require-full-pass
+```
+
+The template starts unapproved and requires a real HTTPS origin, the exact deployed commit, distinct operator and reviewer identities, explicit attestations that no voter data was used and public indexed search remained disabled, and evidence for all 11 build, database, edge, offline, backup/restore, monitoring, accessibility, and rollback checks. A failed check needs a remediation reference and passing retest. Validator output contains only stable blocker IDs and counts; it does not echo the origin, people, infrastructure details, or private evidence notes. This record proves rehearsal completeness, not public-search authorization or accessibility conformance.
+
 ## API Smoke Check
 
 ```sh

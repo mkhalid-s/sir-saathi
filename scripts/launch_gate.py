@@ -161,6 +161,18 @@ def verify_deploy_templates() -> None:
     ]:
         if contract not in accessibility_evidence:
             raise RuntimeError(f"manual accessibility evidence is missing contract: {contract}")
+    deployment_rehearsal = (ROOT / "pipeline/sir_saathi_pipeline/deployment_rehearsal.py").read_text(encoding="utf-8")
+    for contract in [
+        "ready_for_guidance_rehearsal_signoff",
+        "no_voter_data_attestation",
+        "public_search_disabled_attestation",
+        "independent_reviewer",
+        "isolated_restore_drill",
+        "rollback_rehearsal",
+        "values_redacted",
+    ]:
+        if contract not in deployment_rehearsal:
+            raise RuntimeError(f"guidance-only deployment rehearsal is missing contract: {contract}")
 
 
 def verify_abuse_protection() -> None:
