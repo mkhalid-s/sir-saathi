@@ -94,7 +94,8 @@ def test_seed_states_requires_at_least_one_state() -> None:
 def test_select_states_can_seed_all_or_one_state() -> None:
     states = load_all_states()
 
-    assert [state.state_id for state in seed_states.select_states(None, states)] == ["IN-MH", "IN-WB"]
+    assert [state.state_id for state in seed_states.select_states(None, states)] == sorted(states)
+    assert len(seed_states.select_states(None, states)) == 36
     assert [state.state_id for state in seed_states.select_states("IN-WB", states)] == ["IN-WB"]
 
     with pytest.raises(ValueError, match="unknown state_id"):

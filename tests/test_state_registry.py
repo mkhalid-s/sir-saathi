@@ -8,7 +8,34 @@ from pipeline.sir_saathi_pipeline.state_registry import parse_state_config
 
 def test_loads_initial_state_registry() -> None:
     states = load_all_states()
-    assert {"IN-MH", "IN-WB"}.issubset(states)
+    assert len(states) == 36
+    assert set(states) == {
+        "IN-AN", "IN-AP", "IN-AR", "IN-AS", "IN-BR", "IN-CG", "IN-CH", "IN-DH", "IN-DL",
+        "IN-GA", "IN-GJ", "IN-HP", "IN-HR", "IN-JH", "IN-JK", "IN-KA", "IN-KL", "IN-LA",
+        "IN-LD", "IN-MH", "IN-ML", "IN-MN", "IN-MP", "IN-MZ", "IN-NL", "IN-OD", "IN-PB",
+        "IN-PY", "IN-RJ", "IN-SK", "IN-TG", "IN-TN", "IN-TR", "IN-UK", "IN-UP", "IN-WB",
+    }
+
+
+def test_nationwide_baselines_are_official_link_only_and_unverified() -> None:
+    states = load_all_states()
+    baseline = states["IN-AP"]
+    assert baseline.data_capability == "official_link_search"
+    assert baseline.public_launch_ready is False
+    assert baseline.schedule.status == "schedule_unverified"
+    assert baseline.schedule_provenance.confidence == "unverified"
+    assert baseline.schedule.final_roll_date is None
+    assert baseline.ceo_portal == "https://ceoandhra.nic.in"
+    assert any(source.label == "ECI CEO contact directory" for source in baseline.official_sources)
+
+
+def test_nationwide_registry_has_unique_eci_codes_and_valid_language_defaults() -> None:
+    states = load_all_states()
+    assert len({state.eci_state_code for state in states.values()}) == 36
+    for state in states.values():
+        assert state.default_language in state.languages
+        assert state.languages
+        assert state.scripts
 
 
 def test_maharashtra_registry_dates_and_capability() -> None:

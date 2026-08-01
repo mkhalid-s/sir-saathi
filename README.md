@@ -10,7 +10,7 @@ This repository is an MVP/prototype. It includes:
 
 - A mobile-first Astro + Preact PWA in `apps/web`.
 - A FastAPI service in `services/api`.
-- Canonical state and forms configuration in `config`.
+- A nationwide catalogue covering all 36 states and union territories, plus reviewed state and forms configuration in `config`.
 - A PostgreSQL schema and migration in `db`.
 - Local-only PDF parsing, ingestion, loading, search validation, readiness reporting, and operator workflow tools in `pipeline`.
 - Safety gates and sensitive-data checks in `scripts`.
@@ -24,7 +24,7 @@ Public indexed search is intentionally fail-closed unless strict launch criteria
 
 The web app is a mobile-first Progressive Web App. It currently provides:
 
-- State selector backed by reviewed config in `config/states`.
+- State/UT selector backed by the nationwide `config/jurisdictions.json` catalogue and richer reviewed overrides in `config/states`.
 - SIR deadline and source-freshness display.
 - Safe "Find my name" entry flow that prioritizes official search steps before local indexed-search behavior.
 - Situation-based guidance for verification, missing names, new voters, shifted addresses, corrections, deceased-family entries, duplicate entries, and portal failures.
@@ -189,7 +189,8 @@ More detail: `docs/PRIVACY_AND_ABUSE.md`, `docs/GUIDANCE_RULES.md`, and `docs/LA
 ```text
 apps/web/                 Mobile-first Astro + Preact PWA
 config/forms/             SIR forms and document catalogue
-config/states/            Canonical state configuration
+config/jurisdictions.json Nationwide state/UT metadata and official CEO links
+config/states/            Reviewed schedule and capability overrides
 db/                       PostgreSQL schema and migrations
 docs/                     Product, privacy, API, launch, and operating docs
 infra/                    Deployment templates and infrastructure notes

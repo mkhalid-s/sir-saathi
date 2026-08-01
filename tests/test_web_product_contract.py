@@ -94,6 +94,14 @@ def test_web_state_summary_derives_current_schedule_phase() -> None:
         assert phase in source
 
 
+def test_web_state_registry_uses_all_nationwide_jurisdictions() -> None:
+    source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    catalogue = json.loads((ROOT / "config/jurisdictions.json").read_text(encoding="utf-8"))
+    assert "jurisdictionCatalogue.jurisdictions" in source
+    assert len(catalogue["jurisdictions"]) == 36
+    assert len({item["state_id"] for item in catalogue["jurisdictions"]}) == 36
+
+
 def test_wizard_deadlines_advance_with_the_current_phase() -> None:
     source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     assert "state.currentPhase === 'pre_enumeration'" in source
@@ -192,7 +200,7 @@ def test_homepage_surfaces_privacy_safe_search_availability() -> None:
     assert "../data/states" in component_source
     assert "Indexed public search is not launch-ready" in component_source
     assert "Schedule provenance:" in component_source
-    assert "comes from an official source" in component_source
+    assert "current schedule is verified from an official source" in component_source
     assert "state.scheduleProvenance.confidence !== 'official'" in component_source
     assert "rate limits" in component_source
     assert "publicLaunchReady" in component_source

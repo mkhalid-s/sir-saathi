@@ -74,7 +74,7 @@ def verify_source_freshness() -> None:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
-    if "Schedule provenance:" not in search_availability or "comes from an official source" not in search_availability:
+    if "Schedule provenance:" not in search_availability or "current schedule is verified from an official source" not in search_availability:
         raise RuntimeError("search availability must show official schedule provenance requirement")
     for path in sorted((ROOT / "config/states").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -202,14 +202,20 @@ def verify_forms_catalogue() -> None:
 def verify_state_schedule_api() -> None:
     from services.api.app import list_states_payload
 
-    for state in list_states_payload():
+    states = list_states_payload()
+    if len(states) != 36:
+        raise RuntimeError("state API must expose all 36 Indian states and union territories")
+    for state in states:
         schedule = state.get("sir_schedule")
         if not isinstance(schedule, dict):
             raise RuntimeError("state payload must expose structured SIR schedule metadata")
-        if "status" not in schedule or "final_roll_date" not in schedule:
-            raise RuntimeError("state schedule payload must include status and final_roll_date")
+        if "status" not in schedule or "current_phase" not in schedule or "final_roll_date" not in schedule:
+            raise RuntimeError("state schedule payload must include status, current_phase, and final_roll_date")
         if "ceo_portal" not in state:
             raise RuntimeError("state payload must include CEO portal")
+        provenance = state.get("schedule_provenance")
+        if not isinstance(provenance, dict) or provenance.get("confidence") not in {"official", "reported", "unverified"}:
+            raise RuntimeError("state payload must expose explicit schedule provenance confidence")
 
 
 def verify_ingestion_pipeline_contract() -> None:

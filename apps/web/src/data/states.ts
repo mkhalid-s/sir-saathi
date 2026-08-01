@@ -1,5 +1,6 @@
 import maharashtraConfig from '../../../../config/states/IN-MH.json';
 import westBengalConfig from '../../../../config/states/IN-WB.json';
+import jurisdictionCatalogue from '../../../../config/jurisdictions.json';
 
 export type StateCapability = 'guidance_only' | 'official_link_search' | 'pilot_indexed_search' | 'validated_indexed_search';
 export type UiLanguageStatus = 'available' | 'planned';
@@ -29,13 +30,21 @@ interface StateConfig {
   schedule_provenance: {
     label: string;
     source_type: string;
-    confidence: 'official' | 'reported';
+    confidence: 'official' | 'reported' | 'unverified';
     notes: string;
   };
   ceo_portal: string;
   official_sources: SourceConfig[];
   data_capability: StateCapability;
   public_launch_ready: boolean;
+}
+
+interface JurisdictionConfig {
+  state_id: string;
+  name: string;
+  languages: string[];
+  default_language: string;
+  ceo_portal: string;
 }
 
 export interface StateSummary {
@@ -55,7 +64,7 @@ export interface StateSummary {
   sourceFreshness: string[];
   scheduleProvenance: {
     label: string;
-    confidence: 'official' | 'reported';
+    confidence: 'official' | 'reported' | 'unverified';
     notes: string;
   };
 }
@@ -69,10 +78,23 @@ export interface UiLanguageOption {
 const ENGLISH_LABEL = 'English';
 
 const languageNames: Record<string, string> = {
+  as: 'Assamese',
   bn: 'Bengali',
   en: 'English',
+  gu: 'Gujarati',
   hi: 'Hindi',
-  mr: 'Marathi'
+  kn: 'Kannada',
+  kok: 'Konkani',
+  lus: 'Mizo',
+  ml: 'Malayalam',
+  mni: 'Meitei',
+  mr: 'Marathi',
+  ne: 'Nepali',
+  or: 'Odia',
+  pa: 'Punjabi',
+  ta: 'Tamil',
+  te: 'Telugu',
+  ur: 'Urdu'
 };
 
 const statusLabels: Record<string, string> = {
@@ -82,7 +104,8 @@ const statusLabels: Record<string, string> = {
   pre_draft_publication: 'Draft roll publication is next',
   claims_and_objections_open: 'Claims and objections are open',
   claims_disposal: 'Claims and objections are being decided',
-  final_roll_published: 'Final roll published'
+  final_roll_published: 'Final roll published',
+  schedule_unverified: 'Schedule not yet verified'
 };
 
 function currentIndiaDateIso(): string {
@@ -161,4 +184,32 @@ function stateFromConfig(config: StateConfig): StateSummary {
   };
 }
 
-export const states: StateSummary[] = [maharashtraConfig, westBengalConfig].map((config) => stateFromConfig(config as StateConfig));
+function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
+  const source = jurisdictionCatalogue.source;
+  return {
+    stateId: config.state_id,
+    name: config.name,
+    languages: config.languages.map((language) => languageNames[language] ?? language),
+    defaultLanguage: languageNames[config.default_language] ?? config.default_language,
+    capability: 'official_link_search',
+    publicLaunchReady: false,
+    currentPhase: 'schedule_unverified',
+    status: statusLabels.schedule_unverified,
+    officialLink: config.ceo_portal,
+    sourceLabels: [`CEO ${config.name}`, 'ECI voters portal', source.label],
+    sourceFreshness: [`${source.label}: last checked ${displayDate(source.last_verified)}`],
+    scheduleProvenance: {
+      label: source.label,
+      confidence: 'unverified',
+      notes: `ECI's directory lists this official CEO link, but ${config.name}'s current SIR schedule has not yet been independently confirmed.`
+    }
+  };
+}
+
+const stateOverrides = [maharashtraConfig, westBengalConfig]
+  .map((config) => stateFromConfig(config as StateConfig))
+  .reduce<Record<string, StateSummary>>((byId, state) => ({ ...byId, [state.stateId]: state }), {});
+
+export const states: StateSummary[] = (jurisdictionCatalogue.jurisdictions as JurisdictionConfig[])
+  .map((config) => stateOverrides[config.state_id] ?? stateFromJurisdiction(config))
+  .sort((left, right) => left.name.localeCompare(right.name));

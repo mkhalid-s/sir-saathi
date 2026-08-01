@@ -19,6 +19,7 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
 
 def test_list_states_payload_exposes_registry_without_private_data() -> None:
     states = list_states_payload(today=date(2026, 8, 1))
+    assert len(states) == 36
     mh = next(state for state in states if state["state_id"] == "IN-MH")
     assert mh["data_capability"] == "pilot_indexed_search"
     assert "final_roll_date" in mh
@@ -31,6 +32,12 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     assert mh["official_sources"][0]["last_verified"] == "2026-08-01"
     assert mh["current_phase"] == "pre_draft_publication"
     assert mh["sir_schedule"]["current_phase"] == "pre_draft_publication"
+
+    ap = next(state for state in states if state["state_id"] == "IN-AP")
+    assert ap["data_capability"] == "official_link_search"
+    assert ap["current_phase"] == "schedule_unverified"
+    assert ap["schedule_provenance"]["confidence"] == "unverified"
+    assert ap["sir_schedule"]["final_roll_date"] is None
 
 
 def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:

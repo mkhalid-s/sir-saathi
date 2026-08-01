@@ -17,13 +17,14 @@ Capability = Literal[
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_STATE_DIR = ROOT / "config" / "states"
+DEFAULT_JURISDICTION_PATH = ROOT / "config" / "jurisdictions.json"
 VALID_CAPABILITIES = {
     "guidance_only",
     "official_link_search",
     "pilot_indexed_search",
     "validated_indexed_search",
 }
-VALID_PROVENANCE_CONFIDENCE = {"official", "reported"}
+VALID_PROVENANCE_CONFIDENCE = {"official", "reported", "unverified"}
 
 
 @dataclass(frozen=True)
@@ -193,7 +194,87 @@ def load_state(path: str | Path) -> StateConfig:
         return parse_state_config(json.load(handle))
 
 
+def load_jurisdiction_catalogue(path: str | Path = DEFAULT_JURISDICTION_PATH) -> dict[str, StateConfig]:
+    catalogue_path = Path(path)
+    with catalogue_path.open(encoding="utf-8") as handle:
+        catalogue = json.load(handle)
+    source = _require(catalogue, "source")
+    source_label = _require(source, "label")
+    source_url = _require(source, "url")
+    source_verified = _require(source, "last_verified")
+    states: dict[str, StateConfig] = {}
+    eci_codes: set[str] = set()
+    for jurisdiction in _require(catalogue, "jurisdictions"):
+        state_id = _require(jurisdiction, "state_id")
+        eci_state_code = _require(jurisdiction, "eci_state_code")
+        if state_id in states:
+            raise ValueError(f"duplicate jurisdiction state_id: {state_id}")
+        if eci_state_code in eci_codes:
+            raise ValueError(f"duplicate jurisdiction eci_state_code: {eci_state_code}")
+        ceo_portal = _require(jurisdiction, "ceo_portal")
+        state = parse_state_config(
+            {
+                **jurisdiction,
+                "sir_schedule": {
+                    "phase": "Not verified",
+                    "qualifying_date": None,
+                    "enumeration_start": None,
+                    "enumeration_end": None,
+                    "draft_roll_date": None,
+                    "claims_start": None,
+                    "claims_end": None,
+                    "final_roll_date": None,
+                    "status": "schedule_unverified",
+                },
+                "schedule_provenance": {
+                    "label": source_label,
+                    "source_type": "official_portal",
+                    "confidence": "unverified",
+                    "notes": "The official CEO link is verified from ECI's directory, but this jurisdiction's current SIR schedule has not yet been verified.",
+                },
+                "official_sources": [
+                    {
+                        "label": f"CEO {jurisdiction['name']}",
+                        "url": ceo_portal,
+                        "source_type": "official_portal",
+                        "last_verified": source_verified,
+                        "notes": "Official jurisdiction election portal listed by ECI.",
+                    },
+                    {
+                        "label": "ECI voters portal",
+                        "url": "https://voters.eci.gov.in/",
+                        "source_type": "official_portal",
+                        "last_verified": source_verified,
+                        "notes": "Official national portal for voter services and electoral search.",
+                    },
+                    {
+                        "label": source_label,
+                        "url": source_url,
+                        "source_type": "official_portal",
+                        "last_verified": source_verified,
+                        "notes": "ECI directory used to verify the jurisdiction CEO portal link.",
+                    },
+                ],
+                "base_roll_years": [],
+                "historical_source_shape": "Not yet assessed.",
+                "current_roll_source_shape": "Official CEO and ECI voter-service links only; source files are not indexed.",
+                "data_capability": "official_link_search",
+                "parser_status": "Not assessed; no electoral-roll data is indexed.",
+                "public_launch_ready": False,
+                "privacy_notes": "Guidance and official links only until schedule, parser, legal, privacy, and quality gates pass.",
+            }
+        )
+        states[state_id] = state
+        eci_codes.add(eci_state_code)
+    return states
+
+
 def load_all_states(state_dir: str | Path = DEFAULT_STATE_DIR) -> dict[str, StateConfig]:
     directory = Path(state_dir)
-    states = [load_state(path) for path in sorted(directory.glob("*.json"))]
-    return {state.state_id: state for state in states}
+    configured = [load_state(path) for path in sorted(directory.glob("*.json"))]
+    configured_ids = [state.state_id for state in configured]
+    if len(configured_ids) != len(set(configured_ids)):
+        raise ValueError("duplicate state_id in state configuration overrides")
+    states = load_jurisdiction_catalogue() if directory.resolve() == DEFAULT_STATE_DIR.resolve() else {}
+    states.update({state.state_id: state for state in configured})
+    return dict(sorted(states.items()))
