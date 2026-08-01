@@ -16,5 +16,6 @@ Before any public launch:
 - Public indexed search requires official schedule provenance, not reported-only dates.
 - Public search has rate limiting and abuse protection; production multi-process deployments use a shared limiter store.
 - Official links and source freshness are visible.
+- `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.
 - Commit message has no co-author trailer.

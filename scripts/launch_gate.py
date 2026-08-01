@@ -66,6 +66,10 @@ def verify_abuse_protection() -> None:
 
 
 def verify_source_freshness() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from pipeline.sir_saathi_pipeline.source_freshness import build_freshness_report
+
     web = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     search_availability = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
@@ -98,6 +102,12 @@ def verify_source_freshness() -> None:
         for source in data.get("official_sources", []):
             if not source.get("last_verified"):
                 raise RuntimeError(f"missing source freshness in {path.name}: {source.get('label', 'unknown')}")
+    report = build_freshness_report(today=datetime.now(ZoneInfo("Asia/Kolkata")).date())
+    if not report["ready"]:
+        stale_labels = ", ".join(
+            f"{finding['state_id']}:{finding['source_label']}" for finding in report["stale"]
+        )
+        raise RuntimeError(f"official source metadata is stale: {stale_labels}")
 
 
 def verify_pwa_installability() -> None:

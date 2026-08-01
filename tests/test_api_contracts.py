@@ -30,6 +30,9 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     assert mh["schedule_provenance"]["confidence"] == "official"
     assert mh["schedule_provenance"]["source_type"] == "official_portal"
     assert mh["official_sources"][0]["last_verified"] == "2026-08-01"
+    assert mh["official_sources"][0]["freshness"] == "fresh"
+    assert mh["official_sources"][0]["age_days"] == 0
+    assert mh["source_freshness_policy_days"] == 7
     assert mh["current_phase"] == "pre_draft_publication"
     assert mh["sir_schedule"]["current_phase"] == "pre_draft_publication"
 
@@ -38,6 +41,7 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     assert ap["current_phase"] == "schedule_unverified"
     assert ap["schedule_provenance"]["confidence"] == "unverified"
     assert ap["sir_schedule"]["final_roll_date"] is None
+    assert ap["source_freshness_policy_days"] == 90
 
 
 def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:

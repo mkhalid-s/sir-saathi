@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
+from pipeline.sir_saathi_pipeline.source_freshness import assess_source, freshness_window_days
 
 from .models import InternalVoterRecord
 from .pilot_data import load_sanitized_pilot_records
@@ -87,9 +88,12 @@ def list_states_payload(*, today: date | None = None) -> list[dict[str, Any]]:
                     "url": source.url,
                     "source_type": source.source_type,
                     "last_verified": source.last_verified.isoformat(),
+                    "freshness": assess_source(state, source, effective_date).as_dict()["status"],
+                    "age_days": assess_source(state, source, effective_date).age_days,
                 }
                 for source in state.official_sources
             ],
+            "source_freshness_policy_days": freshness_window_days(state, effective_date),
         }
         for state in states.values()
     ]

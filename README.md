@@ -156,6 +156,7 @@ Common local checks:
 
 ```sh
 python scripts/check_sensitive.py
+python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest
 npm audit --workspace apps/web
 npm run web:build
