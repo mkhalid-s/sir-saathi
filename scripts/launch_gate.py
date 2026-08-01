@@ -112,6 +112,10 @@ def verify_pwa_installability() -> None:
         raise RuntimeError("PWA layout must register the service worker")
     if "APP_SHELL_URLS" not in service_worker or "url.pathname.startsWith('/api/')" not in service_worker:
         raise RuntimeError("service worker must cache the app shell and avoid API caching")
+    if "response.ok && response.type === 'basic'" not in service_worker:
+        raise RuntimeError("service worker must not cache failed or opaque responses")
+    if 'class="skip-link" href="#main-content"' not in layout:
+        raise RuntimeError("web layout must provide keyboard skip navigation")
 
 
 def verify_ui_language_readiness() -> None:

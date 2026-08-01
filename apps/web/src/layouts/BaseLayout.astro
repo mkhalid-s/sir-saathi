@@ -1,18 +1,24 @@
 ---
 import '../styles/global.css';
-const { title = 'SIR Saathi' } = Astro.props;
+const {
+  title = 'SIR Saathi',
+  description = 'Privacy-conscious voter guidance, official links, and state-specific SIR status for India.'
+} = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Mobile-first SIR guidance and selective voter-roll support." />
+    <meta name="description" content={description} />
     <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="light" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
     <title>{title}</title>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <slot />
     <script>
       if ('serviceWorker' in navigator) {

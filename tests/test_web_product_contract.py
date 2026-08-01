@@ -253,3 +253,14 @@ def test_pwa_registers_offline_app_shell_service_worker() -> None:
     assert "APP_SHELL_URLS" in service_worker
     assert "'/privacy/'" in service_worker
     assert "url.pathname.startsWith('/api/')" in service_worker
+    assert "response.ok && response.type === 'basic'" in service_worker
+
+
+def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    styles = (ROOT / "apps/web/src/styles/global.css").read_text(encoding="utf-8")
+    assert 'class="skip-link" href="#main-content"' in layout
+    assert ":focus-visible" in styles
+    for page in (ROOT / "apps/web/src/pages").rglob("*.astro"):
+        if page.name == "[stateId].astro" or page.parent == ROOT / "apps/web/src/pages":
+            assert 'id="main-content"' in page.read_text(encoding="utf-8")

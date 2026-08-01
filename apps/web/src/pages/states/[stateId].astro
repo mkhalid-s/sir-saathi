@@ -22,8 +22,11 @@ const scheduleItems = [
 ].filter((item): item is [string, string] => Boolean(item[1]));
 const guideUrl = `/?state=${encodeURIComponent(state.stateId)}#guidance`;
 ---
-<BaseLayout title={`${state.name} voter guide · SIR Saathi`}>
-  <main class="shell content-page state-page">
+<BaseLayout
+  title={`${state.name} voter guide · SIR Saathi`}
+  description={`${state.name} voter guidance, current revision status, schedule provenance, official CEO link, and privacy-safe next steps.`}
+>
+  <main class="shell content-page state-page" id="main-content">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/">SIR Saathi</a><span aria-hidden="true">/</span><span>{state.name}</span>
     </nav>

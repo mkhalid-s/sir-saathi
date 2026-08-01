@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sir-saathi-app-shell-v1';
+const CACHE_NAME = 'sir-saathi-app-shell-v2';
 const APP_SHELL_URLS = [
   '/',
   '/privacy/',
@@ -30,8 +30,10 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        if (response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
         return response;
       })
       .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
