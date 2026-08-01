@@ -10,6 +10,8 @@ The first API surface is intentionally small and served under the `/api` prefix:
 
 Name search fails closed unless the request is explicitly using the sanitized pilot fixture or a future state has passed public launch readiness. Public search must be scoped by Assembly Constituency; `part_number` can only narrow a search when `ac_number` is also present.
 
+The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with reviewer identity and timestamp. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
+
 `GET /api/states` exposes canonical state metadata, including structured SIR schedule dates, CEO portal, official source labels, URLs, types, and `last_verified` dates so clients can show deadlines and source freshness.
 
 `GET /api/forms` exposes the canonical SIR form catalogue and common document categories from `config/forms/sir-actions.json`.

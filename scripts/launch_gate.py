@@ -71,6 +71,14 @@ def verify_abuse_protection() -> None:
         raise RuntimeError("Turnstile must be verified server-side with hostname and action checks")
     if "configured_abuse_verifier" not in app or "abuse_verification_passed=verification_passed" not in app:
         raise RuntimeError("public search route must use only server-owned abuse verification")
+    backend = (ROOT / "services/api/search_backend.py").read_text(encoding="utf-8")
+    schema = (ROOT / "db/schema.sql").read_text(encoding="utf-8")
+    if "public_search_scopes" not in backend or "scope.enabled = TRUE" not in backend:
+        raise RuntimeError("database search must use the reviewed exact-scope allowlist")
+    if "public_search_scopes" not in schema or "reviewed_by TEXT NOT NULL" not in schema:
+        raise RuntimeError("public search scope activation must retain reviewer metadata")
+    if "search_backend=search_backend" not in app:
+        raise RuntimeError("public route must pass only its configured server-side search backend")
 
 
 def verify_source_freshness() -> None:

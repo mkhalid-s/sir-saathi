@@ -33,7 +33,8 @@ from .privacy import (
     search_rate_limit_key,
 )
 from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
-from .search import SearchRequest, search_records
+from .search import SearchRequest, redact_backend_results, search_records
+from .search_backend import SearchBackend, configured_search_backend
 
 try:  # FastAPI is installed in deployment/CI environments.
     from fastapi import FastAPI, HTTPException, Request
@@ -167,6 +168,7 @@ def search_payload(
     rate_limiter: InMemoryRateLimiter | None = None,
     client_identity: str | None = None,
     abuse_verification_passed: bool = False,
+    search_backend: SearchBackend | None = None,
 ) -> dict[str, Any]:
     validated = _search_request(payload)
     states = load_all_states()
@@ -193,11 +195,15 @@ def search_payload(
         assert_rate_limit_allowed(rate_limiter.check(key))
     if records is None:
         if not validated.use_sanitized_pilot:
-            raise ValueError("no public search backend is enabled")
-        record_source = list(load_sanitized_pilot_records())
+            if search_backend is None:
+                raise ValueError("no public search backend is enabled")
+            results = redact_backend_results(request, search_backend.search(request))
+        else:
+            record_source = list(load_sanitized_pilot_records())
+            results = search_records(request, record_source)
     else:
         record_source = list(records)
-    results = search_records(request, record_source)
+        results = search_records(request, record_source)
     response = SearchResponsePayload(results=[record.to_dict() for record in results], count=len(results))
     return response.model_dump()
 
@@ -216,7 +222,7 @@ def configured_abuse_verifier() -> AbuseVerifier | None:
     )
 
 
-def create_app(*, abuse_verifier: AbuseVerifier | None = None):
+def create_app(*, abuse_verifier: AbuseVerifier | None = None, search_backend: SearchBackend | None = None):
     if FastAPI is None:
         raise RuntimeError("FastAPI is required to create the API app")
 
@@ -257,6 +263,7 @@ def create_app(*, abuse_verifier: AbuseVerifier | None = None):
                 rate_limiter=DEFAULT_SEARCH_RATE_LIMITER,
                 client_identity=client_host,
                 abuse_verification_passed=verification_passed,
+                search_backend=search_backend,
             )
         except RateLimitExceeded as exc:
             raise HTTPException(status_code=429, detail=str(exc)) from exc
@@ -266,4 +273,11 @@ def create_app(*, abuse_verifier: AbuseVerifier | None = None):
     return app
 
 
-app = create_app(abuse_verifier=configured_abuse_verifier()) if FastAPI is not None else None
+app = (
+    create_app(
+        abuse_verifier=configured_abuse_verifier(),
+        search_backend=configured_search_backend(),
+    )
+    if FastAPI is not None
+    else None
+)

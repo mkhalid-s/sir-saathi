@@ -44,3 +44,17 @@ def search_records(request: SearchRequest, records: list[InternalVoterRecord]) -
             matches.append(record)
     matches = sorted(matches, key=lambda item: (-item.confidence, item.serial_number or 0))
     return [redact_voter_record(record) for record in matches[: request.limit]]
+
+
+def redact_backend_results(request: SearchRequest, records: list[InternalVoterRecord]) -> list[PublicVoterRecord]:
+    """Redact already-ranked backend rows and reject any scope/limit contract breach."""
+
+    validate_search_scope(request)
+    if len(records) > request.limit:
+        raise ValueError("search backend returned more than the requested limit")
+    for record in records:
+        if record.state_id != request.state_id or record.ac_number != request.ac_number:
+            raise ValueError("search backend returned a record outside the requested state/AC scope")
+        if request.part_number is not None and record.part_number != request.part_number:
+            raise ValueError("search backend returned a record outside the requested part scope")
+    return [redact_voter_record(record) for record in records]

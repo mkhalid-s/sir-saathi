@@ -16,6 +16,7 @@ Before any public launch:
 - Public indexed search requires official schedule provenance, not reported-only dates.
 - Public search has rate limiting and abuse protection; production multi-process deployments use a shared limiter store.
 - Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
+- Every enabled database search scope pins an exact roll version and versioned AC in `public_search_scopes`, with reviewer identity and timestamp; ingestion never enables it.
 - Official links and source freshness are visible.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.
