@@ -1,7 +1,7 @@
 from datetime import date
 
 import pytest
-from services.api.app import assistance_payload, api_route_paths, create_app, forms_payload, guidance_payload, list_states_payload, search_payload
+from services.api.app import assistance_payload, api_route_paths, create_app, forms_payload, guidance_payload, list_states_payload, locales_payload, search_payload
 from services.api.body_limit import BoundedApiBodyMiddleware, MAX_API_BODY_BYTES
 from services.api.models import InternalVoterRecord, redact_voter_record
 from services.api.privacy import InMemoryRateLimiter
@@ -14,6 +14,7 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
     assert "/api/ready" in paths
     assert "/api/states" in paths
     assert "/api/forms" in paths
+    assert "/api/locales" in paths
     assert "/api/assistance" in paths
     assert "/api/guidance" in paths
     assert "/api/search" in paths
@@ -81,6 +82,18 @@ def test_assistance_payload_exposes_only_governed_official_channels() -> None:
     assert fallback["locale_requested"] == "mr"
     assert fallback["locale_used"] == "en"
     assert fallback["locale_fallback"] is True
+
+
+def test_locales_payload_exposes_publishability_without_review_identities() -> None:
+    payload = locales_payload()
+    assert payload["locale_count"] == 17
+    assert payload["available_count"] == 1
+    assert payload["planned_or_blocked_count"] == 16
+    assert len(payload["locales"]) == 17
+    assert next(item for item in payload["locales"] if item["code"] == "en")["public_route_available"] is True
+    assert next(item for item in payload["locales"] if item["code"] == "ur")["direction"] == "rtl"
+    assert "reviewed_by" not in str(payload)
+    assert "translated_by" not in str(payload)
 
 
 def test_api_locale_negotiation_is_explicit_and_fail_closed() -> None:

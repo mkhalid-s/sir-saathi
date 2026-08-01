@@ -43,7 +43,7 @@ def test_csp_audit_rejects_tampering_unsafe_sources_and_inline_attributes() -> N
 
 def test_generated_nationwide_site_has_valid_hash_only_csp() -> None:
     report = audit_directory(ROOT / "apps/web/dist")
-    assert report["page_count"] == 41
+    assert report["page_count"] == 42
     assert report["inline_script_hash_count"] >= 1
     assert report["inline_style_hash_count"] >= 1
     assert report["passed"] is True

@@ -1,0 +1,52 @@
+---
+import localeRegistry from '../../../../config/locales.json';
+import { hasEnabledCatalogue, localizedPath, translate, type MessageKey } from '../lib/i18n';
+import LocaleSwitcher from './LocaleSwitcher.astro';
+
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
+const languages = localeRegistry.locales.map((item) => ({
+  ...item,
+  activationStatus: hasEnabledCatalogue(item.code)
+    ? 'available'
+    : item.status === 'planned' ? 'planned' : 'blocked'
+}));
+const availableCount = languages.filter((item) => item.activationStatus === 'available').length;
+---
+<main class="shell content-page language-page" id="main-content">
+  <LocaleSwitcher locale={locale} currentPath="/languages/" />
+  <h1>{message('languages.title')}</h1>
+  <p>{message('languages.intro')}</p>
+  <p class="notice">{message('languages.summary', {
+    available: availableCount,
+    planned: languages.length - availableCount
+  })}</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label={message('languages.title')}>
+    <table class="language-table">
+      <thead>
+        <tr>
+          <th scope="col">{message('languages.name')}</th>
+          <th scope="col">{message('languages.code')}</th>
+          <th scope="col">{message('languages.direction')}</th>
+          <th scope="col">{message('languages.status')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {languages.map((item) => (
+          <tr>
+            <th scope="row" lang="en">{item.label}</th>
+            <td><code>{item.code}</code></td>
+            <td>{message(item.direction === 'rtl' ? 'languages.rtl' : 'languages.ltr')}</td>
+            <td>{message(`languages.${item.activationStatus}` as MessageKey)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p>{message('languages.review_policy')}</p>
+  <p><a href={localizedPath('/', locale)}>{message('nav.back_home')}</a></p>
+</main>

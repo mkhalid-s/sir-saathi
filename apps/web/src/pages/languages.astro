@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LanguageAvailability from '../components/LanguageAvailability.astro';
+import { translate } from '../lib/i18n';
+---
+<BaseLayout title={translate('en', 'policy.meta.title', { title: translate('en', 'languages.title') })} path="/languages/">
+  <LanguageAvailability locale="en" />
+</BaseLayout>

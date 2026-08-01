@@ -23,6 +23,7 @@ REQUIRED_FILES = [
     "apps/web/src/pages/404.astro",
     "apps/web/src/pages/methodology.astro",
     "apps/web/src/pages/data-use.astro",
+    "apps/web/src/pages/languages.astro",
     "apps/web/src/pages/states/[stateId].astro",
     "config/forms/sir-actions.json",
     "config/official-assistance.json",
@@ -61,7 +62,7 @@ def verify_api_routes() -> None:
     from services.api.app import api_route_paths
 
     paths = api_route_paths()
-    required = {"/api/health", "/api/ready", "/api/states", "/api/forms", "/api/assistance", "/api/guidance", "/api/search"}
+    required = {"/api/health", "/api/ready", "/api/states", "/api/forms", "/api/locales", "/api/assistance", "/api/guidance", "/api/search"}
     missing = sorted(required - paths)
     if missing:
         raise RuntimeError(f"missing API routes: {missing}")
@@ -402,6 +403,7 @@ def verify_ui_language_readiness() -> None:
     runtime_translations = (ROOT / "pipeline/sir_saathi_pipeline/translations.py").read_text(encoding="utf-8")
     catalogue_governance = (ROOT / "pipeline/sir_saathi_pipeline/translation_catalog.py").read_text(encoding="utf-8")
     locale_switcher = (ROOT / "apps/web/src/components/LocaleSwitcher.astro").read_text(encoding="utf-8")
+    language_page = (ROOT / "apps/web/src/components/LanguageAvailability.astro").read_text(encoding="utf-8")
     if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
         raise RuntimeError("web must expose explicit UI language readiness")
     if "human review" not in messages["wizard.language_planned"]:
@@ -430,6 +432,8 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("reviewed locale navigation must preserve locale-prefixed public routes")
     if "resolve_locale" not in api or "locale_fallback" not in api or '"locale"' not in api_schema:
         raise RuntimeError("API locale negotiation must expose explicit reviewed fallback metadata")
+    if "locale_status_payload" not in api or 'f"{API_PREFIX}/locales"' not in api:
+        raise RuntimeError("API clients must be able to discover fail-closed locale availability")
     if "translate_message" not in api_guidance or "translation_readiness" not in runtime_translations:
         raise RuntimeError("API guidance must use the same fail-closed reviewed catalogue as the PWA")
     jurisdiction_keys = {key for key in messages if key.startswith("jurisdiction.")}
@@ -437,6 +441,10 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("all 36 jurisdiction display names must be governed translation keys")
     if "localizedPath(currentPath, option.code)" not in locale_switcher or "aria-current" not in locale_switcher:
         raise RuntimeError("reviewed locale switcher must preserve the current route and expose current language")
+    if "hasEnabledCatalogue(item.code)" not in language_page or 'class="language-table"' not in language_page:
+        raise RuntimeError("public language status must derive publishability from runtime catalogue validation")
+    if "languages.blocked" not in messages or "never published automatically" not in messages["languages.review_policy"]:
+        raise RuntimeError("language status must explain fail-closed human activation")
     report = translation_readiness()
     invalid_available = [
         item["locale"]

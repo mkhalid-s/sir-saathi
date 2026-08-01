@@ -55,6 +55,7 @@ The initial API is intentionally small and served under `/api`:
 - `GET /api/ready`
 - `GET /api/states`
 - `GET /api/forms`
+- `GET /api/locales`
 - `GET /api/assistance`
 - `POST /api/guidance`
 - `POST /api/search`

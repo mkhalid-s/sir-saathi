@@ -6,6 +6,7 @@ The first API surface is intentionally small and served under the `/api` prefix:
 - `GET /api/ready`
 - `GET /api/states`
 - `GET /api/forms`
+- `GET /api/locales`
 - `GET /api/assistance`
 - `POST /api/guidance`
 - `POST /api/search`
@@ -21,6 +22,8 @@ The public adapter uses a dedicated connection configuration with a three-second
 `GET /api/states` exposes canonical state metadata, including structured SIR schedule dates, CEO portal, official source labels, URLs, types, and `last_verified` dates so clients can show deadlines and source freshness.
 
 `GET /api/forms` exposes the canonical SIR form catalogue and common document categories from `config/forms/sir-actions.json`.
+
+`GET /api/locales` exposes all 17 governed language codes, labels, text directions, registry states, and fail-closed public-route availability. It reports an invalid registry-enabled catalogue as blocked, never available, and excludes draft strings, blocker details, translator names, and reviewer identities.
 
 `GET /api/assistance` exposes the canonical nationwide official-help catalogue from `config/official-assistance.json`: ECI web, phone, email, and CEO-directory destinations plus per-channel source bindings and source dates. The Citizen Service Portal, ECI Contact Us page, and ECI CEO Contact Directory support the reviewed claims. The endpoint accepts no complaint or voter data and does not proxy submissions.
 

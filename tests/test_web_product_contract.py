@@ -383,6 +383,27 @@ def test_homepage_static_content_and_reviewed_locale_routes_are_catalogue_driven
     assert "aria-current" in locale_switcher
 
 
+def test_public_language_status_page_uses_fail_closed_runtime_catalogues() -> None:
+    page = (ROOT / "apps/web/src/pages/languages.astro").read_text(encoding="utf-8")
+    component = (ROOT / "apps/web/src/components/LanguageAvailability.astro").read_text(encoding="utf-8")
+    localized = (ROOT / "apps/web/src/pages/[locale]/[policy].astro").read_text(encoding="utf-8")
+    homepage = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
+    sitemap = (ROOT / "apps/web/src/pages/sitemap.xml.ts").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    assert "LanguageAvailability" in page
+    assert "config/locales.json" in component
+    assert "hasEnabledCatalogue(item.code)" in component
+    assert "item.status === 'planned' ? 'planned' : 'blocked'" in component
+    assert '<table class="language-table">' in component
+    assert 'scope="col"' in component and 'scope="row"' in component
+    assert 'role="region"' in component and 'tabindex="0"' in component
+    assert "path: 'languages'" in localized
+    assert "localizedPath('/languages/'" in homepage
+    assert "'/languages/'" in sitemap
+    assert "human review" in messages["languages.intro"]
+    assert "never published automatically" in messages["languages.review_policy"]
+
+
 def test_jurisdiction_display_names_are_catalogue_driven_across_web_and_api() -> None:
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     directory = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
@@ -639,7 +660,7 @@ def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
     for page in (ROOT / "apps/web/src/pages").rglob("*.astro"):
         if page.name == "[stateId].astro" or page.parent == ROOT / "apps/web/src/pages":
             source = page.read_text(encoding="utf-8")
-            assert 'id="main-content"' in source or "HomeContent" in source or "PolicyContent" in source or "StateContent" in source
+            assert 'id="main-content"' in source or "HomeContent" in source or "PolicyContent" in source or "StateContent" in source or "LanguageAvailability" in source
 
 
 def test_accessibility_release_policy_covers_manual_and_automated_evidence() -> None:

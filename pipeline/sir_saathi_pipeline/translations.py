@@ -51,6 +51,44 @@ def resolve_locale(
     return LocaleResolution(requested=normalized, used=used, fallback=used != normalized)
 
 
+def locale_status_payload(
+    *,
+    locales_path: Path = DEFAULT_LOCALES_PATH,
+    catalog_dir: Path = DEFAULT_CATALOG_DIR,
+) -> dict[str, Any]:
+    """Expose safe locale activation facts without draft copy or reviewer identities."""
+
+    registry = json.loads(locales_path.read_text(encoding="utf-8"))
+    readiness = translation_readiness(locales_path=locales_path, catalog_dir=catalog_dir)
+    readiness_by_code = {item["locale"]: item for item in readiness["locales"]}
+    locales = []
+    for item in registry["locales"]:
+        report = readiness_by_code[item["code"]]
+        if report["publishable"]:
+            activation_status = "available"
+        elif item["status"] == "planned":
+            activation_status = "planned"
+        else:
+            activation_status = "blocked"
+        locales.append({
+            "code": item["code"],
+            "label": item["label"],
+            "direction": item["direction"],
+            "registry_status": item["status"],
+            "activation_status": activation_status,
+            "public_route_available": bool(report["publishable"]),
+            "human_review_required": not bool(report["publishable"]),
+        })
+    return {
+        "policy": registry["policy"],
+        "locale_count": len(locales),
+        "available_count": sum(item["public_route_available"] for item in locales),
+        "planned_or_blocked_count": sum(not item["public_route_available"] for item in locales),
+        "locales": locales,
+        "values_redacted": True,
+    }
+
+
 def translate_message(
     locale: str,
     key: str,

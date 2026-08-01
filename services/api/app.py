@@ -17,7 +17,7 @@ from pipeline.sir_saathi_pipeline.assistance_registry import load_assistance_cat
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 from pipeline.sir_saathi_pipeline.source_freshness import assess_source, freshness_window_days
-from pipeline.sir_saathi_pipeline.translations import resolve_locale, translate_message
+from pipeline.sir_saathi_pipeline.translations import locale_status_payload, resolve_locale, translate_message
 
 from .abuse_verification import (
     AbuseVerifier,
@@ -61,6 +61,7 @@ API_ROUTES = {
     f"{API_PREFIX}/ready",
     f"{API_PREFIX}/states",
     f"{API_PREFIX}/forms",
+    f"{API_PREFIX}/locales",
     f"{API_PREFIX}/assistance",
     f"{API_PREFIX}/guidance",
     f"{API_PREFIX}/search",
@@ -205,6 +206,12 @@ def assistance_payload(locale: str = "en") -> dict[str, Any]:
     }
 
 
+def locales_payload() -> dict[str, Any]:
+    """Return public locale readiness without draft strings or review identities."""
+
+    return locale_status_payload()
+
+
 def _guidance_request(payload: dict[str, Any] | GuidanceRequest) -> GuidanceRequest:
     if isinstance(payload, GuidanceRequest):
         return payload
@@ -341,6 +348,10 @@ def create_app(
     @app.get(f"{API_PREFIX}/forms")
     def forms(locale: str = "en") -> dict[str, Any]:
         return forms_payload(locale=locale)
+
+    @app.get(f"{API_PREFIX}/locales")
+    def locales() -> dict[str, Any]:
+        return locales_payload()
 
     @app.get(f"{API_PREFIX}/assistance")
     def assistance(locale: str = "en") -> dict[str, Any]:

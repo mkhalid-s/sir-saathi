@@ -688,6 +688,30 @@ a {
   line-height: 1.7;
 }
 
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: 1.5rem;
+}
+
+.language-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+}
+
+.language-table th,
+.language-table td {
+  border: 1px solid var(--color-soft-border);
+  padding: 0.75rem;
+  text-align: start;
+  vertical-align: top;
+}
+
+.language-table thead th {
+  background: var(--color-canvas);
+}
+
 .question-grid {
   display: grid;
   gap: 1rem;

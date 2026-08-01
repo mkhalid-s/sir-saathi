@@ -1,12 +1,14 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PolicyContent from '../../components/PolicyContent.astro';
+import LanguageAvailability from '../../components/LanguageAvailability.astro';
 import { availableLocales, translate, type UiDirection } from '../../lib/i18n';
 
 const policies = [
   { path: 'privacy', titleKey: 'privacy.title' },
   { path: 'methodology', titleKey: 'methodology.title' },
-  { path: 'data-use', titleKey: 'data_use.title' }
+  { path: 'data-use', titleKey: 'data_use.title' },
+  { path: 'languages', titleKey: 'languages.title' }
 ] as const;
 
 export function getStaticPaths() {
@@ -33,5 +35,7 @@ const title = translate(locale.code, policy.titleKey);
   skipLabel={translate(locale.code, 'nav.skip')}
   path={`/${policy.path}/`}
 >
-  <PolicyContent page={policy.path} locale={locale.code} />
+  {policy.path === 'languages'
+    ? <LanguageAvailability locale={locale.code} />
+    : <PolicyContent page={policy.path} locale={locale.code} />}
 </BaseLayout>
