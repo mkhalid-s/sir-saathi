@@ -88,8 +88,16 @@ def test_web_state_summary_surfaces_source_freshness() -> None:
     assert "last_verified" in source
     assert "sourceFreshness" in source
     assert "scheduleProvenance" in source
+    assert "url: scheduleSource.url" in source
     assert "last checked" in source
     assert "timeZone: 'Asia/Kolkata'" in source
+
+
+def test_state_pages_link_directly_to_schedule_evidence() -> None:
+    page = (ROOT / "apps/web/src/pages/states/[stateId].astro").read_text(encoding="utf-8")
+    assert "state.scheduleProvenance.url" in page
+    assert 'target="_blank"' in page
+    assert 'rel="noreferrer"' in page
 
 
 def test_web_state_summary_derives_current_schedule_phase() -> None:

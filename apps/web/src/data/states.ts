@@ -75,6 +75,7 @@ export interface StateSummary {
   sourceFreshness: string[];
   scheduleProvenance: {
     label: string;
+    url: string;
     confidence: 'official' | 'reported' | 'unverified';
     notes: string;
   };
@@ -154,6 +155,10 @@ export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLangu
 
 function stateFromConfig(config: StateConfig): StateSummary {
   const currentPhase = currentPhaseForSchedule(config.sir_schedule);
+  const scheduleSource = config.official_sources.find(
+    (source) => source.label === config.schedule_provenance.label
+  );
+  if (!scheduleSource) throw new Error(`Missing schedule source for ${config.state_id}`);
   return {
     stateId: config.state_id,
     name: config.name,
@@ -173,6 +178,7 @@ function stateFromConfig(config: StateConfig): StateSummary {
     sourceFreshness: config.official_sources.map((source) => `${source.label}: last checked ${displayDate(source.last_verified)}`),
     scheduleProvenance: {
       label: config.schedule_provenance.label,
+      url: scheduleSource.url,
       confidence: config.schedule_provenance.confidence,
       notes: config.schedule_provenance.notes
     }
@@ -197,6 +203,7 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     sourceFreshness: [`${source.label}: last checked ${displayDate(source.last_verified)}`],
     scheduleProvenance: {
       label: source.label,
+      url: source.url,
       confidence: 'unverified',
       notes: `ECI's directory lists this official CEO link, but ${config.name}'s current SIR schedule has not yet been independently confirmed.`
     }
@@ -219,6 +226,7 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     ],
     scheduleProvenance: {
       label: scheduleSource.label,
+      url: scheduleSource.url,
       confidence: 'official',
       notes: scheduleSource.notes ?? ''
     }
