@@ -1,0 +1,49 @@
+---
+import { localizedPath, translate, type MessageKey } from '../lib/i18n';
+
+type PolicyPage = 'privacy' | 'methodology' | 'data-use';
+
+interface Props {
+  page: PolicyPage;
+  locale: string;
+}
+
+const { page, locale } = Astro.props;
+const message = (key: MessageKey) => translate(locale, key);
+const privacyItems: MessageKey[] = [
+  'privacy.item.accounts', 'privacy.item.uploads', 'privacy.item.raw',
+  'privacy.item.search', 'privacy.item.provenance', 'privacy.item.share'
+];
+const methodologyItems: MessageKey[] = [
+  'methodology.item.sources', 'methodology.item.confirm', 'methodology.item.guidance',
+  'methodology.item.promote', 'methodology.item.fallback', 'methodology.item.share'
+];
+---
+<main class="shell content-page" id="main-content">
+  {page === 'privacy' && (
+    <>
+      <h1>{message('privacy.title')}</h1>
+      <p>{message('privacy.intro')}</p>
+      <ul>{privacyItems.map((key) => <li>{message(key)}</li>)}</ul>
+      <p>{message('privacy.closing')}</p>
+    </>
+  )}
+  {page === 'methodology' && (
+    <>
+      <h1>{message('methodology.title')}</h1>
+      <p>{message('methodology.intro')}</p>
+      <ol>{methodologyItems.map((key) => <li>{message(key)}</li>)}</ol>
+    </>
+  )}
+  {page === 'data-use' && (
+    <>
+      <h1>{message('data_use.title')}</h1>
+      <p>{message('data_use.public_risk')}</p>
+      <p>{message('data_use.prohibited')}</p>
+      <p>{message('data_use.purpose')}</p>
+      <p>{message('data_use.launch')}</p>
+      <p>{message('data_use.share')}</p>
+    </>
+  )}
+  <p><a href={localizedPath('/', locale)}>{message('nav.back_home')}</a></p>
+</main>

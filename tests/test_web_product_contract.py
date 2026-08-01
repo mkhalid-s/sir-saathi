@@ -38,11 +38,12 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
 
 
 def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
-    page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    page_source = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
     wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     indexed_source = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
-    assert "Find my name safely" in page_source
+    assert "home.hero.find" in page_source
+    assert "Find my name safely" in messages["home.hero.find"]
     assert 'href="#find-name"' in page_source
     assert 'id="find-name"' in wizard_source
     assert "Start with a safe official check" in messages["find.title"]
@@ -94,7 +95,7 @@ def test_web_state_summary_surfaces_source_freshness() -> None:
 
 
 def test_state_pages_link_directly_to_schedule_evidence() -> None:
-    page = (ROOT / "apps/web/src/pages/states/[stateId].astro").read_text(encoding="utf-8")
+    page = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")
     assert "state.scheduleProvenance.url" in page
     assert 'target="_blank"' in page
     assert 'rel="noreferrer"' in page
@@ -144,12 +145,16 @@ def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> Non
 
 def test_web_builds_a_shareable_page_for_every_jurisdiction() -> None:
     page = (ROOT / "apps/web/src/pages/states/[stateId].astro").read_text(encoding="utf-8")
+    content = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")
     directory = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "getStaticPaths" in page
     assert "states.map" in page
-    assert "No current SIR schedule has been independently confirmed" in page
-    assert "Get my action checklist" in page
+    assert "state.schedule.unverified" in content
+    assert "No current SIR schedule has been independently confirmed" in messages["state.schedule.unverified"]
+    assert "state.get_checklist" in content
+    assert messages["state.get_checklist"] == "Get my action checklist"
     assert "statePath(state)" in directory
     assert "const params = new URLSearchParams(window.location.search)" in wizard
     assert "params.get('state')" in wizard
@@ -159,7 +164,8 @@ def test_wizard_deadlines_advance_with_the_current_phase() -> None:
     source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     assert "state.currentPhase === 'pre_enumeration'" in source
     assert "state.currentPhase === 'pre_draft_publication'" in source
-    assert "return state.claimsEnd ?? state.finalRollDate" in source
+    assert "state.claimsEndIso ?? state.finalRollDateIso" in source
+    assert "formatIndiaDate(value, locale)" in source
 
 
 def test_web_surfaces_reviewed_ui_language_readiness() -> None:
@@ -186,7 +192,8 @@ def test_reviewed_ui_language_is_restored_and_shareable_without_enabling_drafts(
     assert "params.get('lang') ?? storedLanguage" in wizard
     assert "hasEnabledCatalogue(preferredLanguage)" in wizard
     assert "window.localStorage.setItem" in wizard
-    assert "url.searchParams.set('lang', uiLanguage)" in wizard
+    assert "navigateToLocale(preferredLanguage, true)" in wizard
+    assert "localizedPath(suffix, locale)" in wizard
     assert "url.searchParams.delete('lang')" in wizard
     assert "window.history.replaceState" in wizard
 
@@ -222,14 +229,41 @@ def test_wizard_controls_and_generated_guidance_are_catalogue_driven() -> None:
     assert "guidanceFor(answers, state, uiLanguage)" in wizard
 
 
+def test_homepage_static_content_and_reviewed_locale_routes_are_catalogue_driven() -> None:
+    homepage = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
+    route = (ROOT / "apps/web/src/pages/[locale]/index.astro").read_text(encoding="utf-8")
+    directory = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
+    forms = (ROOT / "apps/web/src/components/FormsReference.astro").read_text(encoding="utf-8")
+    assert "translate(locale" in homepage
+    assert '<ActionWizard initialLocale={locale}' in homepage
+    assert "availableLocales" in route
+    assert "locale.code !== 'en'" in route
+    assert "lang={locale.code}" in route
+    assert "dir={locale.direction}" in route
+    assert "directory.search.not_ready" in directory
+    assert "forms.${form.formId}.purpose" in forms
+    state_route = (ROOT / "apps/web/src/pages/[locale]/states/[stateId].astro").read_text(encoding="utf-8")
+    policy_route = (ROOT / "apps/web/src/pages/[locale]/[policy].astro").read_text(encoding="utf-8")
+    state_content = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")
+    assert "availableLocales" in state_route and "flatMap" in state_route
+    assert "availableLocales" in policy_route and "policies.map" in policy_route
+    assert "localizedPath(statePath(previousState), locale)" in state_content
+    assert "formatIndiaDate(value!, locale)" in state_content
+
+
+def test_web_runtime_revalidates_catalogues_before_generating_locale_routes() -> None:
+    i18n = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
+    assert "catalogueIsRuntimeReady" in i18n
+    assert "catalogue.schema_version !== 1" in i18n
+    assert "referenceKeys.length !== candidateKeys.length" in i18n
+    assert "placeholders(englishCatalog.messages[key])" in i18n
+    assert "catalogue.review?.status === 'reviewed'" in i18n
+    assert "catalogue.review.reviewed_by?.trim()" in i18n
+
+
 def test_web_copy_does_not_overstate_source_certainty() -> None:
-    web_sources = [
-        ROOT / "apps/web/src/data/states.ts",
-        ROOT / "apps/web/src/components/ActionWizard.tsx",
-        ROOT / "apps/web/src/pages/methodology.astro",
-        ROOT / "config/translations/en.json",
-    ]
-    combined = "\n".join(path.read_text(encoding="utf-8") for path in web_sources)
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    combined = "\n".join(messages.values())
     assert "verified " not in combined.casefold()
     assert "confirm deadlines and eligibility" in combined
 
@@ -239,13 +273,15 @@ def test_public_pages_surface_privacy_launch_rules() -> None:
     privacy = (ROOT / "apps/web/src/pages/privacy.astro").read_text(encoding="utf-8")
     data_use = (ROOT / "apps/web/src/pages/data-use.astro").read_text(encoding="utf-8")
     methodology = (ROOT / "apps/web/src/pages/methodology.astro").read_text(encoding="utf-8")
-    combined = "\n".join([privacy_doc, privacy, data_use, methodology])
+    policy_component = (ROOT / "apps/web/src/components/PolicyContent.astro").read_text(encoding="utf-8")
+    translations = (ROOT / "config/translations/en.json").read_text(encoding="utf-8")
+    combined = "\n".join([privacy_doc, privacy, data_use, methodology, policy_component, translations])
     assert "schedule provenance comes from an official source" in combined
     assert "official schedule provenance" in combined
     assert "Shared checklists must not include EPIC" in privacy_doc
-    assert "Shared checklists should not include EPIC, address" in privacy
-    assert "Forwarded checklists should stay generic" in data_use
-    assert "Keep shared checklists free of EPIC, address" in methodology
+    assert "Shared checklists should not include EPIC, address" in translations
+    assert "Forwarded checklists should stay generic" in translations
+    assert "Keep shared checklists free of EPIC, address" in translations
 
 
 def test_web_guidance_escalates_sir_risk_signals() -> None:
@@ -279,37 +315,47 @@ def test_web_guidance_covers_backend_supported_situations() -> None:
 def test_web_guidance_imports_canonical_forms_catalogue() -> None:
     forms_source = (ROOT / "apps/web/src/data/forms.ts").read_text(encoding="utf-8")
     guidance_source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    forms = json.loads((ROOT / "config/forms/sir-actions.json").read_text(encoding="utf-8"))["forms"]
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "../../../../config/forms/sir-actions.json" in forms_source
-    assert "formLabel('form_6')" in guidance_source
-    assert "formLabel('form_7')" in guidance_source
-    assert "formLabel('form_8')" in guidance_source
+    for form_id in ("form_6", "form_7", "form_8"):
+        assert f"form('{form_id}')" in guidance_source
+        assert messages[f"forms.{form_id}.label"] == forms[form_id]["label"]
     assert "document.identity" in guidance_source
     assert "document.address" in guidance_source
     assert "document.age" in guidance_source
 
 
 def test_homepage_surfaces_canonical_forms_reference() -> None:
-    page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    page_source = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
     component_source = (ROOT / "apps/web/src/components/FormsReference.astro").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "FormsReference" in page_source
     assert "../data/forms" in component_source
-    assert "Official form guide" in component_source
-    assert "Common document categories" in component_source
+    assert "forms.eyebrow" in component_source
+    assert messages["forms.eyebrow"] == "Official form guide"
+    assert "forms.common_categories" in component_source
+    assert messages["forms.common_categories"] == "Common document categories"
 
 
 def test_homepage_surfaces_privacy_safe_search_availability() -> None:
-    page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    page_source = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
     component_source = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "SearchAvailability" in page_source
     assert "../data/states" in component_source
-    assert "Indexed public search is not launch-ready" in component_source
-    assert "Schedule provenance:" in component_source
-    assert "current schedule is verified from an official source" in component_source
+    assert "directory.search.not_ready" in component_source
+    assert "Indexed public search is not launch-ready" in messages["directory.search.not_ready"]
+    assert "directory.provenance" in component_source
+    assert messages["directory.provenance"].startswith("Schedule provenance:")
+    assert "directory.search.unverified" in component_source
+    assert "provenance is confirmed from an official source" in messages["directory.search.unverified"]
     assert "state.scheduleProvenance.confidence !== 'official'" in component_source
-    assert "rate limits" in component_source
+    assert "rate limits" in messages["directory.intro"]
     assert "publicLaunchReady" in component_source
     assert "coverage-summary" in component_source
-    assert "View status for all" in component_source
+    assert "directory.view_all" in component_source
+    assert messages["directory.view_all"].startswith("View status for all")
 
 
 def test_pwa_manifest_is_installable() -> None:
@@ -330,6 +376,8 @@ def test_pwa_registers_offline_app_shell_service_worker() -> None:
     assert "'/privacy/'" in service_worker
     assert "url.pathname.startsWith('/api/')" in service_worker
     assert "response.ok && response.type === 'basic'" in service_worker
+    assert "localizedHome" in service_worker
+    assert "caches.match(`/${firstSegment}/`)" in service_worker
 
 
 def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
@@ -339,7 +387,8 @@ def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
     assert ":focus-visible" in styles
     for page in (ROOT / "apps/web/src/pages").rglob("*.astro"):
         if page.name == "[stateId].astro" or page.parent == ROOT / "apps/web/src/pages":
-            assert 'id="main-content"' in page.read_text(encoding="utf-8")
+            source = page.read_text(encoding="utf-8")
+            assert 'id="main-content"' in source or "HomeContent" in source or "PolicyContent" in source or "StateContent" in source
 
 
 def test_accessibility_release_policy_covers_manual_and_automated_evidence() -> None:

@@ -1,0 +1,46 @@
+---
+import ActionWizard from './ActionWizard';
+import FormsReference from './FormsReference.astro';
+import SearchAvailability from './SearchAvailability.astro';
+import { localizedPath, translate } from '../lib/i18n';
+
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const message = (key: Parameters<typeof translate>[1], values: Parameters<typeof translate>[2] = {}) => translate(locale, key, values);
+---
+<main class="shell" id="main-content">
+  <section class="hero">
+    <p class="eyebrow">{message('home.hero.eyebrow')}</p>
+    <h1 class="hero-title">{message('app.tagline')}</h1>
+    <p class="hero-copy">{message('home.hero.copy')}</p>
+    <div class="hero-actions">
+      <a class="primary-button light" href="#find-name">{message('home.hero.find')}</a>
+      <a class="secondary-button light" href="#guidance">{message('home.hero.steps')}</a>
+    </div>
+  </section>
+  <ActionWizard initialLocale={locale} client:load />
+  <SearchAvailability locale={locale} />
+  <FormsReference locale={locale} />
+  <section class="info-grid">
+    <div class="info-card">
+      <h2>{message('home.info.guidance_title')}</h2>
+      <p>{message('home.info.guidance_copy')}</p>
+    </div>
+    <div class="info-card">
+      <h2>{message('home.info.search_title')}</h2>
+      <p>{message('home.info.search_copy')}</p>
+    </div>
+    <div class="info-card">
+      <h2>{message('home.info.official_title')}</h2>
+      <p>{message('home.info.official_copy')}</p>
+    </div>
+  </section>
+  <footer class="actions" aria-label={message('nav.project_links')}>
+    <a class="secondary-button" href={localizedPath('/privacy/', locale)}>{message('nav.privacy')}</a>
+    <a class="secondary-button" href={localizedPath('/methodology/', locale)}>{message('nav.methodology')}</a>
+    <a class="secondary-button" href={localizedPath('/data-use/', locale)}>{message('nav.data_use')}</a>
+  </footer>
+</main>

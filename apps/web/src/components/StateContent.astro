@@ -1,0 +1,87 @@
+---
+import { localizedPath, translate, type MessageKey } from '../lib/i18n';
+import { formatIndiaDate, statePath, states, type StateSummary } from '../data/states';
+
+interface Props {
+  state: StateSummary;
+  locale: string;
+}
+
+const { state, locale } = Astro.props;
+const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
+const hasScheduleDates = Boolean(state.enumerationEndIso || state.claimsEndIso || state.finalRollDateIso);
+const scheduleItems: [MessageKey, string | undefined][] = [
+  ['state.schedule.enumeration_end', state.enumerationEndIso],
+  ['state.schedule.claims_end', state.claimsEndIso],
+  ['state.schedule.final_roll', state.finalRollDateIso]
+];
+const localizedSourceFreshness = state.sourceChecks.map((source) => message('state.schedule.source_checked_item', {
+  label: source.label,
+  date: formatIndiaDate(source.date, locale)
+}));
+const guideUrl = `${localizedPath('/', locale)}?state=${encodeURIComponent(state.stateId)}#guidance`;
+const previousState = states[(states.indexOf(state) - 1 + states.length) % states.length];
+const nextState = states[(states.indexOf(state) + 1) % states.length];
+---
+<main class="shell content-page state-page" id="main-content">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href={localizedPath('/', locale)}>{message('state.breadcrumb')}</a><span aria-hidden="true">/</span><span aria-current="page" dir="auto">{state.name}</span>
+  </nav>
+
+  <section class="state-hero">
+    <p class="eyebrow">{message('state.eyebrow')}</p>
+    <h1 dir="auto">{state.name}</h1>
+    <p>{message('state.intro')}</p>
+    <div class="actions">
+      <a class="primary-button light" href={guideUrl}>{message('state.get_checklist')}</a>
+      <a class="secondary-button light" href={state.officialLink} target="_blank" rel="noreferrer">{message('state.open_portal')}</a>
+    </div>
+  </section>
+
+  <section class="state-facts" aria-labelledby="status-title">
+    <div>
+      <p class="eyebrow dark">{message('state.current_status')}</p>
+      <h2 id="status-title">{message(`status.${state.currentPhase}` as MessageKey)}</h2>
+      <p lang="en">{state.scheduleProvenance.notes}</p>
+    </div>
+    <dl>
+      <div><dt>{message('state.coverage')}</dt><dd>{message('state.coverage_value')}</dd></div>
+      <div><dt>{message('state.schedule_confidence')}</dt><dd>{state.scheduleProvenance.confidence}</dd></div>
+      <div><dt>{message('state.indexed_search')}</dt><dd>{message(state.publicLaunchReady ? 'state.launch_ready' : 'state.not_enabled')}</dd></div>
+    </dl>
+  </section>
+
+  <section class="state-section" aria-labelledby="schedule-title">
+    <h2 id="schedule-title">{message('state.schedule.title')}</h2>
+    {hasScheduleDates ? (
+      <dl class="schedule-list">
+        {scheduleItems.filter(([, value]) => Boolean(value)).map(([key, value]) => <div><dt>{message(key)}</dt><dd>{formatIndiaDate(value!, locale)}</dd></div>)}
+      </dl>
+    ) : (
+      <p>{message(state.currentPhase === 'schedule_pending' ? 'state.schedule.pending' : 'state.schedule.unverified')}</p>
+    )}
+    <p class="source-note">{message('state.schedule.source', { label: state.scheduleProvenance.label, confidence: state.scheduleProvenance.confidence })} <a href={state.scheduleProvenance.url} target="_blank" rel="noreferrer">{message('state.schedule.open_source')}</a></p>
+    <p class="source-note">{message('state.schedule.sources_checked', { sources: localizedSourceFreshness.join('; ') })}</p>
+  </section>
+
+  <section class="state-section" aria-labelledby="language-title">
+    <h2 id="language-title">{message('state.language.title')}</h2>
+    <p>{message('state.language.tracked', { languages: state.languages.join(', '), default_language: state.defaultLanguage })}</p>
+    <p>{message('state.language.review')}</p>
+  </section>
+
+  <section class="state-section safety-panel" aria-labelledby="safety-title">
+    <h2 id="safety-title">{message('state.safety.title')}</h2>
+    <p>{message('state.safety.copy')}</p>
+    <div class="actions">
+      <a class="primary-button" href={guideUrl}>{message('state.safety.start', { state: state.name })}</a>
+      <a class="secondary-button" href={localizedPath('/privacy/', locale)}>{message('state.safety.privacy')}</a>
+    </div>
+  </section>
+
+  <nav class="state-neighbours" aria-label={message('state.nav.other')}>
+    <a href={localizedPath(statePath(previousState), locale)}>{message('state.nav.previous')}</a>
+    <a href={`${localizedPath('/', locale)}#search-availability-title`}>{message('state.nav.all')}</a>
+    <a href={localizedPath(statePath(nextState), locale)}>{message('state.nav.next')}</a>
+  </nav>
+</main>

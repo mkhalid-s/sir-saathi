@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import StateContent from '../../../components/StateContent.astro';
+import { states, type StateSummary } from '../../../data/states';
+import { availableLocales, translate, type UiDirection } from '../../../lib/i18n';
+
+export function getStaticPaths() {
+  return availableLocales
+    .filter((locale) => locale.code !== 'en')
+    .flatMap((locale) => states.map((state) => ({
+      params: { locale: locale.code, stateId: state.stateId.toLowerCase() },
+      props: { locale, state }
+    })));
+}
+
+interface Props {
+  locale: { code: string; label: string; direction: UiDirection };
+  state: StateSummary;
+}
+
+const { locale, state } = Astro.props;
+---
+<BaseLayout
+  title={translate(locale.code, 'state.meta.title', { state: state.name })}
+  description={translate(locale.code, 'state.meta.description', { state: state.name })}
+  lang={locale.code}
+  dir={locale.direction}
+  skipLabel={translate(locale.code, 'nav.skip')}
+>
+  <StateContent state={state} locale={locale.code} />
+</BaseLayout>

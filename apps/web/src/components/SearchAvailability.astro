@@ -1,21 +1,29 @@
 ---
 import { statePath, states } from '../data/states';
+import { localizedPath, translate, type MessageKey } from '../lib/i18n';
 
-function capabilityLabel(capability: string): string {
-  return capability.replaceAll('_', ' ');
+interface Props {
+  locale?: string;
 }
 
-function searchMessage(state: typeof states[number]): string {
+const { locale = 'en' } = Astro.props;
+const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
+
+function capabilityLabel(capability: string): string {
+  return message(`capability.${capability}` as MessageKey);
+}
+
+function searchMessageKey(state: typeof states[number]): MessageKey {
   if (state.scheduleProvenance.confidence !== 'official') {
-    return 'Indexed public search remains off until the current schedule is verified from an official source. Use official portals and local BLO/ERO channels for final verification.';
+    return 'directory.search.unverified';
   }
   if (!state.publicLaunchReady) {
-    return 'Indexed public search is not launch-ready. Use official portals and local BLO/ERO channels for final verification.';
+    return 'directory.search.not_ready';
   }
   if (state.capability === 'validated_indexed_search') {
-    return 'Validated indexed search can be enabled with abuse protection and scoped queries.';
+    return 'directory.search.validated';
   }
-  return 'Guidance and official links are available; indexed search remains disabled.';
+  return 'directory.search.guidance';
 }
 
 const publicSearchCount = states.filter((state) => state.publicLaunchReady).length;
@@ -23,32 +31,32 @@ const reviewedScheduleCount = states.filter((state) => state.scheduleProvenance.
 ---
 <section class="search-availability" aria-labelledby="search-availability-title">
   <div>
-    <p class="eyebrow dark">Search availability</p>
-    <h2 id="search-availability-title">Search stays off until a state is safe to launch.</h2>
-    <p class="reference-copy">SIR Saathi shows search capability transparently, but does not expose public indexed search until validation, privacy review, rate limits, and abuse checks pass.</p>
+    <p class="eyebrow dark">{message('directory.eyebrow')}</p>
+    <h2 id="search-availability-title">{message('directory.title')}</h2>
+    <p class="reference-copy">{message('directory.intro')}</p>
   </div>
 
-  <div class="coverage-summary" aria-label="Nationwide coverage summary">
-    <div><strong>{states.length}</strong><span>states and UTs covered</span></div>
-    <div><strong>{reviewedScheduleCount}</strong><span>reviewed official schedules</span></div>
-    <div><strong>{publicSearchCount}</strong><span>public indexed searches enabled</span></div>
+  <div class="coverage-summary" aria-label={message('directory.coverage_label')}>
+    <div><strong>{states.length}</strong><span>{message('directory.covered')}</span></div>
+    <div><strong>{reviewedScheduleCount}</strong><span>{message('directory.reviewed_schedules')}</span></div>
+    <div><strong>{publicSearchCount}</strong><span>{message('directory.enabled_searches')}</span></div>
   </div>
 
   <details class="jurisdiction-directory">
-    <summary>View status for all {states.length} states and union territories</summary>
+    <summary>{message('directory.view_all', { count: states.length })}</summary>
     <div class="jurisdiction-list">
       {states.map((state) => (
         <article class="jurisdiction-row">
           <div>
             <h3>{state.name}</h3>
-            <p class="source-note">{state.status} · Capability: {capabilityLabel(state.capability)}</p>
-            <p class="source-note">Schedule provenance: {state.scheduleProvenance.confidence}</p>
+            <p class="source-note">{message(`status.${state.currentPhase}` as MessageKey)} · {message('directory.capability', { capability: capabilityLabel(state.capability) })}</p>
+            <p class="source-note">{message('directory.provenance', { confidence: state.scheduleProvenance.confidence })}</p>
           </div>
           <div>
-            <p>{searchMessage(state)}</p>
+            <p>{message(searchMessageKey(state))}</p>
             <div class="jurisdiction-links">
-              <a href={statePath(state)}>View {state.name} guide</a>
-              <a href={state.officialLink} target="_blank" rel="noreferrer">Official CEO portal</a>
+              <a href={localizedPath(statePath(state), locale)}>{message('directory.view_guide', { state: state.name })}</a>
+              <a href={state.officialLink} target="_blank" rel="noreferrer">{message('directory.official_portal')}</a>
             </div>
           </div>
         </article>

@@ -1,30 +1,40 @@
 ---
 import { commonDocuments, forms } from '../data/forms';
+import { translate, type MessageKey } from '../lib/i18n';
 
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'en' } = Astro.props;
+const message = (key: MessageKey) => translate(locale, key);
 const formList = Object.values(forms);
 const documentGroups = Object.entries(commonDocuments);
 ---
 <section class="forms-reference" aria-labelledby="forms-reference-title">
   <div>
-    <p class="eyebrow dark">Official form guide</p>
-    <h2 id="forms-reference-title">Know which form or document category may come up.</h2>
-    <p class="reference-copy">This reference is loaded from the same canonical forms catalogue used by guidance and the API.</p>
+    <p class="eyebrow dark">{message('forms.eyebrow')}</p>
+    <h2 id="forms-reference-title">{message('forms.title')}</h2>
+    <p class="reference-copy">{message('forms.intro')}</p>
   </div>
 
   <div class="forms-list">
     {formList.map((form) => (
       <article class="form-card">
-        <h3>{form.label}</h3>
-        <p>{form.purpose}</p>
+        <h3>{message(`forms.${form.formId}.label` as MessageKey)}</h3>
+        <p>{message(`forms.${form.formId}.purpose` as MessageKey)}</p>
       </article>
     ))}
   </div>
 
   <div class="document-list">
-    <h3>Common document categories</h3>
+    <h3>{message('forms.common_categories')}</h3>
     <ul>
       {documentGroups.map(([category, documents]) => (
-        <li><strong>{category}:</strong> {documents.join(', ')}</li>
+        <li><strong>{message(`forms.category.${category}` as MessageKey)}:</strong> {documents.map((document) => {
+          const matchingKey = Object.entries(commonDocuments).find(([, values]) => values.includes(document))?.[0] ?? category;
+          return message(`document.${matchingKey}` as MessageKey);
+        }).join(', ')}</li>
       ))}
     </ul>
   </div>

@@ -1,17 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PolicyContent from '../components/PolicyContent.astro';
+import { translate } from '../lib/i18n';
 ---
-<BaseLayout title="Methodology | SIR Saathi">
-  <main class="shell content-page" id="main-content">
-    <h1>Methodology</h1>
-    <p>Guidance is based on state registry entries, deterministic rules, and official-source links. Source dates are shown as last checked, not as a guarantee that the deadline is still current.</p>
-    <ol>
-      <li>Record official SIR dates and source links by state.</li>
-      <li>Ask users to confirm deadlines and eligibility on the official portal before acting.</li>
-      <li>Start each state at guidance-only capability.</li>
-      <li>Promote search only after official schedule provenance, parser validation, redaction, and privacy review.</li>
-      <li>Show official fallback links for every action.</li>
-      <li>Keep shared checklists free of EPIC, address, and other private voter details.</li>
-    </ol>
-  </main>
+<BaseLayout title={translate('en', 'policy.meta.title', { title: translate('en', 'methodology.title') })}>
+  <PolicyContent page="methodology" locale="en" />
 </BaseLayout>

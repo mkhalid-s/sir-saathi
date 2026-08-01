@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sir-saathi-app-shell-v2';
+const CACHE_NAME = 'sir-saathi-app-shell-v3';
 const APP_SHELL_URLS = [
   '/',
   '/privacy/',
@@ -36,6 +36,14 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        const firstSegment = url.pathname.split('/').filter(Boolean)[0] || '';
+        const localizedHome = /^[a-z]{2,3}$/.test(firstSegment)
+          ? await caches.match(`/${firstSegment}/`)
+          : undefined;
+        return localizedHome || caches.match('/');
+      })
   );
 });

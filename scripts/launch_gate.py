@@ -119,7 +119,7 @@ def verify_source_freshness() -> None:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
-    if "Schedule provenance:" not in search_availability or "current schedule is verified from an official source" not in search_availability:
+    if "directory.provenance" not in search_availability or "directory.search.unverified" not in search_availability:
         raise RuntimeError("search availability must show official schedule provenance requirement")
     schedule_source = schedule_catalogue.get("source", {})
     if schedule_source.get("source_type") != "official_portal" or not schedule_source.get("last_verified"):
@@ -190,6 +190,8 @@ def verify_pwa_installability() -> None:
         raise RuntimeError("service worker must cache the app shell and avoid API caching")
     if "response.ok && response.type === 'basic'" not in service_worker:
         raise RuntimeError("service worker must not cache failed or opaque responses")
+    if "localizedHome" not in service_worker or "firstSegment" not in service_worker:
+        raise RuntimeError("offline navigation must preserve a previously cached reviewed locale")
     if 'class="skip-link" href="#main-content"' not in layout:
         raise RuntimeError("web layout must provide keyboard skip navigation")
 
@@ -200,6 +202,9 @@ def verify_ui_language_readiness() -> None:
     states_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     i18n = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
+    localized_home = ROOT / "apps/web/src/pages/[locale]/index.astro"
+    localized_state = ROOT / "apps/web/src/pages/[locale]/states/[stateId].astro"
+    localized_policy = ROOT / "apps/web/src/pages/[locale]/[policy].astro"
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
         raise RuntimeError("web must expose explicit UI language readiness")
@@ -209,6 +214,12 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("wizard must show available and planned UI language status")
     if "import.meta.glob" not in i18n or "hasEnabledCatalogue" not in i18n or "translate(uiLanguage" not in wizard:
         raise RuntimeError("reviewed translation catalogues must drive rendered wizard copy")
+    if "catalogueIsRuntimeReady" not in i18n or "referenceKeys.length !== candidateKeys.length" not in i18n:
+        raise RuntimeError("web runtime must independently reject incomplete available catalogues")
+    if not all(path.is_file() for path in (localized_home, localized_state, localized_policy)):
+        raise RuntimeError("reviewed locales must generate home, state, and policy routes")
+    if "localizedPath" not in i18n or "navigateToLocale" not in wizard:
+        raise RuntimeError("reviewed locale navigation must preserve locale-prefixed public routes")
     report = translation_readiness()
     invalid_available = [
         item["locale"]
@@ -240,11 +251,11 @@ def verify_guidance_boundary_copy() -> None:
 
 
 def verify_safe_find_name_flow() -> None:
-    homepage = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
+    homepage = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     indexed = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
-    if "Find my name safely" not in homepage or 'href="#find-name"' not in homepage:
+    if "home.hero.find" not in homepage or "Find my name safely" not in messages["home.hero.find"] or 'href="#find-name"' not in homepage:
         raise RuntimeError("homepage must expose a clear safe find-name entry point")
     if 'id="find-name"' not in wizard or "Start with a safe official check" not in messages["find.title"]:
         raise RuntimeError("wizard must contain the safe find-name flow")
@@ -284,18 +295,20 @@ def verify_public_privacy_pages() -> None:
     privacy = (ROOT / "apps/web/src/pages/privacy.astro").read_text(encoding="utf-8")
     data_use = (ROOT / "apps/web/src/pages/data-use.astro").read_text(encoding="utf-8")
     methodology = (ROOT / "apps/web/src/pages/methodology.astro").read_text(encoding="utf-8")
-    combined = "\n".join([privacy_doc, privacy, data_use, methodology])
+    policy = (ROOT / "apps/web/src/components/PolicyContent.astro").read_text(encoding="utf-8")
+    translations = (ROOT / "config/translations/en.json").read_text(encoding="utf-8")
+    combined = "\n".join([privacy_doc, privacy, data_use, methodology, policy, translations])
     if "schedule provenance comes from an official source" not in combined:
         raise RuntimeError("public pages must explain official schedule provenance requirement")
     if "official schedule provenance before launch" not in privacy_doc:
         raise RuntimeError("privacy policy must require official schedule provenance before launch")
     if "Shared checklists must not include EPIC" not in privacy_doc:
         raise RuntimeError("privacy policy must cover safe checklist forwarding")
-    if "Shared checklists should not include EPIC, address" not in privacy:
+    if "Shared checklists should not include EPIC, address" not in translations:
         raise RuntimeError("privacy page must warn against forwarding private voter details")
-    if "Forwarded checklists should stay generic" not in data_use:
+    if "Forwarded checklists should stay generic" not in translations:
         raise RuntimeError("data-use page must cover safe checklist forwarding")
-    if "Keep shared checklists free of EPIC, address" not in methodology:
+    if "Keep shared checklists free of EPIC, address" not in translations:
         raise RuntimeError("methodology page must cover safe checklist forwarding")
 
 

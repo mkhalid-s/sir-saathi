@@ -1,0 +1,20 @@
+---
+import HomeContent from '../../components/HomeContent.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { availableLocales, translate, type UiDirection } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return availableLocales
+    .filter((locale) => locale.code !== 'en')
+    .map((locale) => ({ params: { locale: locale.code }, props: { locale } }));
+}
+
+interface Props {
+  locale: { code: string; label: string; direction: UiDirection };
+}
+
+const { locale } = Astro.props;
+---
+<BaseLayout title={translate(locale.code, 'app.title')} lang={locale.code} dir={locale.direction} skipLabel={translate(locale.code, 'nav.skip')}>
+  <HomeContent locale={locale.code} />
+</BaseLayout>

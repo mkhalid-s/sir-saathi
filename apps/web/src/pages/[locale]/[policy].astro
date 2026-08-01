@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PolicyContent from '../../components/PolicyContent.astro';
+import { availableLocales, translate, type UiDirection } from '../../lib/i18n';
+
+const policies = [
+  { path: 'privacy', titleKey: 'privacy.title' },
+  { path: 'methodology', titleKey: 'methodology.title' },
+  { path: 'data-use', titleKey: 'data_use.title' }
+] as const;
+
+export function getStaticPaths() {
+  return availableLocales
+    .filter((locale) => locale.code !== 'en')
+    .flatMap((locale) => policies.map((policy) => ({
+      params: { locale: locale.code, policy: policy.path },
+      props: { locale, policy }
+    })));
+}
+
+interface Props {
+  locale: { code: string; label: string; direction: UiDirection };
+  policy: typeof policies[number];
+}
+
+const { locale, policy } = Astro.props;
+const title = translate(locale.code, policy.titleKey);
+---
+<BaseLayout
+  title={translate(locale.code, 'policy.meta.title', { title })}
+  lang={locale.code}
+  dir={locale.direction}
+  skipLabel={translate(locale.code, 'nav.skip')}
+>
+  <PolicyContent page={policy.path} locale={locale.code} />
+</BaseLayout>

@@ -70,9 +70,13 @@ export interface StateSummary {
   enumerationEnd?: string;
   claimsEnd?: string;
   finalRollDate?: string;
+  enumerationEndIso?: string;
+  claimsEndIso?: string;
+  finalRollDateIso?: string;
   officialLink: string;
   sourceLabels: string[];
   sourceFreshness: string[];
+  sourceChecks: { label: string; date: string }[];
   scheduleProvenance: {
     label: string;
     url: string;
@@ -143,8 +147,11 @@ export function statePath(state: Pick<StateSummary, 'stateId'>): string {
 }
 
 function displayDate(value: string | null): string | undefined {
-  if (!value) return undefined;
-  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeZone: 'Asia/Kolkata' })
+  return value ? formatIndiaDate(value, 'en-IN') : undefined;
+}
+
+export function formatIndiaDate(value: string, locale = 'en-IN'): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'Asia/Kolkata' })
     .format(new Date(`${value}T00:00:00+05:30`));
 }
 
@@ -189,9 +196,13 @@ function stateFromConfig(config: StateConfig): StateSummary {
     enumerationEnd: displayDate(config.sir_schedule.enumeration_end),
     claimsEnd: displayDate(config.sir_schedule.claims_end),
     finalRollDate: displayDate(config.sir_schedule.final_roll_date),
+    enumerationEndIso: config.sir_schedule.enumeration_end ?? undefined,
+    claimsEndIso: config.sir_schedule.claims_end ?? undefined,
+    finalRollDateIso: config.sir_schedule.final_roll_date ?? undefined,
     officialLink: officialLinkFor(config),
     sourceLabels: config.official_sources.map((source) => source.label),
     sourceFreshness: config.official_sources.map((source) => `${source.label}: last checked ${displayDate(source.last_verified)}`),
+    sourceChecks: config.official_sources.map((source) => ({ label: source.label, date: source.last_verified })),
     scheduleProvenance: {
       label: config.schedule_provenance.label,
       url: scheduleSource.url,
@@ -217,6 +228,7 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     officialLink: config.ceo_portal,
     sourceLabels: [`CEO ${config.name}`, 'ECI voters portal', source.label],
     sourceFreshness: [`${source.label}: last checked ${displayDate(source.last_verified)}`],
+    sourceChecks: [{ label: source.label, date: source.last_verified }],
     scheduleProvenance: {
       label: source.label,
       url: source.url,
@@ -235,10 +247,17 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     enumerationEnd: displayDate(schedule.enumeration_end),
     claimsEnd: displayDate(schedule.claims_end),
     finalRollDate: displayDate(schedule.final_roll_date),
+    enumerationEndIso: schedule.enumeration_end ?? undefined,
+    claimsEndIso: schedule.claims_end ?? undefined,
+    finalRollDateIso: schedule.final_roll_date ?? undefined,
     sourceLabels: [scheduleSource.label, ...baseline.sourceLabels],
     sourceFreshness: [
       `${scheduleSource.label}: last checked ${displayDate(scheduleSource.last_verified)}`,
       ...baseline.sourceFreshness
+    ],
+    sourceChecks: [
+      { label: scheduleSource.label, date: scheduleSource.last_verified },
+      ...baseline.sourceChecks
     ],
     scheduleProvenance: {
       label: scheduleSource.label,

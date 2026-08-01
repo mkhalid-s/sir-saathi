@@ -1,13 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PolicyContent from '../components/PolicyContent.astro';
+import { translate } from '../lib/i18n';
 ---
-<BaseLayout title="Data Use | SIR Saathi">
-  <main class="shell content-page" id="main-content">
-    <h1>Data Use</h1>
-    <p>Electoral rolls are public documents, but bulk voter data can still create privacy and misuse risks.</p>
-    <p>SIR Saathi does not support voter profiling, campaign targeting, caste or religion inference, or bulk exports.</p>
-    <p>Any indexed search must be limited to voter self-service, source checking, and official-action guidance.</p>
-    <p>Public indexed search launches only after official schedule provenance, parser validation, redaction, rate limits, and abuse checks pass.</p>
-    <p>Forwarded checklists should stay generic and avoid EPIC, address, phone, document, or other private voter details.</p>
-  </main>
+<BaseLayout title={translate('en', 'policy.meta.title', { title: translate('en', 'data_use.title') })}>
+  <PolicyContent page="data-use" locale="en" />
 </BaseLayout>

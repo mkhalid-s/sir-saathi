@@ -1,5 +1,4 @@
-import type { StateSummary } from '../data/states';
-import { formLabel } from '../data/forms';
+import { formatIndiaDate, type StateSummary } from '../data/states';
 import { translate, type MessageKey, type MessageValues } from './i18n';
 
 export type Situation =
@@ -49,28 +48,32 @@ function normalizeInput(input: Situation | WizardAnswers): WizardAnswers {
 }
 
 function deadlineNotice(state: StateSummary, situation: Situation, locale: string): string | undefined {
-  const deadline = deadlineFor(state, situation);
+  const deadline = deadlineFor(state, situation, locale);
   return deadline
     ? translate(locale, 'guidance.deadline_before', { deadline })
     : translate(locale, 'guidance.deadline_latest');
 }
 
-export function deadlineFor(state: StateSummary, situation: Situation): string | undefined {
+export function deadlineFor(state: StateSummary, situation: Situation, locale = 'en-IN'): string | undefined {
+  let value: string | undefined;
   if (situation === 'existing_voter' || situation === 'portal_failed') {
     if (state.currentPhase === 'pre_enumeration' || state.currentPhase === 'enumeration_open') {
-      return state.enumerationEnd ?? state.claimsEnd ?? state.finalRollDate;
+      value = state.enumerationEndIso ?? state.claimsEndIso ?? state.finalRollDateIso;
+    } else if (state.currentPhase === 'pre_draft_publication' || state.currentPhase === 'claims_and_objections_open') {
+      value = state.claimsEndIso ?? state.finalRollDateIso;
+    } else {
+      value = state.finalRollDateIso;
     }
-    if (state.currentPhase === 'pre_draft_publication' || state.currentPhase === 'claims_and_objections_open') {
-      return state.claimsEnd ?? state.finalRollDate;
-    }
-    return state.finalRollDate;
+  } else {
+    value = state.claimsEndIso ?? state.finalRollDateIso;
   }
-  return state.claimsEnd ?? state.finalRollDate;
+  return value ? formatIndiaDate(value, locale) : undefined;
 }
 
 export function guidanceFor(input: Situation | WizardAnswers, state?: StateSummary, locale = 'en'): GuidanceCard {
   const answers = normalizeInput(input);
   const text = (key: MessageKey, values: MessageValues = {}) => translate(locale, key, values);
+  const form = (formId: 'form_6' | 'form_7' | 'form_8') => text(`forms.${formId}.label` as MessageKey);
   const notices = state ? [deadlineNotice(state, answers.situation, locale)].filter(Boolean) as string[] : [];
 
   if (answers.situation === 'missing_name') {
@@ -97,8 +100,8 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     return {
       title: text('guidance.new.title'),
       priority: 'high',
-      summary: text('guidance.new.summary', { form: formLabel('form_6') }),
-      actions: [text('guidance.new.eligibility'), text('guidance.new.prepare'), text('guidance.new.submit', { form: formLabel('form_6') })],
+      summary: text('guidance.new.summary', { form: form('form_6') }),
+      actions: [text('guidance.new.eligibility'), text('guidance.new.prepare'), text('guidance.new.submit', { form: form('form_6') })],
       documents: [text('document.identity'), text('document.address'), text('document.age')],
       notices
     };
@@ -109,7 +112,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       title: text('guidance.shift.title'),
       priority: 'high',
       summary: text('guidance.shift.summary'),
-      actions: [text('guidance.shift.confirm_ac'), text('guidance.shift.prepare'), text('guidance.shift.submit', { form: formLabel('form_8') }), text('guidance.shift.verify_station')],
+      actions: [text('guidance.shift.confirm_ac'), text('guidance.shift.prepare'), text('guidance.shift.submit', { form: form('form_8') }), text('guidance.shift.verify_station')],
       documents: [text('document.address'), text('document.existing_reference')],
       notices
     };
@@ -119,8 +122,8 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     return {
       title: text('guidance.correction.title'),
       priority: 'medium',
-      summary: text('guidance.correction.summary', { form: formLabel('form_8') }),
-      actions: [text('guidance.correction.identify'), text('guidance.correction.prepare'), text('guidance.correction.submit', { form: formLabel('form_8') })],
+      summary: text('guidance.correction.summary', { form: form('form_8') }),
+      actions: [text('guidance.correction.identify'), text('guidance.correction.prepare'), text('guidance.correction.submit', { form: form('form_8') })],
       documents: [text('document.existing_reference'), text('document.correction')],
       notices
     };
@@ -131,7 +134,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       title: text('guidance.deceased.title'),
       priority: 'medium',
       summary: text('guidance.deceased.summary'),
-      actions: [text('guidance.deceased.confirm'), text('guidance.deceased.prepare'), text('guidance.deceased.submit', { form: formLabel('form_7') }), text('guidance.deceased.keep')],
+      actions: [text('guidance.deceased.confirm'), text('guidance.deceased.prepare'), text('guidance.deceased.submit', { form: form('form_7') }), text('guidance.deceased.keep')],
       documents: [text('document.deletion'), text('document.contact')],
       notices
     };

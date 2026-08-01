@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { statePath, states, type StateSummary } from '../../data/states';
+import StateContent from '../../components/StateContent.astro';
+import { states, type StateSummary } from '../../data/states';
+import { translate } from '../../lib/i18n';
 
 export function getStaticPaths() {
   return states.map((state) => ({
@@ -14,80 +16,10 @@ interface Props {
 }
 
 const { state } = Astro.props;
-const hasScheduleDates = Boolean(state.enumerationEnd || state.claimsEnd || state.finalRollDate);
-const scheduleItems = [
-  ['Enumeration closes', state.enumerationEnd],
-  ['Claims and objections close', state.claimsEnd],
-  ['Final roll', state.finalRollDate]
-].filter((item): item is [string, string] => Boolean(item[1]));
-const guideUrl = `/?state=${encodeURIComponent(state.stateId)}#guidance`;
 ---
 <BaseLayout
-  title={`${state.name} voter guide · SIR Saathi`}
-  description={`${state.name} voter guidance, current revision status, schedule provenance, official CEO link, and privacy-safe next steps.`}
+  title={translate('en', 'state.meta.title', { state: state.name })}
+  description={translate('en', 'state.meta.description', { state: state.name })}
 >
-  <main class="shell content-page state-page" id="main-content">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">SIR Saathi</a><span aria-hidden="true">/</span><span aria-current="page">{state.name}</span>
-    </nav>
-
-    <section class="state-hero">
-      <p class="eyebrow">State and UT guide</p>
-      <h1>{state.name}</h1>
-      <p>Check the current revision status, use source-backed next steps, and continue to official voter services.</p>
-      <div class="actions">
-        <a class="primary-button light" href={guideUrl}>Get my action checklist</a>
-        <a class="secondary-button light" href={state.officialLink} target="_blank" rel="noreferrer">Open official CEO portal</a>
-      </div>
-    </section>
-
-    <section class="state-facts" aria-labelledby="status-title">
-      <div>
-        <p class="eyebrow dark">Current status</p>
-        <h2 id="status-title">{state.status}</h2>
-        <p>{state.scheduleProvenance.notes}</p>
-      </div>
-      <dl>
-        <div><dt>Coverage</dt><dd>Guidance and official links</dd></div>
-        <div><dt>Schedule confidence</dt><dd>{state.scheduleProvenance.confidence}</dd></div>
-        <div><dt>Indexed public search</dt><dd>{state.publicLaunchReady ? 'Launch-ready' : 'Not enabled'}</dd></div>
-      </dl>
-    </section>
-
-    <section class="state-section" aria-labelledby="schedule-title">
-      <h2 id="schedule-title">Official schedule</h2>
-      {hasScheduleDates ? (
-        <dl class="schedule-list">
-          {scheduleItems.map(([label, value]) => <div><dt>{label}</dt><dd>{value}</dd></div>)}
-        </dl>
-      ) : (
-        <p>{state.currentPhase === 'schedule_pending'
-          ? 'ECI has said this jurisdiction’s schedule will be announced later. No dates are inferred; check the official CEO or ECI portal for a new order.'
-          : 'No current SIR schedule has been independently confirmed for this jurisdiction. Check the official CEO portal before relying on a date shared elsewhere.'}</p>
-      )}
-      <p class="source-note">Schedule source: <a href={state.scheduleProvenance.url} target="_blank" rel="noreferrer">{state.scheduleProvenance.label}</a> ({state.scheduleProvenance.confidence}).</p>
-      <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>
-    </section>
-
-    <section class="state-section" aria-labelledby="language-title">
-      <h2 id="language-title">Language coverage</h2>
-      <p>Languages tracked for official-source and future UI work: {state.languages.join(', ')}. The tracked default is {state.defaultLanguage}.</p>
-      <p>English guidance is available now. Non-English interface text stays marked as planned until human review.</p>
-    </section>
-
-    <section class="state-section safety-panel" aria-labelledby="safety-title">
-      <h2 id="safety-title">Use voter information safely</h2>
-      <p>Do not post EPIC numbers, addresses, phone numbers, documents, or screenshots publicly. SIR Saathi does not decide eligibility; confirm every submission and result with ECI, the CEO, BLO, or ERO.</p>
-      <div class="actions">
-        <a class="primary-button" href={guideUrl}>Start {state.name} guidance</a>
-        <a class="secondary-button" href="/privacy/">Read privacy guidance</a>
-      </div>
-    </section>
-
-    <nav class="state-neighbours" aria-label="Other jurisdiction guides">
-      <a href={statePath(states[(states.indexOf(state) - 1 + states.length) % states.length])}>Previous jurisdiction</a>
-      <a href="/#search-availability-title">All states and UTs</a>
-      <a href={statePath(states[(states.indexOf(state) + 1) % states.length])}>Next jurisdiction</a>
-    </nav>
-  </main>
+  <StateContent state={state} locale="en" />
 </BaseLayout>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { states, uiLanguageDirection, uiLanguageOptionsForState } from '../data/states';
+import { formatIndiaDate, states, uiLanguageDirection, uiLanguageOptionsForState } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
-import { hasEnabledCatalogue, translate, type MessageKey, type MessageValues } from '../lib/i18n';
+import { availableLocales, hasEnabledCatalogue, localizedPath, translate, type MessageKey, type MessageValues } from '../lib/i18n';
 import IndexedSearch from './IndexedSearch';
 
 const situations: { value: Situation; key: MessageKey }[] = [
@@ -23,6 +23,10 @@ const statusOptions: { value: StatusAnswer; key: MessageKey }[] = [
 
 const UI_LANGUAGE_STORAGE_KEY = 'sir-saathi-ui-language';
 
+interface Props {
+  initialLocale?: string;
+}
+
 function statusSelect(
   label: string,
   value: StatusAnswer,
@@ -39,9 +43,11 @@ function statusSelect(
   );
 }
 
-export default function ActionWizard() {
+export default function ActionWizard({ initialLocale = 'en' }: Props) {
   const [stateId, setStateId] = useState('IN-MH');
-  const [uiLanguage, setUiLanguage] = useState('en');
+  const [uiLanguage, setUiLanguage] = useState(
+    hasEnabledCatalogue(initialLocale) ? initialLocale : 'en'
+  );
   const [nameQuery, setNameQuery] = useState('');
   const [districtHint, setDistrictHint] = useState('');
   const [acHint, setAcHint] = useState('');
@@ -50,7 +56,7 @@ export default function ActionWizard() {
   const [answers, setAnswers] = useState<WizardAnswers>(defaultAnswers);
   const state = states.find((item) => item.stateId === stateId) ?? states[0];
   const guidance = useMemo(() => guidanceFor(answers, state, uiLanguage), [answers, state, uiLanguage]);
-  const deadline = deadlineFor(state, answers.situation);
+  const deadline = deadlineFor(state, answers.situation, uiLanguage);
   const languageOptions = uiLanguageOptionsForState(state.languageCodes);
   const scheduleKnown = state.currentPhase !== 'schedule_unverified';
   const message = (key: MessageKey, values: MessageValues = {}) => translate(uiLanguage, key, values);
@@ -59,6 +65,10 @@ export default function ActionWizard() {
     ? message('wizard.language_planned', { languages: plannedLanguages.join(', ') })
     : message('wizard.language_available');
   const guidanceBoundaryText = message('safety.guidance_boundary');
+  const localizedSourceFreshness = state.sourceChecks.map((source) => message('guidance.source_checked_item', {
+    label: source.label,
+    date: formatIndiaDate(source.date, uiLanguage)
+  }));
   const shareSafetyText = `${message('safety.confirm_official')} ${message('safety.no_private_share')}`;
   const shareText = [
     message('share.checklist', { state: state.name, title: guidance.title }),
@@ -74,6 +84,20 @@ export default function ActionWizard() {
     setStateId(value);
     setFindSubmitted(false);
   };
+  const navigateToLocale = (locale: string, replace = false) => {
+    if (!hasEnabledCatalogue(locale)) return;
+    const url = new URL(window.location.href);
+    const segments = url.pathname.split('/').filter(Boolean);
+    if (segments.length && availableLocales.some((item) => item.code !== 'en' && item.code === segments[0])) {
+      segments.shift();
+    }
+    const suffix = segments.length ? `/${segments.join('/')}/` : '/';
+    url.pathname = localizedPath(suffix, locale);
+    url.searchParams.delete('lang');
+    const destination = `${url.pathname}${url.search}${url.hash}`;
+    if (replace) window.location.replace(destination);
+    else window.location.assign(destination);
+  };
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedState = params.get('state');
@@ -86,8 +110,12 @@ export default function ActionWizard() {
     } catch {
       // Storage can be unavailable in hardened/private browser modes.
     }
-    const preferredLanguage = params.get('lang') ?? storedLanguage;
+    const preferredLanguage = params.get('lang') ?? storedLanguage ?? initialLocale;
     if (preferredLanguage && hasEnabledCatalogue(preferredLanguage)) {
+      if (preferredLanguage !== initialLocale) {
+        navigateToLocale(preferredLanguage, true);
+        return;
+      }
       setUiLanguage(preferredLanguage);
     }
   }, []);
@@ -105,8 +133,7 @@ export default function ActionWizard() {
       // Language selection still works for the current page without storage.
     }
     const url = new URL(window.location.href);
-    if (uiLanguage === 'en') url.searchParams.delete('lang');
-    else url.searchParams.set('lang', uiLanguage);
+    url.searchParams.delete('lang');
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
     return () => {
       document.documentElement.lang = 'en';
@@ -204,7 +231,7 @@ export default function ActionWizard() {
 
         <label class="field">
           {message('wizard.ui_language')}
-          <select id="ui-language" class="select" value={uiLanguage} aria-describedby="ui-language-readiness" onChange={(event) => setUiLanguage((event.currentTarget as HTMLSelectElement).value)}>
+          <select id="ui-language" class="select" value={uiLanguage} aria-describedby="ui-language-readiness" onChange={(event) => navigateToLocale((event.currentTarget as HTMLSelectElement).value)}>
             {languageOptions.map((item) => <option value={item.code} disabled={item.status === 'planned'}>{item.label}{item.status === 'planned' ? message('wizard.planned_suffix') : ''}</option>)}
           </select>
           <span id="ui-language-readiness" class="field-help">{languageReadiness}</span>
@@ -232,7 +259,7 @@ export default function ActionWizard() {
         <p class="source-note">{message('guidance.sources', { sources: state.sourceLabels.join(', ') })}</p>
         <p class="source-note">{message('guidance.schedule_source', { label: state.scheduleProvenance.label, confidence: state.scheduleProvenance.confidence })}</p>
         <p class="source-note">{message('guidance.schedule_note', { note: state.scheduleProvenance.notes })}</p>
-        <p class="source-note">{message('guidance.sources_checked', { sources: state.sourceFreshness.join('; ') })}</p>
+        <p class="source-note">{message('guidance.sources_checked', { sources: localizedSourceFreshness.join('; ') })}</p>
         <p class="source-note">{message('safety.confirm_official')}</p>
         <p class="source-note">{message('guidance.language_status', { status: languageReadiness })}</p>
         <p class="source-note">{message('guidance.state_languages', { languages: state.languages.join(', '), default_language: state.defaultLanguage })}</p>
