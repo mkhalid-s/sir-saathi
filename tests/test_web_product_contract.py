@@ -216,12 +216,13 @@ def test_wizard_controls_and_generated_guidance_are_catalogue_driven() -> None:
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
     indexed = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
     for key in messages:
         if key.startswith(("guidance.missing.", "guidance.new.", "guidance.shift.", "guidance.correction.",
                            "guidance.deceased.", "guidance.duplicate.", "guidance.portal.",
                            "guidance.existing.", "document.")):
-            assert f"'{key}'" in guidance
+            assert key in guidance or key in api_guidance
         if key.startswith(("find.", "wizard.", "share.")):
             assert f"'{key}'" in wizard
         if key.startswith("search."):

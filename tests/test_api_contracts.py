@@ -51,6 +51,30 @@ def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:
     assert labels["form_7"] == "Form 7"
     assert "address" in payload["common_documents"]
     assert "epic_number" not in str(payload).casefold()
+    assert payload["locale_used"] == "en"
+    assert payload["locale_fallback"] is False
+
+
+def test_api_locale_negotiation_is_explicit_and_fail_closed() -> None:
+    forms = forms_payload("mr")
+    assert forms["locale_requested"] == "mr"
+    assert forms["locale_used"] == "en"
+    assert forms["locale_fallback"] is True
+
+    states = list_states_payload(today=date(2026, 8, 1), locale="zz")
+    assert all(state["locale_requested"] == "zz" for state in states)
+    assert all(state["locale_used"] == "en" and state["locale_fallback"] for state in states)
+    mh = next(state for state in states if state["state_id"] == "IN-MH")
+    assert mh["current_phase_label"] == "Draft roll publication is next"
+
+    guidance = guidance_payload(
+        {"state_id": "IN-MH", "situation": "missing_name", "locale": "mr"},
+        today=date(2026, 8, 1),
+    )
+    assert guidance["locale_requested"] == "mr"
+    assert guidance["locale_used"] == "en"
+    assert guidance["locale_fallback"] is True
+    assert guidance["title"] == "Act quickly on a missing name"
 
 
 def test_guidance_payload_returns_deadline_string() -> None:
@@ -73,6 +97,11 @@ def test_guidance_payload_moves_past_expired_enumeration_deadline() -> None:
 def test_guidance_rejects_unknown_fields() -> None:
     with pytest.raises(ValidationError):
         guidance_payload({"state_id": "IN-MH", "situation": "missing_name", "extra": "nope"})
+
+
+def test_guidance_rejects_malformed_locale_codes() -> None:
+    with pytest.raises(ValidationError, match="locale"):
+        guidance_payload({"state_id": "IN-MH", "situation": "missing_name", "locale": "en-US"})
 
 
 def test_search_requires_ac_scope() -> None:

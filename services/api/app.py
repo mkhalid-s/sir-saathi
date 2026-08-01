@@ -15,6 +15,7 @@ from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 from pipeline.sir_saathi_pipeline.source_freshness import assess_source, freshness_window_days
+from pipeline.sir_saathi_pipeline.translations import resolve_locale, translate_message
 
 from .abuse_verification import (
     AbuseVerifier,
@@ -62,18 +63,28 @@ def _date_payload(value: date | None) -> str | None:
     return value.isoformat() if value else None
 
 
-def list_states_payload(*, today: date | None = None) -> list[dict[str, Any]]:
+def list_states_payload(*, today: date | None = None, locale: str = "en") -> list[dict[str, Any]]:
     states = load_all_states()
     effective_date = today or datetime.now(INDIA_TIME_ZONE).date()
+    resolved = resolve_locale(locale)
     return [
         {
             "state_id": state.state_id,
             "name": state.name,
+            "locale_requested": resolved.requested,
+            "locale_used": resolved.used,
+            "locale_fallback": resolved.fallback,
             "languages": list(state.languages),
             "data_capability": state.data_capability,
             "public_launch_ready": state.public_launch_ready,
             "sir_status": state.schedule.status,
             "current_phase": state.schedule.status_on(effective_date),
+            "current_phase_label": translate_message(
+                resolved.used, f"status.{state.schedule.status_on(effective_date)}"
+            ),
+            "data_capability_label": translate_message(
+                resolved.used, f"capability.{state.data_capability}"
+            ),
             "sir_schedule": {
                 "phase": state.schedule.phase,
                 "qualifying_date": _date_payload(state.schedule.qualifying_date),
@@ -111,20 +122,24 @@ def list_states_payload(*, today: date | None = None) -> list[dict[str, Any]]:
     ]
 
 
-def forms_payload() -> dict[str, Any]:
+def forms_payload(locale: str = "en") -> dict[str, Any]:
     catalogue = load_forms_catalogue()
+    resolved = resolve_locale(locale)
     return {
+        "locale_requested": resolved.requested,
+        "locale_used": resolved.used,
+        "locale_fallback": resolved.fallback,
         "forms": [
             {
                 "form_id": form.form_id,
-                "label": form.label,
-                "purpose": form.purpose,
+                "label": translate_message(resolved.used, f"forms.{form.form_id}.label"),
+                "purpose": translate_message(resolved.used, f"forms.{form.form_id}.purpose"),
                 "official_portal": form.official_portal,
             }
             for form in catalogue.forms
         ],
         "common_documents": {
-            category: list(documents)
+            category: [translate_message(resolved.used, f"document.{category}") for _document in documents]
             for category, documents in catalogue.common_documents.items()
         },
     }
@@ -142,6 +157,7 @@ def guidance_payload(
     today: date | None = None,
 ) -> dict[str, Any]:
     validated = _guidance_request(payload)
+    resolved = resolve_locale(validated.locale)
     request = GuidanceInput(
         state_id=validated.state_id,
         situation=validated.situation,
@@ -152,8 +168,11 @@ def guidance_payload(
         base_roll_found=validated.base_roll_found,
         today=today or datetime.now(INDIA_TIME_ZONE).date(),
     )
-    result = get_guidance(request)
+    result = get_guidance(request, locale=resolved.used)
     data = asdict(result)
+    data["locale_requested"] = resolved.requested
+    data["locale_used"] = resolved.used
+    data["locale_fallback"] = resolved.fallback
     if result.deadline:
         data["deadline"] = result.deadline.isoformat()
     return data
@@ -245,12 +264,12 @@ def create_app(
         return {"status": "ok"}
 
     @app.get(f"{API_PREFIX}/states")
-    def states() -> list[dict[str, Any]]:
-        return list_states_payload()
+    def states(locale: str = "en") -> list[dict[str, Any]]:
+        return list_states_payload(locale=locale)
 
     @app.get(f"{API_PREFIX}/forms")
-    def forms() -> dict[str, Any]:
-        return forms_payload()
+    def forms(locale: str = "en") -> dict[str, Any]:
+        return forms_payload(locale=locale)
 
     @app.post(f"{API_PREFIX}/guidance")
     def guidance(payload: dict[str, Any]) -> dict[str, Any]:

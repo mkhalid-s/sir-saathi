@@ -206,6 +206,10 @@ def verify_ui_language_readiness() -> None:
     localized_state = ROOT / "apps/web/src/pages/[locale]/states/[stateId].astro"
     localized_policy = ROOT / "apps/web/src/pages/[locale]/[policy].astro"
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
+    api_schema = (ROOT / "services/api/schemas.py").read_text(encoding="utf-8")
+    api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
+    runtime_translations = (ROOT / "pipeline/sir_saathi_pipeline/translations.py").read_text(encoding="utf-8")
     if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
         raise RuntimeError("web must expose explicit UI language readiness")
     if "human review" not in messages["wizard.language_planned"]:
@@ -220,6 +224,10 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("reviewed locales must generate home, state, and policy routes")
     if "localizedPath" not in i18n or "navigateToLocale" not in wizard:
         raise RuntimeError("reviewed locale navigation must preserve locale-prefixed public routes")
+    if "resolve_locale" not in api or "locale_fallback" not in api or '"locale"' not in api_schema:
+        raise RuntimeError("API locale negotiation must expose explicit reviewed fallback metadata")
+    if "translate_message" not in api_guidance or "translation_readiness" not in runtime_translations:
+        raise RuntimeError("API guidance must use the same fail-closed reviewed catalogue as the PWA")
     report = translation_readiness()
     invalid_available = [
         item["locale"]

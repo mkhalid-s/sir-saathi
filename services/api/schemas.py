@@ -8,6 +8,7 @@ API dependencies.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import re
 from typing import Any, ClassVar
 
 STATUSES = {"yes", "no", "unknown"}
@@ -21,6 +22,7 @@ SITUATIONS = {
     "duplicate_entry",
     "portal_failed",
 }
+LOCALE_PATTERN = re.compile(r"^[a-z]{2,3}$")
 
 
 class ValidationError(ValueError):
@@ -85,6 +87,7 @@ class GuidanceRequest:
         "enumeration_form_submitted",
         "current_roll_found",
         "base_roll_found",
+        "locale",
     }
 
     state_id: str
@@ -94,6 +97,7 @@ class GuidanceRequest:
     enumeration_form_submitted: str = "unknown"
     current_roll_found: str = "unknown"
     base_roll_found: str = "unknown"
+    locale: str = "en"
 
     @classmethod
     def model_validate(cls, payload: dict[str, Any]) -> "GuidanceRequest":
@@ -115,7 +119,10 @@ class GuidanceRequest:
         for key, value in statuses.items():
             if value not in STATUSES:
                 raise ValidationError(f"{key} must be yes, no, or unknown")
-        return cls(state_id=state_id, situation=situation, **statuses)
+        locale = _string(payload, "locale", min_length=2, max_length=3).lower() if "locale" in payload else "en"
+        if not LOCALE_PATTERN.fullmatch(locale):
+            raise ValidationError("locale must be a two- or three-letter language code")
+        return cls(state_id=state_id, situation=situation, locale=locale, **statuses)
 
 
 @dataclass(frozen=True)

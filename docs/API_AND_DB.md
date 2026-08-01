@@ -8,6 +8,8 @@ The first API surface is intentionally small and served under the `/api` prefix:
 - `POST /api/guidance`
 - `POST /api/search`
 
+`GET /api/states?locale=<code>`, `GET /api/forms?locale=<code>`, and the optional `locale` field on `POST /api/guidance` use the same reviewed catalogue as the PWA. Human-readable display fields are translated only when the requested locale is publishable. Responses include `locale_requested`, `locale_used`, and `locale_fallback`; planned, unknown, incomplete, or unreviewed locales visibly fall back to English. Stable state IDs, capability codes, dates, URLs, and source evidence remain language-neutral or verbatim.
+
 Name search fails closed unless the request is explicitly using the sanitized pilot fixture or a future state has passed public launch readiness. Public search must be scoped by Assembly Constituency; `part_number` can only narrow a search when `ac_number` is also present.
 
 The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with reviewer identity and timestamp. Every authorization change also appends a `public_search_scope_events` row with its rationale and aggregate readiness snapshot. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
