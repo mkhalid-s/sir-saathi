@@ -13,6 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 REQUIRED_FILES = [
     "apps/web/public/icons/icon.svg",
+    "apps/web/public/icons/icon-192.png",
+    "apps/web/public/icons/icon-512.png",
+    "apps/web/public/icons/icon-maskable-512.png",
+    "apps/web/public/icons/apple-touch-icon.png",
     "apps/web/public/manifest.webmanifest",
     "apps/web/public/sw.js",
     "apps/web/src/pages/privacy.astro",
@@ -215,13 +219,37 @@ def verify_source_freshness() -> None:
 
 
 def verify_pwa_installability() -> None:
+    import struct
+
     manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
     layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
     service_worker = (ROOT / "apps/web/public/sw.js").read_text(encoding="utf-8")
     if manifest.get("display") != "standalone" or manifest.get("scope") != "/":
         raise RuntimeError("PWA manifest must be standalone and scoped to the app root")
-    if not manifest.get("icons"):
-        raise RuntimeError("PWA manifest must include an icon")
+    icons = manifest.get("icons", [])
+    icon_contract = {(icon.get("sizes"), icon.get("type"), icon.get("purpose")) for icon in icons}
+    required_icons = {
+        ("192x192", "image/png", "any"),
+        ("512x512", "image/png", "any"),
+        ("512x512", "image/png", "maskable"),
+        ("any", "image/svg+xml", "any"),
+    }
+    if not required_icons.issubset(icon_contract):
+        raise RuntimeError("PWA manifest must include interoperable any and maskable icon variants")
+    for name, expected_size in {
+        "icon-192.png": 192,
+        "icon-512.png": 512,
+        "icon-maskable-512.png": 512,
+        "apple-touch-icon.png": 180,
+    }.items():
+        data = (ROOT / "apps/web/public/icons" / name).read_bytes()
+        if data[:8] != b"\x89PNG\r\n\x1a\n" or len(data) < 24:
+            raise RuntimeError(f"{name} must be a valid PNG")
+        width, height = struct.unpack(">II", data[16:24])
+        if (width, height) != (expected_size, expected_size):
+            raise RuntimeError(f"{name} must be {expected_size}x{expected_size}")
+    if 'rel="apple-touch-icon"' not in layout:
+        raise RuntimeError("PWA layout must expose the mobile touch icon")
     if "navigator.serviceWorker.register('/sw.js')" not in layout:
         raise RuntimeError("PWA layout must register the service worker")
     if "APP_SHELL_URLS" not in service_worker or "url.pathname.startsWith('/api/')" not in service_worker:
@@ -558,6 +586,7 @@ def main() -> int:
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])
+    run(["npm", "run", "pwa:icons:check"])
     run(["npm", "run", "web:build"])
     run([sys.executable, "scripts/check_accessibility.py"])
     run([sys.executable, "scripts/check_discoverability.py"])

@@ -5,9 +5,14 @@
     "apps/web"
   ],
   "scripts": {
+    "pwa:icons": "node scripts/generate_pwa_icons.mjs",
+    "pwa:icons:check": "node scripts/generate_pwa_icons.mjs --check",
     "web:dev": "npm --workspace apps/web run dev",
     "web:build": "npm --workspace apps/web run build",
     "web:preview": "npm --workspace apps/web run preview"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
   },
   "optionalDependencies": {
     "@astrojs/compiler-binding-linux-arm64-gnu": "0.3.2",

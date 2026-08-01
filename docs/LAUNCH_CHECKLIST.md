@@ -6,6 +6,7 @@ Before any public launch:
 - Python tests pass.
 - Web build passes.
 - PWA manifest, icon, and service worker registration are present.
+- `npm run pwa:icons:check` confirms the 192px, 512px, maskable, and Apple touch PNG assets still match the reviewed SVG icon source.
 - Service worker excludes `/api/*` from offline caching.
 - npm audit reports no vulnerabilities for the web workspace.
 - `python3 scripts/launch_gate.py` passes.

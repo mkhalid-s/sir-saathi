@@ -395,9 +395,15 @@ def test_pwa_manifest_is_installable() -> None:
     manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
     assert manifest["display"] == "standalone"
     assert manifest["scope"] == "/"
-    assert manifest["icons"]
-    assert manifest["icons"][0]["src"] == "/icons/icon.svg"
-    assert "maskable" in manifest["icons"][0]["purpose"]
+    assert manifest["id"] == "/"
+    assert manifest["lang"] == "en"
+    icon_contract = {(icon["sizes"], icon["type"], icon["purpose"]) for icon in manifest["icons"]}
+    assert ("192x192", "image/png", "any") in icon_contract
+    assert ("512x512", "image/png", "any") in icon_contract
+    assert ("512x512", "image/png", "maskable") in icon_contract
+    assert ("any", "image/svg+xml", "any") in icon_contract
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    assert 'rel="apple-touch-icon"' in layout
 
 
 def test_pwa_registers_offline_app_shell_service_worker() -> None:

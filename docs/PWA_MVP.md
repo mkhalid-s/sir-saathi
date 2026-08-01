@@ -55,7 +55,7 @@ Compilation rejects incomplete strings, changed keys or source copy, lost placeh
 The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalogue discovery is automatic at build time, but only locales marked `available` in the governed registry can render. Safety text, all form controls, official and indexed-search instructions, every situation-specific guidance title/summary/action/document, status, deadline, provenance, and checklist sharing use keyed messages with checked placeholders. Draft or missing catalogues cannot be selected and fall back to the reviewed English source copy.
 
 - WhatsApp-shareable checklist with official-confirmation and no-private-details reminder.
-- Installable PWA manifest with app icon.
+- Installable PWA manifest with reproducible 192px/512px PNG, scalable SVG, dedicated maskable, and Apple touch icon variants derived from one reviewed SVG source.
 - Service worker for offline app-shell fallback; API calls are not cached.
 - Keyboard skip navigation, visible focus indicators, semantic main landmarks, and status announcements for interactive results.
 - Assistive-technology announcements when guidance changes, labelled language-readiness help, automatic direction for voter names, 44px interactive targets, reduced-motion safeguards, and forced-colour focus visibility.

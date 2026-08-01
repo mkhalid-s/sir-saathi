@@ -29,6 +29,8 @@ jobs:
           cache: 'npm'
       - name: Install web dependencies
         run: npm ci
+      - name: Verify generated PWA icons
+        run: npm run pwa:icons:check
       - name: Build web PWA
         run: ASTRO_TELEMETRY_DISABLED=1 npm run web:build
       - name: Audit generated accessibility structure

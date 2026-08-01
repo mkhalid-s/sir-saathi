@@ -11,6 +11,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SELF = "scripts/check_sensitive.py"
+PUBLIC_BINARY_ASSETS = {
+    "apps/web/public/icons/apple-touch-icon.png",
+    "apps/web/public/icons/icon-192.png",
+    "apps/web/public/icons/icon-512.png",
+    "apps/web/public/icons/icon-maskable-512.png",
+}
 
 BLOCKED_PATH_PATTERNS = [
     re.compile(r"^data/(?!README\.md$).+"),
@@ -91,7 +97,7 @@ def main() -> int:
         if data is None:
             continue
         if not is_text_candidate(rel_path):
-            if b"\0" in data[:4096]:
+            if rel_path not in PUBLIC_BINARY_ASSETS and b"\0" in data[:4096]:
                 findings.append(f"binary candidate: {rel_path}")
             continue
         try:
