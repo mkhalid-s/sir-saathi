@@ -40,18 +40,21 @@ from .privacy import (
 from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
 from .search import SearchRequest, redact_backend_results, search_records
 from .search_backend import SearchBackend, configured_search_backend
+from .readiness import GUIDANCE_MODE, configured_deployment_mode, runtime_readiness
 
 try:  # FastAPI is installed in deployment/CI environments.
-    from fastapi import FastAPI, HTTPException, Request
+    from fastapi import FastAPI, HTTPException, Request, Response
 except Exception:  # pragma: no cover - local environments may not have FastAPI yet
     FastAPI = None  # type: ignore[assignment]
     HTTPException = Exception  # type: ignore[assignment]
     Request = object  # type: ignore[assignment]
+    Response = object  # type: ignore[assignment]
 
 API_PREFIX = "/api"
 INDIA_TIME_ZONE = ZoneInfo("Asia/Kolkata")
 API_ROUTES = {
     f"{API_PREFIX}/health",
+    f"{API_PREFIX}/ready",
     f"{API_PREFIX}/states",
     f"{API_PREFIX}/forms",
     f"{API_PREFIX}/guidance",
@@ -253,6 +256,7 @@ def create_app(
     search_backend: SearchBackend | None = None,
     rate_limiter: RateLimiter = DEFAULT_SEARCH_RATE_LIMITER,
     trusted_proxy_hops: int = 0,
+    deployment_mode: str = GUIDANCE_MODE,
 ):
     if FastAPI is None:
         raise RuntimeError("FastAPI is required to create the API app")
@@ -262,6 +266,19 @@ def create_app(
     @app.get(f"{API_PREFIX}/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get(f"{API_PREFIX}/ready")
+    def ready(response: Response) -> dict[str, object]:
+        report = runtime_readiness(
+            mode=deployment_mode,
+            abuse_verifier=abuse_verifier,
+            search_backend=search_backend,
+            rate_limiter=rate_limiter,
+            trusted_proxy_hops=trusted_proxy_hops,
+        )
+        if not report["ready"]:
+            response.status_code = 503
+        return report
 
     @app.get(f"{API_PREFIX}/states")
     def states(locale: str = "en") -> list[dict[str, Any]]:
@@ -318,6 +335,7 @@ def create_configured_app():
         search_backend=configured_search_backend(),
         rate_limiter=configured_rate_limiter(),
         trusted_proxy_hops=configured_trusted_proxy_hops(),
+        deployment_mode=configured_deployment_mode(),
     )
 
 

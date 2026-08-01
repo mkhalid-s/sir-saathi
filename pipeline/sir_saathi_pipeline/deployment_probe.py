@@ -130,6 +130,24 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
             payload = None
         check("api_health.payload", payload == {"status": "ok"})
 
+    readiness = request_surface("api_readiness", "/api/ready")
+    if readiness:
+        headers = {name.casefold(): value for name, value in readiness.headers.items()}
+        check("api_readiness.status_200", readiness.status == 200)
+        check("api_readiness.json_content_type", "application/json" in headers.get("content-type", "").casefold())
+        check("api_readiness.no_store", "no-store" in headers.get("cache-control", "").casefold())
+        try:
+            payload = json.loads(readiness.body)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            payload = None
+        check(
+            "api_readiness.payload",
+            isinstance(payload, dict)
+            and payload.get("status") == "ready"
+            and payload.get("ready") is True
+            and payload.get("blockers") == [],
+        )
+
     not_found = request_surface("not_found", NOT_FOUND_PATH)
     if not_found:
         headers = {name.casefold(): value for name, value in not_found.headers.items()}

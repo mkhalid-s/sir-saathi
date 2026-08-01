@@ -30,6 +30,18 @@ def test_guidance_preflight_requires_one_real_https_origin() -> None:
     with pytest.raises(ValueError, match="mode"):
         preflight("unknown", {})
 
+    mismatched = preflight(
+        "guidance",
+        {
+            "PUBLIC_SITE_URL": "https://sirsaathi.org",
+            "WEB_URL": "https://sirsaathi.org",
+            "SIR_SAATHI_DEPLOYMENT_MODE": "indexed-search",
+        },
+    )
+    assert mismatched["blockers"] == [
+        "SIR_SAATHI_DEPLOYMENT_MODE must match the selected deployment mode"
+    ]
+
 
 def test_indexed_search_preflight_checks_secrets_dependencies_and_backup_boundary(tmp_path: Path) -> None:
     backup_dir = tmp_path / "backups"
@@ -37,6 +49,7 @@ def test_indexed_search_preflight_checks_secrets_dependencies_and_backup_boundar
     environment = {
         "PUBLIC_SITE_URL": "https://sirsaathi.org",
         "WEB_URL": "https://sirsaathi.org/",
+        "SIR_SAATHI_DEPLOYMENT_MODE": "indexed-search",
         "PUBLIC_TURNSTILE_SITE_KEY": "public-site-value",
         "SIR_SAATHI_DATABASE_URL": "postgresql://database.internal/sir_saathi",
         "SIR_SAATHI_REDIS_URL": "rediss://redis.internal/0",
@@ -51,7 +64,7 @@ def test_indexed_search_preflight_checks_secrets_dependencies_and_backup_boundar
         "mode": "indexed-search",
         "ready": True,
         "blockers": [],
-        "checked_fields": 10,
+        "checked_fields": 11,
         "values_redacted": True,
     }
 

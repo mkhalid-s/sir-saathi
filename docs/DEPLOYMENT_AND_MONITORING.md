@@ -22,7 +22,7 @@ Build with Node 22 and set `PUBLIC_TURNSTILE_SITE_KEY` to the public site key pa
 
 Set `PUBLIC_SITE_URL` to the exact public HTTPS origin during every production build. It drives canonical links, reviewed-locale alternates, `sitemap.xml`, and `robots.txt`; the checked-in `.example` origin is only a deterministic local/CI default. Run `python scripts/check_discoverability.py --require-production-origin` after the production build so reserved example output cannot be deployed.
 
-Run the read-only, value-redacting production preflight in the same environment used for the release. Guidance-only deployment requires the final build and monitor origins to match. Indexed-search mode additionally requires and validates the PostgreSQL/Redis URLs, distinct Turnstile public/server values, exact Turnstile hostname, trusted proxy hops, and private encrypted-backup destination/recipient:
+Run the read-only, value-redacting production preflight in the same environment used for the release. Guidance-only deployment requires the final build and monitor origins to match. Indexed-search mode additionally requires `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search` and validates the PostgreSQL/Redis URLs, distinct Turnstile public/server values, exact Turnstile hostname, trusted proxy hops, and private encrypted-backup destination/recipient:
 
 ```sh
 python -m pipeline.sir_saathi_pipeline.deployment_preflight --mode guidance
@@ -37,7 +37,7 @@ After the candidate release is deployed, audit the real public surface:
 python -m pipeline.sir_saathi_pipeline.deployment_probe --origin "$PUBLIC_SITE_URL"
 ```
 
-The value-redacting probe follows normal redirects and checks 26 transport-level contracts: the final URL stays on the requested HTTPS origin, the homepage identifies the PWA, required browser-security headers and deny-by-default/Turnstile CSP directives are present, `/api/health` is same-origin JSON with `Cache-Control: no-store`, and an unknown route returns the no-index HTML recovery page with HTTP 404. It reports stable check IDs rather than response bodies, redirect destinations, or network exception details. Passing the probe is deployed-release evidence, but is not a substitute for the browser, accessibility, backup/restore, or indexed-search rehearsal.
+The value-redacting probe follows normal redirects and checks 32 transport-level contracts: the final URL stays on the requested HTTPS origin, the homepage identifies the PWA, required browser-security headers and deny-by-default/Turnstile CSP directives are present, `/api/health` and `/api/ready` are same-origin JSON with `Cache-Control: no-store`, readiness is green for the selected runtime mode, and an unknown route returns the no-index HTML recovery page with HTTP 404. It reports stable check IDs rather than response bodies, redirect destinations, or network exception details. Passing the probe is deployed-release evidence, but is not a substitute for the browser, accessibility, backup/restore, or indexed-search rehearsal.
 
 ## API Smoke Check
 
@@ -45,6 +45,7 @@ The value-redacting probe follows normal redirects and checks 26 transport-level
 python -m pip install -r requirements.lock
 uvicorn services.api.app:create_configured_app --factory --host 127.0.0.1 --port 8000
 curl -fsS http://127.0.0.1:8000/api/health
+curl -fsS http://127.0.0.1:8000/api/ready
 ```
 
 Deploy the reviewed `requirements.lock`, not a freshly resolved `requirements.txt`, so CI and the VM run the same Python dependency graph.
@@ -78,7 +79,7 @@ Creation streams `pg_dump` custom-format output directly into `age`; no plaintex
 
 Archive verification is not a restore drill. Before public indexed search, restore a reviewed backup into a newly created isolated PostgreSQL 16 database with no public network route, run migrations with `--check`, compare aggregate row/readiness counts, record the operator/date/result outside the repository, and securely destroy the drill database. PostgreSQL archives can execute source-controlled database definitions during restore, so use only backups produced by the trusted deployment and a least-privileged isolated target.
 
-Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all five. `PUBLIC_TURNSTILE_SITE_KEY` is intentionally public and belongs in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
+Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search`, `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all six. Guidance is the safe default and deliberately stays ready without search dependencies. `PUBLIC_TURNSTILE_SITE_KEY` is intentionally public and belongs in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
 
 ## Local Database
 
@@ -90,12 +91,12 @@ Real indexed search additionally requires runtime secrets/configuration outside 
 - Use `infra/caddy/Caddyfile.example` as the reverse proxy template.
 - Replace the example hostname, keep the PWA root at `/srv/sir-saathi/web/current`, and keep `/api/*` on that exact origin. Caddy serves Astro's generated directory indexes and retains the API prefix when proxying.
 - Preserve the template's HSTS, anti-framing, content-type, referrer, permissions, cross-origin-resource, and Content Security Policy headers. The CSP is deny-by-default and allows network script/frame access only to the Turnstile challenge origin. Astro's static hydration bootstrap and generated island styles are inline, so the reviewed policy currently contains `unsafe-inline` for scripts and styles; moving to build-generated hashes or runtime nonces is a tracked hardening improvement, not a reason to remove the rest of the allowlist.
-- Create `/etc/sir-saathi/api.env` as `root:sir-saathi` with mode `0640`. Put the five server-owned `SIR_SAATHI_*` values listed above in that file; never add `PUBLIC_TURNSTILE_SITE_KEY` or shell `export` syntax. The systemd unit loads this exact file before starting the API.
+- Create `/etc/sir-saathi/api.env` as `root:sir-saathi` with mode `0640`. Put the six server-owned `SIR_SAATHI_*` values listed above in that file; never add `PUBLIC_TURNSTILE_SITE_KEY` or shell `export` syntax. The systemd unit loads this exact file before starting the API.
 - Keep runtime configuration outside Git. After changing it, run `systemctl daemon-reload` when the unit changed and restart `sir-saathi-api`.
 
 ## Monitoring
 
-Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/health` route and every request has a 10-second timeout. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Use the fuller deployment probe after releases and edge-policy changes rather than on a high-frequency uptime interval. Alert on API health failure, PWA failure, disk pressure, missing/failed encrypted backups, failed archive verification, overdue restore drills, and elevated error rates.
+Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/ready` route and every request has a 10-second timeout; this detects indexed-search dependency loss while leaving guidance-mode availability independent. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Use the fuller deployment probe after releases and edge-policy changes rather than on a high-frequency uptime interval. Alert on API readiness failure, PWA failure, disk pressure, missing/failed encrypted backups, failed archive verification, overdue restore drills, and elevated error rates.
 
 After every edge-policy change, inspect a deployed state page and exercise the indexed-search challenge in a browser with the console open. Treat CSP violations involving same-origin Astro assets or `https://challenges.cloudflare.com` as release blockers; do not broaden the policy to arbitrary third-party origins.
 

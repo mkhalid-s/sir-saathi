@@ -30,6 +30,7 @@ REQUIRED_FILES = [
     "docs/ACCESSIBILITY.md",
     "docs/IMPLEMENTATION_STATUS.md",
     "services/api/privacy.py",
+    "services/api/readiness.py",
     "infra/caddy/Caddyfile.example",
     "infra/docker-compose.yml",
     ".github/workflows/source-freshness.yml",
@@ -54,7 +55,7 @@ def verify_api_routes() -> None:
     from services.api.app import api_route_paths
 
     paths = api_route_paths()
-    required = {"/api/health", "/api/states", "/api/forms", "/api/guidance", "/api/search"}
+    required = {"/api/health", "/api/ready", "/api/states", "/api/forms", "/api/guidance", "/api/search"}
     missing = sorted(required - paths)
     if missing:
         raise RuntimeError(f"missing API routes: {missing}")
@@ -127,10 +128,22 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("deployment preflight must distinguish safe launch modes without exposing values")
     if "TURNSTILE_HOSTNAME_ENV" not in preflight or "TRUSTED_PROXY_HOPS_ENV" not in preflight:
         raise RuntimeError("indexed-search preflight must validate abuse and proxy boundaries")
+    if "DEPLOYMENT_MODE_ENV" not in preflight or "must match the selected deployment mode" not in preflight:
+        raise RuntimeError("deployment preflight must match the selected runtime mode")
+    readiness = (ROOT / "services/api/readiness.py").read_text(encoding="utf-8")
+    for contract in [
+        "indexed_search.turnstile_unavailable",
+        "indexed_search.database_unavailable",
+        "indexed_search.shared_limiter_unavailable",
+        "indexed_search.trusted_proxy_unconfigured",
+    ]:
+        if contract not in readiness:
+            raise RuntimeError(f"runtime readiness is missing fail-closed contract: {contract}")
     probe = (ROOT / "pipeline/sir_saathi_pipeline/deployment_probe.py").read_text(encoding="utf-8")
     for contract in [
         "origin.invalid_https_origin",
         "api_health.no_store",
+        "api_readiness.no_store",
         "csp.default_deny",
         "not_found.noindex",
         "values_redacted",

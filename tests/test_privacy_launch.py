@@ -120,6 +120,25 @@ def test_redis_rate_limiter_fails_closed_when_store_is_unavailable() -> None:
         RedisRateLimiter(client=Client()).check("search:hashed-scope")
 
 
+def test_redis_readiness_uses_ping_without_consuming_a_rate_limit_slot() -> None:
+    class Client:
+        def __init__(self, result=True):
+            self.result = result
+            self.pings = 0
+
+        def ping(self):
+            self.pings += 1
+            return self.result
+
+        def eval(self, *_args):
+            raise AssertionError("readiness must not consume a limiter slot")
+
+    client = Client()
+    assert RedisRateLimiter(client=client).ready() is True
+    assert client.pings == 1
+    assert RedisRateLimiter(client=Client(False)).ready() is False
+
+
 def test_client_ip_resolution_trusts_only_configured_proxy_hops() -> None:
     forwarded = "198.51.100.9, 203.0.113.8"
     assert resolve_client_ip(peer_ip="127.0.0.1", forwarded_for=forwarded, trusted_proxy_hops=0) == "127.0.0.1"

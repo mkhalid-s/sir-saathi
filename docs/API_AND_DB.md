@@ -3,6 +3,7 @@
 The first API surface is intentionally small and served under the `/api` prefix:
 
 - `GET /api/health`
+- `GET /api/ready`
 - `GET /api/states`
 - `GET /api/forms`
 - `POST /api/guidance`
@@ -18,7 +19,9 @@ The production adapter in `services/api/search_backend.py` reads PostgreSQL only
 
 `GET /api/forms` exposes the canonical SIR form catalogue and common document categories from `config/forms/sir-actions.json`.
 
-The deployed `/api/search` handler also applies a fixed-window rate limit keyed by hashed client identity, state, and Assembly Constituency. This is intentionally small for the MVP and should move to a shared store before multi-process deployment.
+`GET /api/health` is process liveness. `GET /api/ready` is deployment-mode-aware readiness: guidance mode does not depend on indexed-search infrastructure, while indexed-search mode returns HTTP 503 unless server-side Turnstile is configured, PostgreSQL answers a data-free `SELECT 1`, the shared Redis limiter answers a non-mutating `PING`, and the trusted proxy boundary is configured. Readiness reports stable blocker IDs and never returns connection strings or exception details.
+
+The deployed `/api/search` handler also applies a fixed-window rate limit keyed by hashed client identity, state, and Assembly Constituency. Production indexed search requires the atomic shared Redis implementation; missing or unavailable Redis fails closed.
 
 API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 

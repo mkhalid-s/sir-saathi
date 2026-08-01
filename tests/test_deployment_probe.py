@@ -17,6 +17,13 @@ SECURITY_HEADERS = {
 
 
 def valid_fetcher(url: str, _timeout: float) -> ProbeResponse:
+    if url.endswith("/api/ready"):
+        return ProbeResponse(
+            200,
+            {"content-type": "application/json", "cache-control": "no-store"},
+            b'{"status":"ready","mode":"guidance","ready":true,"blockers":[]}',
+            url,
+        )
     if url.endswith("/api/health"):
         return ProbeResponse(
             200,
@@ -44,7 +51,7 @@ def test_deployment_probe_accepts_complete_same_origin_surface() -> None:
 
     assert report["ready"] is True
     assert report["checks_passed"] == report["checks_total"]
-    assert report["checks_total"] == 26
+    assert report["checks_total"] == 32
     assert report["blockers"] == []
     assert report["values_redacted"] is True
 
@@ -90,10 +97,11 @@ def test_deployment_probe_fails_closed_for_invalid_origin_and_network_failure() 
 
     failed = probe("https://sirsaathi.org", fetcher=failed_fetcher)
     assert failed["ready"] is False
-    assert failed["checks_total"] == 3
+    assert failed["checks_total"] == 4
     assert failed["blockers"] == [
         "home.request_succeeded",
         "api_health.request_succeeded",
+        "api_readiness.request_succeeded",
         "not_found.request_succeeded",
     ]
     assert "private network detail" not in str(failed)

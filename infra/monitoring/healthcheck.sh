@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 set -eu
-API_URL="${API_URL:-http://127.0.0.1:8000/api/health}"
+API_URL="${API_URL:-http://127.0.0.1:8000/api/ready}"
 WEB_URL="${WEB_URL:-}"
 CURL_TIMEOUT_SECONDS="${CURL_TIMEOUT_SECONDS:-10}"
 

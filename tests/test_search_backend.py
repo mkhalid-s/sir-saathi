@@ -4,7 +4,7 @@ import importlib
 import pytest
 
 from services.api.search import SearchRequest
-from services.api.search_backend import PostgresSearchBackend, public_search_sql
+from services.api.search_backend import PostgresSearchBackend, configured_search_backend, public_search_sql
 from services.api.models import InternalVoterRecord
 from services.api.privacy import RateLimitDecision
 
@@ -72,6 +72,31 @@ def test_postgres_backend_uses_bounded_parameters_and_closes_connection() -> Non
     assert connection.closed is True
     assert results[0].name == "Sample Voter"
     assert results[0].epic_last4 == "1234"
+
+
+def test_postgres_backend_readiness_is_non_sensitive_and_closes_connection() -> None:
+    connection = FakeConnection([])
+    assert PostgresSearchBackend(lambda: connection).ready() is True
+    assert connection.cursor_obj.executed == ("SELECT 1", ())
+    assert connection.closed is True
+    assert PostgresSearchBackend(lambda: (_ for _ in ()).throw(TimeoutError("private"))).ready() is False
+
+
+def test_configured_postgres_backend_uses_a_bounded_connect_timeout(monkeypatch) -> None:
+    captured = {}
+
+    def connect(database_url, **kwargs):
+        captured.update({"database_url": database_url, **kwargs})
+        raise TimeoutError("synthetic")
+
+    import psycopg
+
+    monkeypatch.setenv("SIR_SAATHI_DATABASE_URL", "postgresql://database.internal/sir_saathi")
+    monkeypatch.setattr(psycopg, "connect", connect)
+    backend = configured_search_backend()
+    assert backend is not None
+    assert backend.ready() is False
+    assert captured["connect_timeout"] == 3
 
 
 def test_search_backend_is_called_only_after_launch_policy_passes(monkeypatch) -> None:

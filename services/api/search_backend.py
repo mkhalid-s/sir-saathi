@@ -111,6 +111,20 @@ class PostgresSearchBackend:
             for row in rows
         ]
 
+    def ready(self) -> bool:
+        """Check connectivity without reading voter or scope data."""
+
+        try:
+            connection = self._connection_factory()
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1", ())
+            finally:
+                connection.close()
+        except Exception:
+            return False
+        return True
+
 
 def configured_search_backend() -> SearchBackend | None:
     database_url = os.environ.get(DATABASE_URL_ENV)
@@ -121,6 +135,6 @@ def configured_search_backend() -> SearchBackend | None:
         import psycopg
         from psycopg.rows import dict_row
 
-        return psycopg.connect(database_url, row_factory=dict_row)
+        return psycopg.connect(database_url, row_factory=dict_row, connect_timeout=3)
 
     return PostgresSearchBackend(connect)

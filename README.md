@@ -51,6 +51,7 @@ Accessibility targets, automated checks, and the required manual assistive-techn
 The initial API is intentionally small and served under `/api`:
 
 - `GET /api/health`
+- `GET /api/ready`
 - `GET /api/states`
 - `GET /api/forms`
 - `POST /api/guidance`

@@ -78,7 +78,8 @@ def test_compose_is_local_only_and_not_trust_auth() -> None:
 
 def test_healthcheck_probes_the_deployed_api_route_with_a_timeout() -> None:
     healthcheck = (ROOT / "infra/monitoring/healthcheck.sh").read_text(encoding="utf-8")
-    assert "http://127.0.0.1:8000/api/health" in healthcheck
+    assert "http://127.0.0.1:8000/api/ready" in healthcheck
+    assert "127.0.0.1:8000/api/health" not in healthcheck
     assert "127.0.0.1:8000/health" not in healthcheck
     assert "--max-time" in healthcheck
     assert 'WEB_URL="${WEB_URL:-}"' in healthcheck

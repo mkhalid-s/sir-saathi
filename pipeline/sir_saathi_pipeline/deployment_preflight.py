@@ -21,6 +21,7 @@ TURNSTILE_HOSTNAME_ENV = "SIR_SAATHI_TURNSTILE_HOSTNAME"
 TRUSTED_PROXY_HOPS_ENV = "SIR_SAATHI_TRUSTED_PROXY_HOPS"
 BACKUP_DIR_ENV = "SIR_SAATHI_BACKUP_DIR"
 AGE_RECIPIENT_ENV = "SIR_SAATHI_AGE_RECIPIENT"
+DEPLOYMENT_MODE_ENV = "SIR_SAATHI_DEPLOYMENT_MODE"
 RESERVED_PUBLIC_SUFFIXES = (".example", ".invalid", ".localhost", ".test")
 
 
@@ -78,9 +79,13 @@ def preflight(mode: str, environment: Mapping[str, str]) -> dict[str, object]:
         blockers.append(f"{WEB_URL_ENV} must be a non-reserved HTTPS origin")
     if site_origin and web_origin and site_origin != web_origin:
         blockers.append(f"{WEB_URL_ENV} must match {PUBLIC_SITE_URL_ENV}")
+    runtime_mode = environment.get(DEPLOYMENT_MODE_ENV, "guidance").strip()
+    if runtime_mode != mode:
+        blockers.append(f"{DEPLOYMENT_MODE_ENV} must match the selected deployment mode")
 
     if mode == "indexed-search":
         required = [
+            DEPLOYMENT_MODE_ENV,
             PUBLIC_TURNSTILE_SITE_KEY_ENV,
             DATABASE_URL_ENV,
             REDIS_URL_ENV,
@@ -137,7 +142,7 @@ def preflight(mode: str, environment: Mapping[str, str]) -> dict[str, object]:
         "mode": mode,
         "ready": not blockers,
         "blockers": blockers,
-        "checked_fields": 2 if mode == "guidance" else 10,
+        "checked_fields": 3 if mode == "guidance" else 11,
         "values_redacted": True,
     }
 

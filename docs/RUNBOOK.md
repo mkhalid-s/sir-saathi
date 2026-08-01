@@ -23,6 +23,6 @@ If sensitive data is exposed:
 - Confirm the daily `Official source freshness` workflow is enabled on the default branch and its failure notifications reach an active operator. Its retained JSON report contains source metadata only and is safe to use for triage.
 - Review sources marked `expiring` before they become launch blockers. The report contains public source labels and dates only—never voter queries or records.
 - Weekly dependency audit.
-- Daily API/PWA health checks after launch.
+- Daily API readiness/PWA checks after launch; use liveness separately when diagnosing whether failure is process-level or an indexed-search dependency.
 - Create an encrypted database backup before every migration or roll ingestion and on the deployment's reviewed schedule; verify its checksum/decryption/archive structure with `python -m pipeline.sir_saathi_pipeline.backups verify`.
 - Perform and record an isolated full restore test before enabling real indexed search and at the reviewed recovery-test cadence. Archive verification alone is insufficient.

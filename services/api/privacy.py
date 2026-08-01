@@ -116,6 +116,14 @@ class RedisRateLimiter:
             retry_after_seconds=0 if allowed else max(1, ttl),
         )
 
+    def ready(self) -> bool:
+        """Check the shared limiter without consuming a rate-limit slot."""
+
+        try:
+            return self.client.ping() is True
+        except Exception:
+            return False
+
 
 def configured_rate_limiter() -> RateLimiter:
     redis_url = os.environ.get(REDIS_URL_ENV)
