@@ -1,4 +1,4 @@
-import { formatIndiaDate, type StateSummary } from '../data/states';
+import { currentIndiaDateIso, formatIndiaDate, type StateSummary } from '../data/states';
 import { translate, type MessageKey, type MessageValues } from './i18n';
 
 export type Situation =
@@ -48,13 +48,19 @@ function normalizeInput(input: Situation | WizardAnswers): WizardAnswers {
 }
 
 function deadlineNotice(state: StateSummary, situation: Situation, locale: string): string | undefined {
-  const deadline = deadlineFor(state, situation, locale);
-  return deadline
-    ? translate(locale, 'guidance.deadline_before', { deadline })
-    : translate(locale, 'guidance.deadline_latest');
+  const deadlineIso = deadlineIsoFor(state, situation);
+  if (!deadlineIso) return translate(locale, 'guidance.deadline_latest');
+  const remainingDays = Math.round(
+    (Date.parse(`${deadlineIso}T00:00:00+05:30`) - Date.parse(`${currentIndiaDateIso()}T00:00:00+05:30`)) /
+      (24 * 60 * 60 * 1000)
+  );
+  if (remainingDays < 0) return translate(locale, 'guidance.warning.passed');
+  if (remainingDays <= 3) return translate(locale, 'guidance.warning.close');
+  return translate(locale, 'guidance.deadline_before', { deadline: formatIndiaDate(deadlineIso, locale) });
 }
 
-export function deadlineFor(state: StateSummary, situation: Situation, locale = 'en-IN'): string | undefined {
+export function deadlineIsoFor(state: StateSummary, situation: Situation): string | undefined {
+  if (state.currentPhase === 'schedule_unverified' || state.currentPhase === 'schedule_pending') return undefined;
   let value: string | undefined;
   if (situation === 'existing_voter' || situation === 'portal_failed') {
     if (state.currentPhase === 'pre_enumeration' || state.currentPhase === 'enumeration_open') {
@@ -65,8 +71,15 @@ export function deadlineFor(state: StateSummary, situation: Situation, locale = 
       value = state.finalRollDateIso;
     }
   } else {
-    value = state.claimsEndIso ?? state.finalRollDateIso;
+    value = state.currentPhase === 'claims_disposal' || state.currentPhase === 'final_roll_published'
+      ? state.finalRollDateIso
+      : state.claimsEndIso ?? state.finalRollDateIso;
   }
+  return value;
+}
+
+export function deadlineFor(state: StateSummary, situation: Situation, locale = 'en-IN'): string | undefined {
+  const value = deadlineIsoFor(state, situation);
   return value ? formatIndiaDate(value, locale) : undefined;
 }
 
@@ -81,8 +94,8 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     const actions = [
       text('guidance.missing.search_again'),
       text('guidance.missing.check_roll'),
-      text('guidance.missing.contact'),
-      text('guidance.missing.file_claim')
+      text('guidance.missing.file_claim'),
+      text('guidance.missing.contact')
     ];
     if (!scheduleUnavailable && answers.baseRollFound === 'yes') {
       actions.splice(2, 0, text('guidance.missing.base_reference'));
@@ -102,7 +115,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       title: text('guidance.new.title'),
       priority: 'high',
       summary: text('guidance.new.summary', { form: form('form_6') }),
-      actions: [text('guidance.new.eligibility'), text('guidance.new.prepare'), text('guidance.new.submit', { form: form('form_6') })],
+      actions: [text('guidance.new.eligibility'), text('guidance.new.prepare'), text('guidance.new.submit', { form: form('form_6') }), text('guidance.new.track')],
       documents: [text('document.identity'), text('document.address'), text('document.age')],
       notices
     };
@@ -163,14 +176,21 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     };
   }
 
-  const enumerationClosed = state && state.currentPhase !== 'pre_enumeration' && state.currentPhase !== 'enumeration_open';
+  const revisionComplete = state?.currentPhase === 'final_roll_published';
+  const enumerationActionable = state?.currentPhase === 'pre_enumeration' || state?.currentPhase === 'enumeration_open';
   const actions = scheduleUnavailable
     ? [
         text('guidance.existing.check_current'),
         text('guidance.existing.check_notices'),
         text('guidance.existing.contact_unverified')
       ]
-    : enumerationClosed
+    : revisionComplete
+    ? [
+        text('guidance.existing.check_final'),
+        text('guidance.existing.current_remedy'),
+        text('guidance.existing.keep_every')
+      ]
+    : !enumerationActionable
     ? [
         text('guidance.existing.check_draft'),
         text('guidance.existing.file_claim'),
@@ -182,11 +202,11 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
         text('guidance.existing.keep')
       ];
   let priority: GuidanceCard['priority'] = 'medium';
-  if (!scheduleUnavailable && (answers.bloVisited === 'no' || answers.enumerationFormReceived === 'no')) {
+  if (enumerationActionable && (answers.bloVisited === 'no' || answers.enumerationFormReceived === 'no')) {
     actions.unshift(text('guidance.existing.contact_missing_form'));
     priority = 'high';
   }
-  if (!scheduleUnavailable && answers.enumerationFormReceived === 'yes' && answers.enumerationFormSubmitted === 'no') {
+  if (enumerationActionable && answers.enumerationFormReceived === 'yes' && answers.enumerationFormSubmitted === 'no') {
     actions.unshift(text('guidance.existing.submit_received'));
     priority = 'high';
   }
@@ -200,6 +220,8 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     priority,
     summary: scheduleUnavailable
       ? text('guidance.existing.summary_unverified')
+      : revisionComplete
+      ? text('guidance.existing.summary_complete')
       : text('guidance.existing.summary'),
     actions,
     documents: [text('document.existing_reference'), text('document.changed_detail')],

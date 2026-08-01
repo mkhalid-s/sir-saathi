@@ -110,14 +110,9 @@ def get_guidance(
     schedule_unavailable = state.schedule.status in {"schedule_unverified", "schedule_pending"}
 
     if request.situation == "existing_voter":
-        revision_complete = state.schedule.status_on(request.today) == "final_roll_published" if request.today else (
-            state.schedule.status == "final_roll_published"
-        )
-        enumeration_closed = bool(
-            request.today
-            and state.schedule.enumeration_end
-            and request.today > state.schedule.enumeration_end
-        )
+        current_status = state.schedule.status_on(request.today) if request.today else state.schedule.status
+        revision_complete = current_status == "final_roll_published"
+        enumeration_actionable = current_status in {"pre_enumeration", "enumeration_open"}
         if schedule_unavailable:
             actions = [
                 text("guidance.existing.check_current"),
@@ -130,7 +125,7 @@ def get_guidance(
                 text("guidance.existing.current_remedy"),
                 text("guidance.existing.keep_every"),
             ]
-        elif enumeration_closed:
+        elif not enumeration_actionable:
             actions = [
                 text("guidance.existing.check_draft"),
                 text("guidance.existing.file_claim"),
@@ -142,16 +137,26 @@ def get_guidance(
                 text("guidance.existing.submit_enumeration"),
                 text("guidance.existing.keep"),
             ]
-        if not schedule_unavailable and (
+        if enumeration_actionable and (
             request.enumeration_form_received == "no" or request.blo_visited == "no"
         ):
             actions.insert(0, text("guidance.existing.contact_missing_form"))
             priority: Priority = "high"
         else:
             priority = "medium"
+        if (
+            enumeration_actionable
+            and request.enumeration_form_received == "yes"
+            and request.enumeration_form_submitted == "no"
+        ):
+            actions.insert(0, text("guidance.existing.submit_received"))
+            priority = "high"
+        if request.current_roll_found == "no":
+            actions.insert(0, text("guidance.existing.urgent_missing"))
+            priority = "urgent"
         return GuidanceResult(
             priority=priority,
-            title=text("guidance.existing.title"),
+            title=text("guidance.existing.title_missing" if priority == "urgent" else "guidance.existing.title"),
             summary=(
                 text("guidance.existing.summary_unverified")
                 if schedule_unavailable

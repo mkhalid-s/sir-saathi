@@ -30,3 +30,5 @@ The first version of SIR Saathi guidance is deterministic. It does not use an LL
 - Do not expose full EPIC values, addresses, or raw roll records in guidance examples.
 - If a deadline appears close or passed, tell the user to check official channels immediately.
 - Treat both unverified and officially pending schedules as unavailable: hide and ignore BLO, enumeration-form, and base-roll answers, show no inferred SIR deadline, and direct the voter to current rolls and official notices. Clear state-specific status answers whenever the jurisdiction changes.
+- Ask status questions only when they affect the selected situation and revision phase. Clear prior status answers when the situation changes. Enumeration answers may change guidance only before or during enumeration; completed revisions must use final/current-roll remedies and must never send a voter back to enumeration.
+- Keep PWA and API urgency aligned: a missing current-roll entry is urgent, a received-but-unsubmitted enumeration form is high priority only while enumeration is actionable, and passed or imminent deadlines use explicit warning copy rather than future-tense instructions.

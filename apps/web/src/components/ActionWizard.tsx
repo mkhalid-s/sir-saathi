@@ -60,6 +60,11 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   const deadline = deadlineFor(state, answers.situation, uiLanguage);
   const languageOptions = uiLanguageOptionsForState(state.languageCodes);
   const scheduleKnown = state.currentPhase !== 'schedule_unverified' && state.currentPhase !== 'schedule_pending';
+  const enumerationQuestionsRelevant = answers.situation === 'existing_voter' &&
+    (state.currentPhase === 'pre_enumeration' || state.currentPhase === 'enumeration_open');
+  const currentRollQuestionRelevant = answers.situation === 'existing_voter';
+  const baseRollQuestionRelevant = answers.situation === 'missing_name' && scheduleKnown;
+  const hasStatusQuestions = enumerationQuestionsRelevant || currentRollQuestionRelevant || baseRollQuestionRelevant;
   const message = (key: MessageKey, values: MessageValues = {}) => translate(uiLanguage, key, values);
   const plannedLanguages = languageOptions.filter((item) => item.status === 'planned').map((item) => item.label);
   const languageReadiness = plannedLanguages.length
@@ -80,6 +85,9 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const updateAnswer = <K extends keyof WizardAnswers>(key: K, value: WizardAnswers[K]) => {
     setAnswers((current) => ({ ...current, [key]: value }));
+  };
+  const updateSituation = (situation: Situation) => {
+    setAnswers({ ...defaultAnswers, situation });
   };
   const updateState = (value: string) => {
     setStateId(value);
@@ -229,7 +237,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
 
         <label class="field">
           {message('wizard.situation')}
-          <select class="select" value={answers.situation} onChange={(event) => updateAnswer('situation', (event.currentTarget as HTMLSelectElement).value as Situation)}>
+          <select class="select" value={answers.situation} onChange={(event) => updateSituation((event.currentTarget as HTMLSelectElement).value as Situation)}>
             {situations.map((item) => <option value={item.value}>{message(item.key)}</option>)}
           </select>
         </label>
@@ -252,13 +260,15 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
         <p>{guidanceBoundaryText}</p>
       </div>
 
-      <div class="question-grid" aria-label={message('wizard.questions_label')}>
-        {scheduleKnown && statusSelect(message('wizard.question.blo'), answers.bloVisited, (value) => updateAnswer('bloVisited', value), message)}
-        {scheduleKnown && statusSelect(message('wizard.question.received'), answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value), message)}
-        {scheduleKnown && statusSelect(message('wizard.question.submitted'), answers.enumerationFormSubmitted, (value) => updateAnswer('enumerationFormSubmitted', value), message)}
-        {statusSelect(message('wizard.question.current_roll'), answers.currentRollFound, (value) => updateAnswer('currentRollFound', value), message)}
-        {scheduleKnown && statusSelect(message('wizard.question.base_roll'), answers.baseRollFound, (value) => updateAnswer('baseRollFound', value), message)}
-      </div>
+      {hasStatusQuestions && (
+        <div class="question-grid" aria-label={message('wizard.questions_label')}>
+          {enumerationQuestionsRelevant && statusSelect(message('wizard.question.blo'), answers.bloVisited, (value) => updateAnswer('bloVisited', value), message)}
+          {enumerationQuestionsRelevant && statusSelect(message('wizard.question.received'), answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value), message)}
+          {enumerationQuestionsRelevant && statusSelect(message('wizard.question.submitted'), answers.enumerationFormSubmitted, (value) => updateAnswer('enumerationFormSubmitted', value), message)}
+          {currentRollQuestionRelevant && statusSelect(message('wizard.question.current_roll'), answers.currentRollFound, (value) => updateAnswer('currentRollFound', value), message)}
+          {baseRollQuestionRelevant && statusSelect(message('wizard.question.base_roll'), answers.baseRollFound, (value) => updateAnswer('baseRollFound', value), message)}
+        </div>
+      )}
 
       <div class="result-card priority-${guidance.priority}" aria-labelledby="guidance-result-title">
         <p class="result-status">{message(`status.${state.currentPhase}` as MessageKey)}</p>

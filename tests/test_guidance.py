@@ -1,6 +1,58 @@
 from datetime import date
 
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
+from pipeline.sir_saathi_pipeline.state_registry import load_all_states
+
+
+def test_all_jurisdictions_and_situations_obey_phase_safety_matrix() -> None:
+    states = load_all_states()
+    situations = (
+        "existing_voter",
+        "missing_name",
+        "new_voter",
+        "shifted_address",
+        "correction",
+        "deceased_family",
+        "duplicate_entry",
+        "portal_failed",
+    )
+    today = date(2026, 8, 1)
+    assert len(states) == 36
+    for state_id, state in states.items():
+        phase = state.schedule.status_on(today)
+        for situation in situations:
+            result = get_guidance(GuidanceInput(state_id=state_id, situation=situation, today=today))
+            assert result.title and result.summary and result.actions and result.documents
+            if state.schedule.status in {"schedule_unverified", "schedule_pending"}:
+                assert result.deadline is None
+            else:
+                assert result.deadline is not None
+
+        normal = get_guidance(GuidanceInput(state_id=state_id, situation="existing_voter", today=today))
+        stale = get_guidance(GuidanceInput(
+            state_id=state_id,
+            situation="existing_voter",
+            blo_visited="no",
+            enumeration_form_received="yes",
+            enumeration_form_submitted="no",
+            today=today,
+        ))
+        if phase in {"pre_enumeration", "enumeration_open"}:
+            assert stale.priority == "high"
+        else:
+            assert stale == normal
+
+        missing = get_guidance(GuidanceInput(
+            state_id=state_id,
+            situation="existing_voter",
+            current_roll_found="no",
+            today=today,
+        ))
+        assert missing.priority == "urgent"
+        assert "Treat this as urgent" in missing.actions[0]
+        if phase == "final_roll_published":
+            assert "reviewed revision schedule is complete" in normal.summary
+            assert "final/current electoral roll" in normal.actions[0]
 
 
 def test_missing_name_is_urgent_and_uses_claims_deadline() -> None:
@@ -25,10 +77,53 @@ def test_existing_voter_without_blo_visit_is_high_priority() -> None:
             situation="existing_voter",
             blo_visited="no",
             enumeration_form_received="no",
+            today=date(2026, 7, 1),
         )
     )
     assert result.priority == "high"
     assert "Contact your BLO" in result.actions[0]
+
+
+def test_existing_voter_received_form_and_missing_roll_match_pwa_priority_rules() -> None:
+    received = get_guidance(
+        GuidanceInput(
+            state_id="IN-MH",
+            situation="existing_voter",
+            enumeration_form_received="yes",
+            enumeration_form_submitted="no",
+            today=date(2026, 7, 1),
+        )
+    )
+    assert received.priority == "high"
+    assert "Submit the received enumeration form" in received.actions[0]
+
+    missing = get_guidance(
+        GuidanceInput(
+            state_id="IN-MH",
+            situation="existing_voter",
+            current_roll_found="no",
+            today=date(2026, 8, 1),
+        )
+    )
+    assert missing.priority == "urgent"
+    assert missing.title == "Resolve your missing current-roll entry"
+    assert "Treat this as urgent" in missing.actions[0]
+
+
+def test_completed_revision_ignores_stale_enumeration_answers() -> None:
+    result = get_guidance(
+        GuidanceInput(
+            state_id="IN-MH",
+            situation="existing_voter",
+            blo_visited="no",
+            enumeration_form_received="yes",
+            enumeration_form_submitted="no",
+            today=date(2026, 10, 8),
+        )
+    )
+    assert result.priority == "medium"
+    assert "final/current electoral roll" in result.actions[0]
+    assert all("enumeration form" not in action.casefold() for action in result.actions)
 
 
 def test_existing_voter_advances_to_claims_deadline_after_enumeration() -> None:

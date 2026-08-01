@@ -5,6 +5,7 @@
     "apps/web"
   ],
   "scripts": {
+    "guidance:matrix:check": "node scripts/check_web_guidance_matrix.mjs",
     "pwa:icons": "node scripts/generate_pwa_icons.mjs",
     "pwa:icons:check": "node scripts/generate_pwa_icons.mjs --check",
     "pwa:offline:check": "node scripts/finalize_service_worker.mjs --check",

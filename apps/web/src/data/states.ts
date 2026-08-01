@@ -126,7 +126,7 @@ const statusLabels: Record<string, string> = {
   schedule_unverified: 'Schedule not yet verified'
 };
 
-function currentIndiaDateIso(): string {
+export function currentIndiaDateIso(): string {
   const parts = new Intl.DateTimeFormat('en', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',

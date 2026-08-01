@@ -205,9 +205,44 @@ def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> Non
     assert "state.currentPhase !== 'schedule_unverified' && state.currentPhase !== 'schedule_pending'" in wizard
     assert "state?.currentPhase === 'schedule_unverified' || state?.currentPhase === 'schedule_pending'" in guidance
     assert "!scheduleUnavailable && answers.baseRollFound" in guidance
-    assert "!scheduleUnavailable && (answers.bloVisited" in guidance
+    assert "enumerationActionable && (answers.bloVisited" in guidance
     assert "setAnswers((current) => ({ ...defaultAnswers, situation: current.situation }))" in wizard
+    assert "enumerationQuestionsRelevant" in wizard
+    assert "baseRollQuestionRelevant" in wizard
+    assert "updateSituation" in wizard
     assert "official jurisdiction notice" in messages["guidance.existing.summary_unverified"]
+
+
+def test_web_guidance_matches_phase_aware_api_outcomes() -> None:
+    guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    assert "revisionComplete" in guidance
+    assert "guidance.existing.check_final" in guidance
+    assert "guidance.existing.current_remedy" in guidance
+    assert "guidance.existing.summary_complete" in guidance
+    assert "enumerationActionable && answers.enumerationFormReceived" in guidance
+    assert "answers.currentRollFound === 'no'" in guidance
+    assert "guidance.new.track" in guidance
+    assert "deadlineIsoFor" in guidance
+    assert "guidance.warning.passed" in guidance
+    assert "guidance.warning.close" in guidance
+    assert messages["guidance.existing.summary_complete"].startswith("The reviewed revision schedule is complete")
+
+
+def test_web_guidance_has_an_executable_all_jurisdiction_matrix_gate() -> None:
+    package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    checker = (ROOT / "scripts/check_web_guidance_matrix.mjs").read_text(encoding="utf-8")
+    launch_gate = (ROOT / "scripts/launch_gate.py").read_text(encoding="utf-8")
+    assert package["scripts"]["guidance:matrix:check"] == "node scripts/check_web_guidance_matrix.mjs"
+    assert "states.length, 36" in checker
+    assert "for (const situation of situations)" in checker
+    assert "staleEnumeration" in checker
+    assert "phaseVariants" in checker
+    assert "pre_enumeration" in checker
+    assert "enumeration_open" in checker
+    assert "final_roll_published" in checker
+    assert "schedule_pending" in checker
+    assert 'run(["npm", "run", "guidance:matrix:check"])' in launch_gate
 
 
 def test_web_builds_a_shareable_page_for_every_jurisdiction() -> None:

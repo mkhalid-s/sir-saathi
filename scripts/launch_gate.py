@@ -238,6 +238,23 @@ def verify_source_freshness() -> None:
         raise RuntimeError("API must treat pending and unverified schedules as the same fail-closed boundary")
     if "setAnswers((current) => ({ ...defaultAnswers, situation: current.situation }))" not in web:
         raise RuntimeError("jurisdiction changes must clear state-specific wizard answers")
+    for contract in [
+        "enumerationQuestionsRelevant",
+        "baseRollQuestionRelevant",
+        "updateSituation",
+    ]:
+        if contract not in web:
+            raise RuntimeError(f"wizard must suppress irrelevant or stale status answers: {contract}")
+    for contract in [
+        "revisionComplete",
+        "guidance.existing.check_final",
+        "guidance.existing.summary_complete",
+        "enumerationActionable",
+        "guidance.new.track",
+        "guidance.warning.passed",
+    ]:
+        if contract not in web_guidance:
+            raise RuntimeError(f"PWA guidance is missing phase-aware parity contract: {contract}")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
     if "directory.provenance" not in search_availability or "directory.search.unverified" not in search_availability:
@@ -694,6 +711,7 @@ def main() -> int:
     run([sys.executable, "scripts/check_sensitive.py"])
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])
+    run(["npm", "run", "guidance:matrix:check"])
     run(["npm", "run", "pwa:icons:check"])
     run(["npm", "run", "web:build"])
     run(["npm", "run", "pwa:offline:check"])
