@@ -17,9 +17,19 @@ def test_maharashtra_registry_dates_and_capability() -> None:
     assert mh.schedule.final_roll_date == date(2026, 10, 7)
     assert mh.data_capability == "pilot_indexed_search"
     assert mh.is_search_enabled is True
-    assert all(source.last_verified == date(2026, 6, 29) for source in mh.official_sources)
-    assert mh.schedule_provenance.confidence == "reported"
-    assert mh.schedule_provenance.source_type == "public_report"
+    assert all(source.last_verified == date(2026, 8, 1) for source in mh.official_sources)
+    assert mh.schedule_provenance.confidence == "official"
+    assert mh.schedule_provenance.source_type == "official_portal"
+
+
+def test_maharashtra_schedule_derives_current_phase_from_dates() -> None:
+    schedule = load_all_states()["IN-MH"].schedule
+    assert schedule.status_on(date(2026, 6, 29)) == "pre_enumeration"
+    assert schedule.status_on(date(2026, 7, 1)) == "enumeration_open"
+    assert schedule.status_on(date(2026, 8, 1)) == "pre_draft_publication"
+    assert schedule.status_on(date(2026, 8, 5)) == "claims_and_objections_open"
+    assert schedule.status_on(date(2026, 9, 5)) == "claims_disposal"
+    assert schedule.status_on(date(2026, 10, 7)) == "final_roll_published"
 
 
 def test_west_bengal_starts_guidance_only() -> None:

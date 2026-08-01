@@ -54,7 +54,13 @@ function deadlineNotice(state: StateSummary, situation: Situation): string | und
 
 export function deadlineFor(state: StateSummary, situation: Situation): string | undefined {
   if (situation === 'existing_voter' || situation === 'portal_failed') {
-    return state.enumerationEnd ?? state.claimsEnd ?? state.finalRollDate;
+    if (state.currentPhase === 'pre_enumeration' || state.currentPhase === 'enumeration_open') {
+      return state.enumerationEnd ?? state.claimsEnd ?? state.finalRollDate;
+    }
+    if (state.currentPhase === 'pre_draft_publication' || state.currentPhase === 'claims_and_objections_open') {
+      return state.claimsEnd ?? state.finalRollDate;
+    }
+    return state.finalRollDate;
   }
   return state.claimsEnd ?? state.finalRollDate;
 }
@@ -149,11 +155,18 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     };
   }
 
-  const actions = [
-    'Verify your name through official sources.',
-    'Submit the enumeration form before the deadline if you receive one.',
-    'Keep the acknowledgement safely.'
-  ];
+  const enumerationClosed = state && state.currentPhase !== 'pre_enumeration' && state.currentPhase !== 'enumeration_open';
+  const actions = enumerationClosed
+    ? [
+        'Check your entry in the draft or current roll through official sources.',
+        'If it is missing or incorrect, file the appropriate claim during the claims and objections window.',
+        'Keep every acknowledgement safely.'
+      ]
+    : [
+        'Verify your name through official sources.',
+        'Submit the enumeration form before the deadline if you receive one.',
+        'Keep the acknowledgement safely.'
+      ];
   let priority: GuidanceCard['priority'] = 'medium';
   if (answers.bloVisited === 'no' || answers.enumerationFormReceived === 'no') {
     actions.unshift('Contact your BLO or local ERO because the enumeration form has not reached you yet.');

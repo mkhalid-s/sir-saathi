@@ -79,6 +79,28 @@ def test_web_state_summary_surfaces_source_freshness() -> None:
     assert "last checked" in source
 
 
+def test_web_state_summary_derives_current_schedule_phase() -> None:
+    source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    assert "currentPhaseForSchedule" in source
+    assert "Asia/Kolkata" in source
+    for phase in [
+        "pre_enumeration",
+        "enumeration_open",
+        "pre_draft_publication",
+        "claims_and_objections_open",
+        "claims_disposal",
+        "final_roll_published",
+    ]:
+        assert phase in source
+
+
+def test_wizard_deadlines_advance_with_the_current_phase() -> None:
+    source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    assert "state.currentPhase === 'pre_enumeration'" in source
+    assert "state.currentPhase === 'pre_draft_publication'" in source
+    assert "return state.claimsEnd ?? state.finalRollDate" in source
+
+
 def test_web_surfaces_reviewed_ui_language_readiness() -> None:
     state_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")

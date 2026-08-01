@@ -15,28 +15,28 @@
     "claims_start": "2026-08-05",
     "claims_end": "2026-09-04",
     "final_roll_date": "2026-10-07",
-    "status": "enumeration_scheduled"
+    "status": "pre_draft_publication"
   },
   "schedule_provenance": {
-    "label": "Maharashtra SIR schedule report",
-    "source_type": "public_report",
-    "confidence": "reported",
-    "notes": "Dates are from a public report; confirm against ECI/CEO sources before acting."
+    "label": "ECI SIR Phase III schedule",
+    "source_type": "official_portal",
+    "confidence": "official",
+    "notes": "Dates are from the official ECI Phase III press note hosted by CEO Maharashtra; recheck the official source before acting."
   },
   "ceo_portal": "https://ceoelection.maharashtra.gov.in/",
   "official_sources": [
     {
-      "label": "Maharashtra SIR schedule report",
-      "url": "https://newsonair.gov.in/maharashtra-to-begin-verification-of-98-6-million-voters-from-june-30-under-special-intensive-revision/",
-      "source_type": "public_report",
-      "last_verified": "2026-06-29",
-      "notes": "Contains Maharashtra SIR Phase III dates and process summary."
+      "label": "ECI SIR Phase III schedule",
+      "url": "https://ceoelection.maharashtra.gov.in/Downloads/PDF/Press%20Note%20Special%20Intensive%20Revision.pdf",
+      "source_type": "official_portal",
+      "last_verified": "2026-08-01",
+      "notes": "Official Phase III schedule with Maharashtra enumeration, draft, claims, disposal, and final-roll dates."
     },
     {
       "label": "ECI voters portal",
       "url": "https://voters.eci.gov.in/",
       "source_type": "official_portal",
-      "last_verified": "2026-06-29",
+      "last_verified": "2026-08-01",
       "notes": "Official portal for voter services and online forms."
     }
   ],

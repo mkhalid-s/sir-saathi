@@ -47,12 +47,26 @@ class GuidanceResult:
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
 
-def _deadline_for(state: StateConfig, case: Situation) -> date | None:
+def _first_on_or_after(today: date | None, *candidates: date | None) -> date | None:
+    available = tuple(candidate for candidate in candidates if candidate is not None)
+    if not available:
+        return None
+    if today is None:
+        return available[0]
+    return next((candidate for candidate in available if candidate >= today), available[-1])
+
+
+def _deadline_for(state: StateConfig, case: Situation, today: date | None) -> date | None:
     if case in {"missing_name", "correction", "shifted_address", "new_voter"}:
-        return state.schedule.claims_end or state.schedule.final_roll_date
+        return _first_on_or_after(today, state.schedule.claims_end, state.schedule.final_roll_date)
     if case in {"existing_voter", "portal_failed"}:
-        return state.schedule.enumeration_end or state.schedule.claims_end or state.schedule.final_roll_date
-    return state.schedule.claims_end or state.schedule.final_roll_date
+        return _first_on_or_after(
+            today,
+            state.schedule.enumeration_end,
+            state.schedule.claims_end,
+            state.schedule.final_roll_date,
+        )
+    return _first_on_or_after(today, state.schedule.claims_end, state.schedule.final_roll_date)
 
 
 def _base_links(state: StateConfig) -> tuple[str, ...]:
@@ -81,17 +95,29 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
     if request.state_id not in registry:
         raise ValueError(f"unknown state_id: {request.state_id}")
     state = registry[request.state_id]
-    deadline = _deadline_for(state, request.situation)
+    deadline = _deadline_for(state, request.situation, request.today)
     links = _base_links(state)
     labels = _source_labels(state)
     warnings = list(_schedule_warning(state, request.today, deadline))
 
     if request.situation == "existing_voter":
-        actions = [
-            "Confirm your name in the current electoral roll using the official portal or local BLO support.",
-            "If you receive a SIR enumeration form, verify the pre-filled details and submit it before the enumeration deadline.",
-            "Keep the acknowledgement copy or submission confirmation safely.",
-        ]
+        enumeration_closed = bool(
+            request.today
+            and state.schedule.enumeration_end
+            and request.today > state.schedule.enumeration_end
+        )
+        if enumeration_closed:
+            actions = [
+                "Check your entry in the draft/current electoral roll through the official portal or local BLO support.",
+                "If your entry is missing or incorrect, file the appropriate claim during the claims and objections window.",
+                "Keep every acknowledgement or submission confirmation safely.",
+            ]
+        else:
+            actions = [
+                "Confirm your name in the current electoral roll using the official portal or local BLO support.",
+                "If you receive a SIR enumeration form, verify the pre-filled details and submit it before the enumeration deadline.",
+                "Keep the acknowledgement copy or submission confirmation safely.",
+            ]
         if request.enumeration_form_received == "no" or request.blo_visited == "no":
             actions.insert(0, "Contact your BLO or local ERO office because the enumeration form has not reached you yet.")
             priority: Priority = "high"

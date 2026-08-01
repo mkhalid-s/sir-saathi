@@ -31,6 +31,20 @@ def test_existing_voter_without_blo_visit_is_high_priority() -> None:
     assert "Contact your BLO" in result.actions[0]
 
 
+def test_existing_voter_advances_to_claims_deadline_after_enumeration() -> None:
+    result = get_guidance(
+        GuidanceInput(
+            state_id="IN-MH",
+            situation="existing_voter",
+            today=date(2026, 8, 1),
+        )
+    )
+    assert result.deadline == date(2026, 9, 4)
+    assert not result.warnings
+    assert "draft/current electoral roll" in result.actions[0]
+    assert all("submit it before the enumeration deadline" not in action for action in result.actions)
+
+
 def test_west_bengal_guidance_uses_official_sources() -> None:
     result = get_guidance(GuidanceInput(state_id="IN-WB", situation="correction"))
     assert result.priority == "medium"

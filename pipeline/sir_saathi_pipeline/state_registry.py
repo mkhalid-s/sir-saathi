@@ -38,6 +38,22 @@ class SirSchedule:
     final_roll_date: date | None
     status: str
 
+    def status_on(self, today: date) -> str:
+        """Derive the user-facing phase from reviewed schedule dates."""
+        if self.enumeration_start and today < self.enumeration_start:
+            return "pre_enumeration"
+        if self.enumeration_start and self.enumeration_end and today <= self.enumeration_end:
+            return "enumeration_open"
+        if self.draft_roll_date and today < self.draft_roll_date:
+            return "pre_draft_publication"
+        if self.draft_roll_date and self.claims_end and today <= self.claims_end:
+            return "claims_and_objections_open"
+        if self.final_roll_date and today < self.final_roll_date:
+            return "claims_disposal"
+        if self.final_roll_date and today >= self.final_roll_date:
+            return "final_roll_published"
+        return self.status
+
 
 @dataclass(frozen=True)
 class DataSource:

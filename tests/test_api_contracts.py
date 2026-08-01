@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from services.api.app import api_route_paths, forms_payload, guidance_payload, list_states_payload, search_payload
 from services.api.models import InternalVoterRecord, redact_voter_record
@@ -16,7 +18,7 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
 
 
 def test_list_states_payload_exposes_registry_without_private_data() -> None:
-    states = list_states_payload()
+    states = list_states_payload(today=date(2026, 8, 1))
     mh = next(state for state in states if state["state_id"] == "IN-MH")
     assert mh["data_capability"] == "pilot_indexed_search"
     assert "final_roll_date" in mh
@@ -24,9 +26,11 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
     assert mh["sir_schedule"]["enumeration_end"] == "2026-07-29"
     assert mh["sir_schedule"]["claims_end"] == "2026-09-04"
     assert mh["sir_schedule"]["final_roll_date"] == "2026-10-07"
-    assert mh["schedule_provenance"]["confidence"] == "reported"
-    assert mh["schedule_provenance"]["source_type"] == "public_report"
-    assert mh["official_sources"][0]["last_verified"] == "2026-06-29"
+    assert mh["schedule_provenance"]["confidence"] == "official"
+    assert mh["schedule_provenance"]["source_type"] == "official_portal"
+    assert mh["official_sources"][0]["last_verified"] == "2026-08-01"
+    assert mh["current_phase"] == "pre_draft_publication"
+    assert mh["sir_schedule"]["current_phase"] == "pre_draft_publication"
 
 
 def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:
@@ -39,8 +43,19 @@ def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:
 
 
 def test_guidance_payload_returns_deadline_string() -> None:
-    result = guidance_payload({"state_id": "IN-MH", "situation": "missing_name"})
+    result = guidance_payload(
+        {"state_id": "IN-MH", "situation": "missing_name"},
+        today=date(2026, 8, 1),
+    )
     assert result["priority"] == "urgent"
+    assert result["deadline"] == "2026-09-04"
+
+
+def test_guidance_payload_moves_past_expired_enumeration_deadline() -> None:
+    result = guidance_payload(
+        {"state_id": "IN-MH", "situation": "existing_voter"},
+        today=date(2026, 8, 1),
+    )
     assert result["deadline"] == "2026-09-04"
 
 

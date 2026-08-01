@@ -18,7 +18,10 @@ interface StateConfig {
   languages: string[];
   default_language: string;
   sir_schedule: {
+    enumeration_start: string | null;
     enumeration_end: string | null;
+    draft_roll_date: string | null;
+    claims_start: string | null;
     claims_end: string | null;
     final_roll_date: string | null;
     status: string;
@@ -42,6 +45,7 @@ export interface StateSummary {
   defaultLanguage: string;
   capability: StateCapability;
   publicLaunchReady: boolean;
+  currentPhase: string;
   status: string;
   enumerationEnd?: string;
   claimsEnd?: string;
@@ -72,9 +76,35 @@ const languageNames: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
+  pre_enumeration: 'Preparing for enumeration',
+  enumeration_open: 'Enumeration is open',
   enumeration_scheduled: 'Enumeration scheduled',
+  pre_draft_publication: 'Draft roll publication is next',
+  claims_and_objections_open: 'Claims and objections are open',
+  claims_disposal: 'Claims and objections are being decided',
   final_roll_published: 'Final roll published'
 };
+
+function currentIndiaDateIso(): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+export function currentPhaseForSchedule(schedule: StateConfig['sir_schedule'], today = currentIndiaDateIso()): string {
+  if (schedule.enumeration_start && today < schedule.enumeration_start) return 'pre_enumeration';
+  if (schedule.enumeration_start && schedule.enumeration_end && today <= schedule.enumeration_end) return 'enumeration_open';
+  if (schedule.draft_roll_date && today < schedule.draft_roll_date) return 'pre_draft_publication';
+  if (schedule.draft_roll_date && schedule.claims_end && today <= schedule.claims_end) return 'claims_and_objections_open';
+  if (schedule.final_roll_date && today < schedule.final_roll_date) return 'claims_disposal';
+  if (schedule.final_roll_date && today >= schedule.final_roll_date) return 'final_roll_published';
+  return schedule.status;
+}
 
 function displayDate(value: string | null): string | undefined {
   if (!value) return undefined;
@@ -107,6 +137,7 @@ export function uiLanguageReadiness(stateLanguages: string[]): string {
 }
 
 function stateFromConfig(config: StateConfig): StateSummary {
+  const currentPhase = currentPhaseForSchedule(config.sir_schedule);
   return {
     stateId: config.state_id,
     name: config.name,
@@ -114,7 +145,8 @@ function stateFromConfig(config: StateConfig): StateSummary {
     defaultLanguage: languageNames[config.default_language] ?? config.default_language,
     capability: config.data_capability,
     publicLaunchReady: config.public_launch_ready,
-    status: statusLabels[config.sir_schedule.status] ?? config.sir_schedule.status.replaceAll('_', ' '),
+    currentPhase,
+    status: statusLabels[currentPhase] ?? currentPhase.replaceAll('_', ' '),
     enumerationEnd: displayDate(config.sir_schedule.enumeration_end),
     claimsEnd: displayDate(config.sir_schedule.claims_end),
     finalRollDate: displayDate(config.sir_schedule.final_roll_date),

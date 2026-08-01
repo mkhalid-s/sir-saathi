@@ -93,7 +93,7 @@ def test_build_workflow_reports_state_config_and_required_env(tmp_path: Path) ->
     ]
     assert report["state_config"]["data_capability"] == "pilot_indexed_search"
     assert report["state_config"]["public_launch_ready"] is False
-    assert report["state_config"]["schedule_provenance"] == "reported"
+    assert report["state_config"]["schedule_provenance"] == "official"
     assert report["source_manifest"]["reviewed"] is True
     assert report["source_manifest"]["roll_year"] == 2002
     assert report["source_manifest"]["checksum"] == VALID_CHECKSUM

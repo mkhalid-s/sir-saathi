@@ -43,7 +43,13 @@ def test_search_launch_policy_allows_sanitized_pilot() -> None:
 
 def test_public_search_requires_official_schedule_provenance() -> None:
     mh = load_all_states()["IN-MH"]
-    launch_ready = replace(mh, public_launch_ready=True, data_capability="validated_indexed_search")
+    reported_provenance = replace(mh.schedule_provenance, confidence="reported")
+    launch_ready = replace(
+        mh,
+        public_launch_ready=True,
+        data_capability="validated_indexed_search",
+        schedule_provenance=reported_provenance,
+    )
     with pytest.raises(ValueError, match="official schedule provenance"):
         assert_search_launch_allowed(launch_ready, turnstile_verified=True, use_sanitized_pilot=False)
 

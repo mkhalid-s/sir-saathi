@@ -6,8 +6,9 @@ The pure functions are importable in tests without requiring a running server.
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import date
+from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
@@ -34,6 +35,7 @@ except Exception:  # pragma: no cover - local environments may not have FastAPI 
     Request = object  # type: ignore[assignment]
 
 API_PREFIX = "/api"
+INDIA_TIME_ZONE = ZoneInfo("Asia/Kolkata")
 API_ROUTES = {
     f"{API_PREFIX}/health",
     f"{API_PREFIX}/states",
@@ -47,8 +49,9 @@ def _date_payload(value: date | None) -> str | None:
     return value.isoformat() if value else None
 
 
-def list_states_payload() -> list[dict[str, Any]]:
+def list_states_payload(*, today: date | None = None) -> list[dict[str, Any]]:
     states = load_all_states()
+    effective_date = today or datetime.now(INDIA_TIME_ZONE).date()
     return [
         {
             "state_id": state.state_id,
@@ -57,6 +60,7 @@ def list_states_payload() -> list[dict[str, Any]]:
             "data_capability": state.data_capability,
             "public_launch_ready": state.public_launch_ready,
             "sir_status": state.schedule.status,
+            "current_phase": state.schedule.status_on(effective_date),
             "sir_schedule": {
                 "phase": state.schedule.phase,
                 "qualifying_date": _date_payload(state.schedule.qualifying_date),
@@ -67,6 +71,7 @@ def list_states_payload() -> list[dict[str, Any]]:
                 "claims_end": _date_payload(state.schedule.claims_end),
                 "final_roll_date": _date_payload(state.schedule.final_roll_date),
                 "status": state.schedule.status,
+                "current_phase": state.schedule.status_on(effective_date),
             },
             "schedule_provenance": {
                 "label": state.schedule_provenance.label,
@@ -115,7 +120,11 @@ def _guidance_request(payload: dict[str, Any] | GuidanceRequest) -> GuidanceRequ
     return GuidanceRequest.model_validate(payload)
 
 
-def guidance_payload(payload: dict[str, Any] | GuidanceRequest) -> dict[str, Any]:
+def guidance_payload(
+    payload: dict[str, Any] | GuidanceRequest,
+    *,
+    today: date | None = None,
+) -> dict[str, Any]:
     validated = _guidance_request(payload)
     request = GuidanceInput(
         state_id=validated.state_id,
@@ -125,6 +134,7 @@ def guidance_payload(payload: dict[str, Any] | GuidanceRequest) -> dict[str, Any
         enumeration_form_submitted=validated.enumeration_form_submitted,
         current_roll_found=validated.current_roll_found,
         base_roll_found=validated.base_roll_found,
+        today=today or datetime.now(INDIA_TIME_ZONE).date(),
     )
     result = get_guidance(request)
     data = asdict(result)
