@@ -1,5 +1,6 @@
 ---
 import localeRegistry from '../../../../config/locales.json';
+import { formatIndiaDate } from '../data/states';
 import { hasEnabledCatalogue, localizedPath, translate, type MessageKey } from '../lib/i18n';
 import LocaleSwitcher from './LocaleSwitcher.astro';
 
@@ -48,5 +49,9 @@ const availableCount = languages.filter((item) => item.activationStatus === 'ava
     </table>
   </div>
   <p>{message('languages.review_policy')}</p>
+  <p class="source-note">{message('languages.coverage_source', {
+    source: localeRegistry.coverage.source_label,
+    date: formatIndiaDate(localeRegistry.coverage.last_verified, locale)
+  })} <a href={localeRegistry.coverage.source_url} target="_blank" rel="noreferrer">{localeRegistry.coverage.source_label}</a></p>
   <p><a href={localizedPath('/', locale)}>{message('nav.back_home')}</a></p>
 </main>

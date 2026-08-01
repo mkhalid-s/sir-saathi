@@ -101,6 +101,15 @@ def test_every_nationwide_language_has_a_governed_locale() -> None:
         "review": "reviewed",
     }
     assert locales["ur"]["direction"] == "rtl"
+    assert locales["ks"]["direction"] == "rtl"
+    assert locales["sd"]["direction"] == "rtl"
+    eighth_schedule = {
+        "as", "bn", "brx", "doi", "gu", "hi", "kn", "ks", "kok", "mai", "ml",
+        "mni", "mr", "ne", "or", "pa", "sa", "sat", "sd", "ta", "te", "ur",
+    }
+    assert eighth_schedule <= set(locales)
+    assert len(locales) == 24
+    assert locale_data["coverage"]["source_url"] == "https://www.legislative.gov.in/constitution-in-regional-languages"
     assert all(
         locale["status"] == "planned"
         and locale["review"] == "required"

@@ -402,6 +402,8 @@ def test_public_language_status_page_uses_fail_closed_runtime_catalogues() -> No
     assert "'/languages/'" in sitemap
     assert "human review" in messages["languages.intro"]
     assert "never published automatically" in messages["languages.review_policy"]
+    assert "localeRegistry.coverage.source_url" in component
+    assert "all 22 languages" in messages["languages.intro"]
 
 
 def test_jurisdiction_display_names_are_catalogue_driven_across_web_and_api() -> None:

@@ -3,8 +3,8 @@
   "eci_state_code": "S25",
   "name": "West Bengal",
   "short_name": "WB",
-  "languages": ["en", "bn", "hi"],
-  "scripts": ["Latin", "Bengali", "Devanagari"],
+  "languages": ["en", "bn", "hi", "sat"],
+  "scripts": ["Latin", "Bengali", "Devanagari", "Ol Chiki"],
   "default_language": "bn",
   "sir_schedule": {
     "phase": "Phase II",

@@ -86,12 +86,13 @@ def test_assistance_payload_exposes_only_governed_official_channels() -> None:
 
 def test_locales_payload_exposes_publishability_without_review_identities() -> None:
     payload = locales_payload()
-    assert payload["locale_count"] == 17
+    assert payload["locale_count"] == 24
     assert payload["available_count"] == 1
-    assert payload["planned_or_blocked_count"] == 16
-    assert len(payload["locales"]) == 17
+    assert payload["planned_or_blocked_count"] == 23
+    assert len(payload["locales"]) == 24
     assert next(item for item in payload["locales"] if item["code"] == "en")["public_route_available"] is True
     assert next(item for item in payload["locales"] if item["code"] == "ur")["direction"] == "rtl"
+    assert next(item for item in payload["locales"] if item["code"] == "sd")["direction"] == "rtl"
     assert "reviewed_by" not in str(payload)
     assert "translated_by" not in str(payload)
 

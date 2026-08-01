@@ -81,6 +81,7 @@ def locale_status_payload(
         })
     return {
         "policy": registry["policy"],
+        "coverage": registry["coverage"],
         "locale_count": len(locales),
         "available_count": sum(item["public_route_available"] for item in locales),
         "planned_or_blocked_count": sum(not item["public_route_available"] for item in locales),

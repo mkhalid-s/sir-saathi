@@ -446,6 +446,16 @@ def verify_ui_language_readiness() -> None:
     if "languages.blocked" not in messages or "never published automatically" not in messages["languages.review_policy"]:
         raise RuntimeError("language status must explain fail-closed human activation")
     report = translation_readiness()
+    locale_registry = json.loads((ROOT / "config/locales.json").read_text(encoding="utf-8"))
+    eighth_schedule = {
+        "as", "bn", "brx", "doi", "gu", "hi", "kn", "ks", "kok", "mai", "ml",
+        "mni", "mr", "ne", "or", "pa", "sa", "sat", "sd", "ta", "te", "ur",
+    }
+    registry_codes = {item["code"] for item in locale_registry["locales"]}
+    if not eighth_schedule <= registry_codes or len(registry_codes) != 24:
+        raise RuntimeError("locale governance must cover all 22 Eighth Schedule languages plus English and Mizo")
+    if locale_registry.get("coverage", {}).get("source_url") != "https://www.legislative.gov.in/constitution-in-regional-languages":
+        raise RuntimeError("locale scope must retain its official Legislative Department source")
     invalid_available = [
         item["locale"]
         for item in report["locales"]

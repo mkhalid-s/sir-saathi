@@ -19,7 +19,7 @@ def _write(path: Path, value: object) -> None:
 
 def test_repository_translation_readiness_is_fail_closed() -> None:
     report = translation_readiness()
-    assert report["locale_count"] == 17
+    assert report["locale_count"] == 24
     assert report["available_locales"] == ["en"]
     assert report["required_message_count"] >= 20
     marathi = next(item for item in report["locales"] if item["locale"] == "mr")

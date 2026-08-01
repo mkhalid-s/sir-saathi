@@ -20,14 +20,16 @@ def test_repository_runtime_falls_back_from_planned_or_unknown_locales() -> None
 
 def test_public_locale_status_is_complete_and_redacts_review_details() -> None:
     payload = locale_status_payload()
-    assert payload["locale_count"] == 17
+    assert payload["locale_count"] == 24
     assert payload["available_count"] == 1
-    assert payload["planned_or_blocked_count"] == 16
+    assert payload["planned_or_blocked_count"] == 23
     assert payload["values_redacted"] is True
     assert {item["code"] for item in payload["locales"]} == {
         "en", "as", "bn", "gu", "hi", "kn", "kok", "lus", "ml", "mni",
-        "mr", "ne", "or", "pa", "ta", "te", "ur",
+        "mr", "ne", "or", "pa", "ta", "te", "ur", "brx", "doi", "ks",
+        "mai", "sa", "sat", "sd",
     }
+    assert payload["coverage"]["source_url"] == "https://www.legislative.gov.in/constitution-in-regional-languages"
     english = next(item for item in payload["locales"] if item["code"] == "en")
     assert english["activation_status"] == "available"
     assert english["public_route_available"] is True
@@ -46,6 +48,7 @@ def test_invalid_available_locale_is_publicly_blocked(tmp_path: Path) -> None:
     catalogues = tmp_path / "translations"
     _write(locales, {
         "policy": "Human review required.",
+        "coverage": {"source_url": "https://example.org/fixture"},
         "locales": [
             {"code": "en", "label": "English", "direction": "ltr", "status": "available", "review": "reviewed"},
             {"code": "mr", "label": "Marathi", "direction": "ltr", "status": "available", "review": "required"},
