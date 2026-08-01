@@ -2,6 +2,7 @@
 import ActionWizard from './ActionWizard';
 import FormsReference from './FormsReference.astro';
 import SearchAvailability from './SearchAvailability.astro';
+import LocaleSwitcher from './LocaleSwitcher.astro';
 import { localizedPath, translate } from '../lib/i18n';
 
 interface Props {
@@ -12,6 +13,7 @@ const { locale } = Astro.props;
 const message = (key: Parameters<typeof translate>[1], values: Parameters<typeof translate>[2] = {}) => translate(locale, key, values);
 ---
 <main class="shell" id="main-content">
+  <LocaleSwitcher locale={locale} currentPath="/" />
   <section class="hero">
     <p class="eyebrow">{message('home.hero.eyebrow')}</p>
     <h1 class="hero-title">{message('app.tagline')}</h1>

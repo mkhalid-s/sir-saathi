@@ -1,6 +1,6 @@
 ---
 import { statePath, states } from '../data/states';
-import { localizedPath, translate, type MessageKey } from '../lib/i18n';
+import { jurisdictionName, localizedPath, translate, type MessageKey } from '../lib/i18n';
 
 interface Props {
   locale?: string;
@@ -48,14 +48,14 @@ const reviewedScheduleCount = states.filter((state) => state.scheduleProvenance.
       {states.map((state) => (
         <article class="jurisdiction-row">
           <div>
-            <h3>{state.name}</h3>
+            <h3>{jurisdictionName(locale, state.stateId)}</h3>
             <p class="source-note">{message(`status.${state.currentPhase}` as MessageKey)} · {message('directory.capability', { capability: capabilityLabel(state.capability) })}</p>
             <p class="source-note">{message('directory.provenance', { confidence: state.scheduleProvenance.confidence })}</p>
           </div>
           <div>
             <p>{message(searchMessageKey(state))}</p>
             <div class="jurisdiction-links">
-              <a href={localizedPath(statePath(state), locale)}>{message('directory.view_guide', { state: state.name })}</a>
+              <a href={localizedPath(statePath(state), locale)}>{message('directory.view_guide', { state: jurisdictionName(locale, state.stateId) })}</a>
               <a href={state.officialLink} target="_blank" rel="noreferrer">{message('directory.official_portal')}</a>
             </div>
           </div>

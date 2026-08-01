@@ -210,6 +210,7 @@ def verify_ui_language_readiness() -> None:
     api_schema = (ROOT / "services/api/schemas.py").read_text(encoding="utf-8")
     api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
     runtime_translations = (ROOT / "pipeline/sir_saathi_pipeline/translations.py").read_text(encoding="utf-8")
+    locale_switcher = (ROOT / "apps/web/src/components/LocaleSwitcher.astro").read_text(encoding="utf-8")
     if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
         raise RuntimeError("web must expose explicit UI language readiness")
     if "human review" not in messages["wizard.language_planned"]:
@@ -228,6 +229,11 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("API locale negotiation must expose explicit reviewed fallback metadata")
     if "translate_message" not in api_guidance or "translation_readiness" not in runtime_translations:
         raise RuntimeError("API guidance must use the same fail-closed reviewed catalogue as the PWA")
+    jurisdiction_keys = {key for key in messages if key.startswith("jurisdiction.")}
+    if len(jurisdiction_keys) != 36:
+        raise RuntimeError("all 36 jurisdiction display names must be governed translation keys")
+    if "localizedPath(currentPath, option.code)" not in locale_switcher or "aria-current" not in locale_switcher:
+        raise RuntimeError("reviewed locale switcher must preserve the current route and expose current language")
     report = translation_readiness()
     invalid_available = [
         item["locale"]

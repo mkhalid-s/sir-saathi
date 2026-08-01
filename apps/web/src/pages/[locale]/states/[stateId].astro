@@ -2,7 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import StateContent from '../../../components/StateContent.astro';
 import { states, type StateSummary } from '../../../data/states';
-import { availableLocales, translate, type UiDirection } from '../../../lib/i18n';
+import { availableLocales, jurisdictionName, translate, type UiDirection } from '../../../lib/i18n';
 
 export function getStaticPaths() {
   return availableLocales
@@ -21,8 +21,8 @@ interface Props {
 const { locale, state } = Astro.props;
 ---
 <BaseLayout
-  title={translate(locale.code, 'state.meta.title', { state: state.name })}
-  description={translate(locale.code, 'state.meta.description', { state: state.name })}
+  title={translate(locale.code, 'state.meta.title', { state: jurisdictionName(locale.code, state.stateId) })}
+  description={translate(locale.code, 'state.meta.description', { state: jurisdictionName(locale.code, state.stateId) })}
   lang={locale.code}
   dir={locale.direction}
   skipLabel={translate(locale.code, 'nav.skip')}

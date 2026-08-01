@@ -1,6 +1,7 @@
 ---
-import { localizedPath, translate, type MessageKey } from '../lib/i18n';
+import { jurisdictionName, localizedPath, translate, type MessageKey } from '../lib/i18n';
 import { formatIndiaDate, statePath, states, type StateSummary } from '../data/states';
+import LocaleSwitcher from './LocaleSwitcher.astro';
 
 interface Props {
   state: StateSummary;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 const { state, locale } = Astro.props;
+const stateName = jurisdictionName(locale, state.stateId);
 const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
 const hasScheduleDates = Boolean(state.enumerationEndIso || state.claimsEndIso || state.finalRollDateIso);
 const scheduleItems: [MessageKey, string | undefined][] = [
@@ -24,13 +26,14 @@ const previousState = states[(states.indexOf(state) - 1 + states.length) % state
 const nextState = states[(states.indexOf(state) + 1) % states.length];
 ---
 <main class="shell content-page state-page" id="main-content">
+  <LocaleSwitcher locale={locale} currentPath={statePath(state)} />
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href={localizedPath('/', locale)}>{message('state.breadcrumb')}</a><span aria-hidden="true">/</span><span aria-current="page" dir="auto">{state.name}</span>
+    <a href={localizedPath('/', locale)}>{message('state.breadcrumb')}</a><span aria-hidden="true">/</span><span aria-current="page" dir="auto">{stateName}</span>
   </nav>
 
   <section class="state-hero">
     <p class="eyebrow">{message('state.eyebrow')}</p>
-    <h1 dir="auto">{state.name}</h1>
+    <h1 dir="auto">{stateName}</h1>
     <p>{message('state.intro')}</p>
     <div class="actions">
       <a class="primary-button light" href={guideUrl}>{message('state.get_checklist')}</a>
@@ -74,7 +77,7 @@ const nextState = states[(states.indexOf(state) + 1) % states.length];
     <h2 id="safety-title">{message('state.safety.title')}</h2>
     <p>{message('state.safety.copy')}</p>
     <div class="actions">
-      <a class="primary-button" href={guideUrl}>{message('state.safety.start', { state: state.name })}</a>
+      <a class="primary-button" href={guideUrl}>{message('state.safety.start', { state: stateName })}</a>
       <a class="secondary-button" href={localizedPath('/privacy/', locale)}>{message('state.safety.privacy')}</a>
     </div>
   </section>

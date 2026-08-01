@@ -69,6 +69,10 @@ export function localizedPath(path: string, locale: string): string {
   return locale === 'en' ? normalized : `/${locale}${normalized}`;
 }
 
+export function jurisdictionName(locale: string, stateId: string): string {
+  return translate(locale, `jurisdiction.${stateId}` as MessageKey);
+}
+
 export function translate(locale: string, key: MessageKey, values: MessageValues = {}): string {
   const catalogue = hasEnabledCatalogue(locale) ? catalogues[locale] : englishCatalog;
   const template = catalogue.messages[key] ?? englishCatalog.messages[key];

@@ -70,7 +70,7 @@ def list_states_payload(*, today: date | None = None, locale: str = "en") -> lis
     return [
         {
             "state_id": state.state_id,
-            "name": state.name,
+            "name": translate_message(resolved.used, f"jurisdiction.{state.state_id}"),
             "locale_requested": resolved.requested,
             "locale_used": resolved.used,
             "locale_fallback": resolved.fallback,

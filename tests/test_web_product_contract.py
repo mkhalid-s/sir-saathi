@@ -250,6 +250,21 @@ def test_homepage_static_content_and_reviewed_locale_routes_are_catalogue_driven
     assert "availableLocales" in policy_route and "policies.map" in policy_route
     assert "localizedPath(statePath(previousState), locale)" in state_content
     assert "formatIndiaDate(value!, locale)" in state_content
+    locale_switcher = (ROOT / "apps/web/src/components/LocaleSwitcher.astro").read_text(encoding="utf-8")
+    assert "availableLocales.length > 1" in locale_switcher
+    assert "localizedPath(currentPath, option.code)" in locale_switcher
+    assert "aria-current" in locale_switcher
+
+
+def test_jurisdiction_display_names_are_catalogue_driven_across_web_and_api() -> None:
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    directory = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
+    state_page = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")
+    api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
+    assert "jurisdictionName(uiLanguage" in wizard
+    assert "jurisdictionName(locale" in directory
+    assert "jurisdictionName(locale" in state_page
+    assert 'f"jurisdiction.{state.state_id}"' in api
 
 
 def test_web_runtime_revalidates_catalogues_before_generating_locale_routes() -> None:

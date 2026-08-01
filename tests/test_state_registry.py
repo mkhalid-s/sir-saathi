@@ -110,6 +110,17 @@ def test_every_nationwide_language_has_a_governed_locale() -> None:
     )
 
 
+def test_every_jurisdiction_name_has_a_governed_translation_key() -> None:
+    states = load_all_states()
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    translated_names = {
+        key.removeprefix("jurisdiction."): value
+        for key, value in messages.items()
+        if key.startswith("jurisdiction.")
+    }
+    assert translated_names == {state_id: state.name for state_id, state in states.items()}
+
+
 def test_maharashtra_registry_dates_and_capability() -> None:
     mh = load_all_states()["IN-MH"]
     assert mh.eci_state_code == "S13"

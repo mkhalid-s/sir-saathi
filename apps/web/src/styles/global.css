@@ -67,6 +67,32 @@ a {
   padding: 2rem 1rem;
 }
 
+.locale-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.locale-switcher a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.5rem 0.875rem;
+  color: #334155;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.locale-switcher a[aria-current="page"] {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+}
+
 .hero {
   margin-bottom: 2rem;
   border-radius: 1.5rem;

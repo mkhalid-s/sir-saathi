@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { formatIndiaDate, states, uiLanguageDirection, uiLanguageOptionsForState } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
-import { availableLocales, hasEnabledCatalogue, localizedPath, translate, type MessageKey, type MessageValues } from '../lib/i18n';
+import { availableLocales, hasEnabledCatalogue, jurisdictionName, localizedPath, translate, type MessageKey, type MessageValues } from '../lib/i18n';
 import IndexedSearch from './IndexedSearch';
 
 const situations: { value: Situation; key: MessageKey }[] = [
@@ -55,6 +55,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   const [findSubmitted, setFindSubmitted] = useState(false);
   const [answers, setAnswers] = useState<WizardAnswers>(defaultAnswers);
   const state = states.find((item) => item.stateId === stateId) ?? states[0];
+  const stateName = jurisdictionName(uiLanguage, state.stateId);
   const guidance = useMemo(() => guidanceFor(answers, state, uiLanguage), [answers, state, uiLanguage]);
   const deadline = deadlineFor(state, answers.situation, uiLanguage);
   const languageOptions = uiLanguageOptionsForState(state.languageCodes);
@@ -71,7 +72,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   }));
   const shareSafetyText = `${message('safety.confirm_official')} ${message('safety.no_private_share')}`;
   const shareText = [
-    message('share.checklist', { state: state.name, title: guidance.title }),
+    message('share.checklist', { state: stateName, title: guidance.title }),
     message('share.next', { action: guidance.actions[0] }),
     message('share.deadline', { deadline: deadline ?? message('guidance.deadline_unknown') }),
     shareSafetyText
@@ -170,7 +171,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
           <label class="field">
             {message('find.state_label')}
             <select id="find-state" class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
-              {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
+              {states.map((item) => <option value={item.stateId}>{jurisdictionName(uiLanguage, item.stateId)}</option>)}
             </select>
           </label>
           <label class="field">
@@ -196,10 +197,10 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
         </form>
         {findSubmitted && (
           <div class="find-result" aria-live="polite">
-            <h3>{message('find.official_first', { state: state.name })}</h3>
+            <h3>{message('find.official_first', { state: stateName })}</h3>
             <p>{message('find.result_intro')}</p>
             <ol class="official-check-steps">
-              <li>{message('find.step_state', { state: state.name })}</li>
+              <li>{message('find.step_state', { state: stateName })}</li>
               <li>{message('find.step_search')}</li>
               <li>{message('find.step_spelling')}</li>
               <li>{message('find.step_contact')}</li>
@@ -218,7 +219,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
         <label class="field">
           {message('wizard.state')}
           <select class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
-            {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
+            {states.map((item) => <option value={item.stateId}>{jurisdictionName(uiLanguage, item.stateId)}</option>)}
           </select>
         </label>
 

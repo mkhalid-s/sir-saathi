@@ -1,5 +1,6 @@
 ---
 import { localizedPath, translate, type MessageKey } from '../lib/i18n';
+import LocaleSwitcher from './LocaleSwitcher.astro';
 
 type PolicyPage = 'privacy' | 'methodology' | 'data-use';
 
@@ -20,6 +21,7 @@ const methodologyItems: MessageKey[] = [
 ];
 ---
 <main class="shell content-page" id="main-content">
+  <LocaleSwitcher locale={locale} currentPath={`/${page}/`} />
   {page === 'privacy' && (
     <>
       <h1>{message('privacy.title')}</h1>
