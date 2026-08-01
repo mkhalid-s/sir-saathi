@@ -134,8 +134,10 @@ AI may help explain source-backed guidance or summarize checklists, but it must 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock
 ```
+
+`requirements.txt` records direct dependency intent. CI and production use the exact transitive versions in `requirements.lock`; regenerate and test that lock deliberately when dependencies are updated.
 
 ### Web
 

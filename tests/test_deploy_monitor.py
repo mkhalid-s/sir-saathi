@@ -11,6 +11,7 @@ def test_deployment_reference_files_exist() -> None:
         "infra/systemd/sir-saathi-api.service",
         "infra/monitoring/healthcheck.sh",
         "infra/docker-compose.yml",
+        "requirements.lock",
     ]:
         assert (ROOT / rel).is_file()
 
@@ -44,3 +45,15 @@ def test_healthcheck_probes_the_deployed_api_route_with_a_timeout() -> None:
     assert "http://127.0.0.1:8000/api/health" in healthcheck
     assert "127.0.0.1:8000/health" not in healthcheck
     assert "--max-time" in healthcheck
+
+
+def test_ci_and_deployment_use_the_exact_python_lock() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    lock = (ROOT / "requirements.lock").read_text(encoding="utf-8")
+    dependencies = [line for line in lock.splitlines() if line and not line.startswith("#")]
+    assert "pip install -r requirements.lock" in workflow
+    assert dependencies
+    assert all("==" in dependency for dependency in dependencies)
+    assert any(dependency.startswith("fastapi==") for dependency in dependencies)
+    assert any(dependency.startswith("psycopg-binary==") for dependency in dependencies)
+    assert any(dependency.startswith("redis==") for dependency in dependencies)

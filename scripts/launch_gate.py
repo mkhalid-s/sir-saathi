@@ -25,6 +25,7 @@ REQUIRED_FILES = [
     "services/api/privacy.py",
     "infra/caddy/Caddyfile.example",
     "infra/docker-compose.yml",
+    "requirements.lock",
 ]
 
 
@@ -59,6 +60,13 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("local compose must provide a loopback-only shared rate-limit store")
     if "services.api.app:create_configured_app --factory" not in systemd:
         raise RuntimeError("API service must use the environment-configured application factory")
+    lock_lines = [
+        line.strip()
+        for line in (ROOT / "requirements.lock").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    if not lock_lines or any("==" not in line for line in lock_lines):
+        raise RuntimeError("production Python dependencies must use exact versions in requirements.lock")
 
 
 def verify_abuse_protection() -> None:
