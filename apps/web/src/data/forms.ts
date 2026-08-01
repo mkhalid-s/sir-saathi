@@ -32,6 +32,9 @@ export const forms: Record<string, FormSummary> = Object.fromEntries(
   ])
 ) as Record<string, FormSummary>;
 
+export const officialVoterServicesPortal = forms.form_6?.officialPortal;
+if (!officialVoterServicesPortal) throw new Error('Canonical Form 6 voter-services portal is required');
+
 export const commonDocuments: Record<string, string[]> = catalogue.common_documents;
 
 export function formLabel(formId: string): string {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { officialVoterServicesPortal } from '../data/forms';
 import { formatIndiaDate, states, uiLanguageDirection, uiLanguageOptionsForState } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
 import { availableLocales, hasEnabledCatalogue, jurisdictionName, localizedPath, translate, type MessageKey, type MessageValues } from '../lib/i18n';
@@ -208,7 +209,8 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
             </ol>
             <p>{message('find.indexed_boundary')}</p>
             <div class="actions">
-              <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_official')}</a>
+              <a class="primary-button" href={officialVoterServicesPortal} target="_blank" rel="noreferrer">{message('find.open_voter_services')}</a>
+              <a class="secondary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_ceo', { state: stateName })}</a>
               <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>{message('find.not_found')}</button>
               {state.publicLaunchReady && <button class="secondary-button" type="button" onClick={clearFindNameHints}>{message('find.clear')}</button>}
             </div>

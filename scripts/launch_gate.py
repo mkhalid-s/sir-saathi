@@ -392,6 +392,7 @@ def verify_safe_find_name_flow() -> None:
     homepage = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     indexed = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
+    forms = (ROOT / "apps/web/src/data/forms.ts").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     if "home.hero.find" not in homepage or "Find my name safely" not in messages["home.hero.find"] or 'href="#find-name"' not in homepage:
         raise RuntimeError("homepage must expose a clear safe find-name entry point")
@@ -407,6 +408,10 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("indexed search must explain when scoped voter details leave the device")
     if "official-check-steps" not in wizard:
         raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
+    if "officialVoterServicesPortal" not in forms or "href={officialVoterServicesPortal}" not in wizard:
+        raise RuntimeError("official fallback must link the canonical ECI voter-services portal")
+    if "href={state.officialLink}" not in wizard or "find.open_ceo" not in wizard:
+        raise RuntimeError("official fallback must keep the state CEO portal distinct from voter services")
     for key, expected in [
         ("find.step_search", "Search with the name as it may appear in the roll"),
         ("find.step_spelling", "Try common spelling variations"),

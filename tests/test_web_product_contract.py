@@ -109,6 +109,21 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "aria-live=\"polite\"" in indexed_source
 
 
+def test_find_flow_separates_eci_voter_services_from_state_ceo_portals() -> None:
+    forms_source = (ROOT / "apps/web/src/data/forms.ts").read_text(encoding="utf-8")
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    forms = json.loads((ROOT / "config/forms/sir-actions.json").read_text(encoding="utf-8"))["forms"]
+    assert "officialVoterServicesPortal" in forms_source
+    assert forms["form_6"]["official_portal"] == "https://voters.eci.gov.in/"
+    assert "href={officialVoterServicesPortal}" in wizard
+    assert "href={state.officialLink}" in wizard
+    assert "find.open_voter_services" in wizard
+    assert "find.open_ceo" in wizard
+    assert messages["find.open_voter_services"] == "Open ECI voter services"
+    assert messages["find.open_ceo"] == "Open {state} CEO portal"
+
+
 def test_web_share_checklist_includes_safety_reminder() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]

@@ -5,7 +5,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 ## Included
 
 - State selector and 36 shareable state/UT pages backed by `config/jurisdictions.json` plus reviewed `config/states/*.json` overrides.
-- Safe state-specific "Find my name" entry flow that routes users through official search steps first, lets users clear local hints, and hands not-found cases to missing-name guidance.
+- Safe state-specific "Find my name" entry flow that routes users through official search steps first, clearly separates the canonical ECI voter-services destination from each state or UT CEO portal, lets authorized-scope users clear local hints, and hands not-found cases to missing-name guidance.
 - A dormant-by-default indexed-search client that renders only for a jurisdiction marked launch-ready. It requires AC scope, explicitly renders Turnstile with the `voter_search` action, submits only after the user's search action, resets the single-use response, and displays only bounded redacted API fields.
 - Situation selector covering verification, missing name, new voter, shifted address, correction, deceased-family entry, duplicate entry, and portal failure.
 - Follow-up SIR questions for BLO visit, enumeration form receipt/submission, current roll match, and base/base-roll match.
