@@ -97,6 +97,9 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
     source_encoding = str(metadata.get("source_encoding") or "") or None
     ac_number = int(metadata["ac_number"])
     part_number = int(metadata["part_number"])
+    geography_version = str(metadata.get("geography_version") or f"roll-{parsed_roll.roll_year}").strip()
+    if not geography_version:
+        raise ValueError("geography_version must not be empty")
     roll_version_id = stable_id(
         "roll",
         parsed_roll.state_id,
@@ -107,7 +110,7 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
         part_number,
     )
     source_document_id = stable_id("srcdoc", parsed_roll.state_id, parsed_roll.source_document.checksum)
-    ac_id = stable_id("ac", parsed_roll.state_id, ac_number)
+    ac_id = stable_id("ac", parsed_roll.state_id, ac_number, geography_version)
     district_name = str(metadata.get("district_name") or "").strip()
     district_code = str(metadata.get("district_code") or "").strip() or None
     geography_source_label = str(metadata.get("geography_source_label") or parsed_roll.source_label)
@@ -117,7 +120,7 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
         if district_name
         else None
     )
-    polling_station_id = stable_id("ps", parsed_roll.state_id, ac_number, part_number)
+    polling_station_id = stable_id("ps", ac_id, part_number)
     extraction_run_id = stable_id("extract", source_document_id, parsed_roll.parser_name, len(parsed_roll.voters))
 
     source_document = {
@@ -156,6 +159,7 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
         "state_id": parsed_roll.state_id,
         "district_id": district_id,
         "ac_number": ac_number,
+        "geography_version": geography_version,
         "name": str(metadata.get("ac_name_encoded") or f"AC {ac_number}"),
         "reservation_status": metadata.get("ac_reservation_encoded") or None,
         "source_label": geography_source_label,

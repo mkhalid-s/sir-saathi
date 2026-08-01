@@ -23,6 +23,8 @@ A state can move from guidance to search only when:
 6. Full EPIC values, addresses, raw PDFs, and parsed exports are not exposed or committed.
 7. Public pages show source freshness and official verification fallback.
 
+Geography is versioned, not treated as timeless. Official ECI delimitation orders and reviewed CEO publications are the authority for constituency snapshots. The same state and AC number can refer to different names or boundaries in historical and current rolls, so ingestion assigns an isolated roll-year snapshot unless reviewed metadata supplies a geography version. Cross-year proposals require a separately reviewed equivalence scope; matching AC or part numbers alone is never enough.
+
 ## Initial States
 
 - Maharashtra is the first deep pilot because local parser work exists for 2002 Trombay rolls.

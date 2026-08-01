@@ -96,13 +96,14 @@ def load_ingestion_batch(connection: ConnectionLike, batch: IngestionBatch) -> L
                 cursor,
                 """
                 INSERT INTO assembly_constituencies (
-                    ac_id, state_id, district_id, ac_number, name, reservation_status,
+                    ac_id, state_id, district_id, ac_number, geography_version, name, reservation_status,
                     source_label, source_updated_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (ac_id) DO UPDATE SET
                     state_id = EXCLUDED.state_id,
                     district_id = EXCLUDED.district_id,
                     ac_number = EXCLUDED.ac_number,
+                    geography_version = EXCLUDED.geography_version,
                     name = EXCLUDED.name,
                     reservation_status = EXCLUDED.reservation_status,
                     source_label = EXCLUDED.source_label,
@@ -113,6 +114,7 @@ def load_ingestion_batch(connection: ConnectionLike, batch: IngestionBatch) -> L
                     batch.assembly_constituency["state_id"],
                     batch.assembly_constituency["district_id"],
                     batch.assembly_constituency["ac_number"],
+                    batch.assembly_constituency["geography_version"],
                     batch.assembly_constituency["name"],
                     batch.assembly_constituency["reservation_status"],
                     batch.assembly_constituency["source_label"],

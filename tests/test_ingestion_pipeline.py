@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from pipeline.sir_saathi_pipeline.ingestion import (
@@ -66,6 +68,7 @@ def test_build_ingestion_batch_maps_parsed_roll_to_db_rows() -> None:
     assert batch.roll_version["roll_year"] == 2002
     assert batch.source_document["status"] == "registered"
     assert batch.assembly_constituency["ac_number"] == 172
+    assert batch.assembly_constituency["geography_version"] == "roll-2002"
     assert batch.district is None
     assert batch.polling_station["part_number"] == 21
     assert batch.extraction_run["status"] == "validated"
@@ -83,6 +86,23 @@ def test_build_ingestion_batch_maps_parsed_roll_to_db_rows() -> None:
     assert "sample-card" not in first.values()
 
 
+def test_reused_ac_and_part_numbers_get_distinct_roll_snapshot_ids() -> None:
+    historical = build_ingestion_batch(sample_roll(), hash_salt="unit-test-salt")
+    current_roll = sample_roll()
+    current = build_ingestion_batch(
+        replace(
+            current_roll,
+            roll_year=2026,
+            roll_kind="current_roll",
+            metadata={**current_roll.metadata, "ac_name_encoded": "Anushakti Nagar"},
+        ),
+        hash_salt="unit-test-salt",
+    )
+    assert historical.assembly_constituency["ac_number"] == current.assembly_constituency["ac_number"]
+    assert historical.assembly_constituency["ac_id"] != current.assembly_constituency["ac_id"]
+    assert historical.polling_station["polling_station_id"] != current.polling_station["polling_station_id"]
+
+
 def test_build_ingestion_batch_links_reviewed_district_metadata() -> None:
     roll = sample_roll()
     metadata = {
@@ -91,6 +111,7 @@ def test_build_ingestion_batch_links_reviewed_district_metadata() -> None:
         "district_code": "S1322",
         "geography_source_label": "Reviewed CEO geography",
         "geography_source_updated_at": "2026-08-01",
+        "geography_version": "reviewed-mh-2002-delimitation",
     }
     batch = build_ingestion_batch(
         ParsedRollInput(
@@ -111,6 +132,7 @@ def test_build_ingestion_batch_links_reviewed_district_metadata() -> None:
     assert batch.district["eci_district_code"] == "S1322"
     assert batch.assembly_constituency["district_id"] == batch.district["district_id"]
     assert batch.assembly_constituency["source_label"] == "Reviewed CEO geography"
+    assert batch.assembly_constituency["geography_version"] == "reviewed-mh-2002-delimitation"
 
 
 def test_build_ingestion_batch_rejects_count_mismatch() -> None:

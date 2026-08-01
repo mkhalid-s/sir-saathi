@@ -15,7 +15,9 @@ class MatchRecord:
     voter_record_id: str
     state_id: str
     ac_number: int
+    geography_scope: str
     part_number: int | None
+    part_geography_scope: str | None
     roll_year: int
     name_normalized: str
     name_phonetic: str | None
@@ -69,7 +71,12 @@ def _age_similarity(base: MatchRecord, current: MatchRecord) -> float:
 
 
 def score_candidate(base: MatchRecord, current: MatchRecord) -> MatchCandidate | None:
-    if base.state_id != current.state_id or base.ac_number != current.ac_number:
+    if (
+        base.state_id != current.state_id
+        or base.ac_number != current.ac_number
+        or base.geography_scope != current.geography_scope
+        or not base.geography_scope.startswith("reviewed:")
+    ):
         return None
     if current.roll_year <= base.roll_year:
         return None
@@ -83,6 +90,9 @@ def score_candidate(base: MatchRecord, current: MatchRecord) -> MatchCandidate |
         base.part_number is not None
         and current.part_number is not None
         and base.part_number == current.part_number
+        and base.part_geography_scope is not None
+        and base.part_geography_scope == current.part_geography_scope
+        and base.part_geography_scope.startswith("reviewed:")
     )
     geography_bonus = 0.05 if same_part else 0.0
     score = min(

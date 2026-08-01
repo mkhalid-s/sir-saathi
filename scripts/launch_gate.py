@@ -277,6 +277,8 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("ingestion must preserve reviewed district relationships")
     if "INSERT INTO districts" not in db_loader or "source_updated_at" not in schema:
         raise RuntimeError("database loading must preserve geographic source provenance")
+    if "geography_version" not in schema or 'startswith("reviewed:")' not in matching:
+        raise RuntimeError("historical/current matching must use versioned, reviewed geography scopes")
     if "status: str = \"proposed\"" not in matching or "human review" not in matching:
         raise RuntimeError("cross-year matching must remain proposal-only and human-reviewed")
     if "voter_record_match_candidates" not in schema or "reviewed_at IS NOT NULL" not in schema:

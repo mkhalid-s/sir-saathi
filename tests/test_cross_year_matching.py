@@ -13,7 +13,9 @@ def record(record_id: str, *, year: int, name: str, relative: str, age: int, par
         voter_record_id=record_id,
         state_id="IN-MH",
         ac_number=172,
+        geography_scope="reviewed:mh-2002-2026-ac172",
         part_number=part,
+        part_geography_scope="reviewed:mh-2002-2026-ac172-part21",
         roll_year=year,
         name_normalized=name,
         name_phonetic=name,
@@ -40,6 +42,26 @@ def test_cross_year_matching_is_ac_scoped_and_forward_only() -> None:
     older = record("older", year=2001, name="asha patil", relative="mohan patil", age=19)
     assert score_candidate(base, wrong_ac) is None
     assert score_candidate(base, older) is None
+
+
+def test_cross_year_matching_rejects_reused_ac_number_without_reviewed_geography_equivalence() -> None:
+    base = record("base-1", year=2002, name="asha patil", relative="mohan patil", age=20)
+    current = MatchRecord(**{
+        **record("current-1", year=2026, name="asha patil", relative="mohan patil", age=44).__dict__,
+        "geography_scope": "current:mh-post-2008-ac172",
+    })
+    assert score_candidate(base, current) is None
+
+
+def test_part_bonus_requires_separately_reviewed_part_equivalence() -> None:
+    base = record("base-1", year=2002, name="asha patil", relative="mohan patil", age=20)
+    current = MatchRecord(**{
+        **record("current-1", year=2026, name="asha patil", relative="mohan patil", age=44).__dict__,
+        "part_geography_scope": "reviewed:different-part-boundary",
+    })
+    candidate = score_candidate(base, current)
+    assert candidate is not None
+    assert candidate.same_part is False
 
 
 def test_match_proposals_are_bounded_and_do_not_auto_confirm() -> None:

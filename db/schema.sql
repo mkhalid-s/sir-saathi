@@ -27,11 +27,12 @@ CREATE TABLE IF NOT EXISTS assembly_constituencies (
     state_id TEXT NOT NULL REFERENCES states(state_id),
     district_id TEXT REFERENCES districts(district_id),
     ac_number INTEGER NOT NULL,
+    geography_version TEXT NOT NULL,
     name TEXT NOT NULL,
     reservation_status TEXT,
     source_label TEXT,
     source_updated_at DATE,
-    UNIQUE (state_id, ac_number)
+    UNIQUE (state_id, ac_number, geography_version)
 );
 
 CREATE TABLE IF NOT EXISTS polling_stations (
