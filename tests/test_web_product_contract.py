@@ -495,7 +495,9 @@ def test_every_nationwide_guide_surfaces_governed_official_assistance() -> None:
     assert "<OfficialAssistance" in state_source
     assert "stateOfficialLink={state.officialLink}" in state_source
     assert "../../../../config/official-assistance.json" in data_source
-    assert config["source"]["url"] == "https://voters.eci.gov.in/"
+    assert {source["url"] for source in config["sources"]} == {
+        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us"
+    }
     assert {channel["href"] for channel in config["channels"]} == {
         "https://voters.eci.gov.in/", "tel:1950", "mailto:complaints@eci.gov.in"
     }
@@ -504,6 +506,8 @@ def test_every_nationwide_guide_surfaces_governed_official_assistance() -> None:
     assert "<textarea" not in component_source
     assert "target={channel.kind === 'web' ? '_blank' : undefined}" in component_source
     assert "rel={channel.kind === 'web' ? 'noreferrer' : undefined}" in component_source
+    assert "assistanceSources.map" in component_source
+    assert all(channel["source_ids"] for channel in config["channels"])
     for key in (
         "assistance.eyebrow", "assistance.title", "assistance.intro", "assistance.privacy",
         "assistance.source", "assistance.state_portal",

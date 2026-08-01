@@ -1,16 +1,27 @@
 {
-  "schema_version": 1,
-  "source": {
-    "label": "Election Commission of India Citizen Service Portal and National Voter Helpline notice",
-    "url": "https://voters.eci.gov.in/",
-    "last_verified": "2026-08-01",
-    "max_age_days": 30
-  },
+  "schema_version": 2,
+  "sources": [
+    {
+      "source_id": "citizen_services",
+      "label": "Election Commission of India Citizen Service Portal",
+      "url": "https://voters.eci.gov.in/",
+      "last_verified": "2026-08-01",
+      "max_age_days": 30
+    },
+    {
+      "source_id": "eci_contact",
+      "label": "Election Commission of India Contact Us",
+      "url": "https://www.eci.gov.in/contact-us",
+      "last_verified": "2026-08-01",
+      "max_age_days": 30
+    }
+  ],
   "channels": [
     {
       "channel_id": "portal",
       "kind": "web",
       "href": "https://voters.eci.gov.in/",
+      "source_ids": ["citizen_services"],
       "label_key": "assistance.portal.label",
       "description_key": "assistance.portal.description",
       "action_key": "assistance.portal.action"
@@ -19,6 +30,7 @@
       "channel_id": "helpline",
       "kind": "phone",
       "href": "tel:1950",
+      "source_ids": ["citizen_services", "eci_contact"],
       "label_key": "assistance.helpline.label",
       "description_key": "assistance.helpline.description",
       "action_key": "assistance.helpline.action"
@@ -27,6 +39,7 @@
       "channel_id": "email",
       "kind": "email",
       "href": "mailto:complaints@eci.gov.in",
+      "source_ids": ["citizen_services", "eci_contact"],
       "label_key": "assistance.email.label",
       "description_key": "assistance.email.description",
       "action_key": "assistance.email.action"

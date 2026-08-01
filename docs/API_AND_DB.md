@@ -22,7 +22,7 @@ The public adapter uses a dedicated connection configuration with a three-second
 
 `GET /api/forms` exposes the canonical SIR form catalogue and common document categories from `config/forms/sir-actions.json`.
 
-`GET /api/assistance` exposes the canonical nationwide official-help catalogue from `config/official-assistance.json`: ECI web, phone, and email destinations plus their source date. It accepts no complaint or voter data and does not proxy submissions.
+`GET /api/assistance` exposes the canonical nationwide official-help catalogue from `config/official-assistance.json`: ECI web, phone, and email destinations plus per-channel source bindings and source dates. The Citizen Service Portal and ECI Contact Us page independently support the reviewed claims. The endpoint accepts no complaint or voter data and does not proxy submissions.
 
 `GET /api/health` is process liveness. `GET /api/ready` is deployment-mode-aware readiness: guidance mode does not depend on indexed-search infrastructure, while indexed-search mode returns HTTP 503 unless server-side Turnstile is configured, PostgreSQL answers a data-free `SELECT 1`, the shared Redis limiter answers a non-mutating `PING`, and the trusted proxy boundary is configured. Readiness reports stable blocker IDs and never returns connection strings or exception details.
 

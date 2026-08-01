@@ -17,6 +17,7 @@ EXPECTED_CHANNELS = {"portal", "helpline", "email"}
 
 @dataclass(frozen=True)
 class AssistanceSource:
+    source_id: str
     label: str
     url: str
     last_verified: date
@@ -28,6 +29,7 @@ class AssistanceChannel:
     channel_id: str
     kind: str
     href: str
+    source_ids: tuple[str, ...]
     label_key: str
     description_key: str
     action_key: str
@@ -35,7 +37,7 @@ class AssistanceChannel:
 
 @dataclass(frozen=True)
 class AssistanceCatalogue:
-    source: AssistanceSource
+    sources: tuple[AssistanceSource, ...]
     channels: tuple[AssistanceChannel, ...]
 
 
@@ -51,37 +53,61 @@ def _official_https_url(value: str) -> bool:
 
 
 def parse_assistance_catalogue(data: dict[str, Any]) -> AssistanceCatalogue:
-    if data.get("schema_version") != 1:
-        raise ValueError("official assistance schema_version must be 1")
-    source_raw = _required(data, "source")
-    source = AssistanceSource(
-        label=str(_required(source_raw, "label")).strip(),
-        url=str(_required(source_raw, "url")).strip(),
-        last_verified=date.fromisoformat(str(_required(source_raw, "last_verified"))),
-        max_age_days=int(_required(source_raw, "max_age_days")),
-    )
-    if not source.label or not _official_https_url(source.url):
-        raise ValueError("official assistance source must have a label and official ECI HTTPS URL")
-    if not 1 <= source.max_age_days <= 90:
-        raise ValueError("official assistance max_age_days must be between 1 and 90")
-
-    channels = tuple(
-        AssistanceChannel(
-            channel_id=str(_required(item, "channel_id")),
-            kind=str(_required(item, "kind")),
-            href=str(_required(item, "href")),
-            label_key=str(_required(item, "label_key")),
-            description_key=str(_required(item, "description_key")),
-            action_key=str(_required(item, "action_key")),
+    if not isinstance(data, dict) or data.get("schema_version") != 2:
+        raise ValueError("official assistance schema_version must be 2")
+    source_items = _required(data, "sources")
+    if not isinstance(source_items, list) or not source_items:
+        raise ValueError("official assistance sources must be a non-empty list")
+    try:
+        sources = tuple(
+            AssistanceSource(
+                source_id=str(_required(item, "source_id")).strip(),
+                label=str(_required(item, "label")).strip(),
+                url=str(_required(item, "url")).strip(),
+                last_verified=date.fromisoformat(str(_required(item, "last_verified"))),
+                max_age_days=int(_required(item, "max_age_days")),
+            )
+            for item in source_items
         )
-        for item in _required(data, "channels")
-    )
+    except (AttributeError, TypeError) as exc:
+        raise ValueError("invalid official assistance source") from exc
+    source_ids = {source.source_id for source in sources}
+    if len(source_ids) != len(sources) or any(not source_id for source_id in source_ids):
+        raise ValueError("official assistance source IDs must be unique and non-empty")
+    for source in sources:
+        if not source.label or not _official_https_url(source.url):
+            raise ValueError("official assistance source must have a label and official ECI HTTPS URL")
+        if not 1 <= source.max_age_days <= 90:
+            raise ValueError("official assistance max_age_days must be between 1 and 90")
+
+    channel_items = _required(data, "channels")
+    if not isinstance(channel_items, list):
+        raise ValueError("official assistance channels must be a list")
+    try:
+        channels = tuple(
+            AssistanceChannel(
+                channel_id=str(_required(item, "channel_id")),
+                kind=str(_required(item, "kind")),
+                href=str(_required(item, "href")),
+                source_ids=tuple(str(value) for value in _required(item, "source_ids")),
+                label_key=str(_required(item, "label_key")),
+                description_key=str(_required(item, "description_key")),
+                action_key=str(_required(item, "action_key")),
+            )
+            for item in channel_items
+        )
+    except (AttributeError, TypeError) as exc:
+        raise ValueError("invalid official assistance channel") from exc
     if {channel.channel_id for channel in channels} != EXPECTED_CHANNELS or len(channels) != len(EXPECTED_CHANNELS):
         raise ValueError("official assistance must define portal, helpline, and email exactly once")
     expected_kinds = {"portal": "web", "helpline": "phone", "email": "email"}
     for channel in channels:
         if channel.kind != expected_kinds[channel.channel_id]:
             raise ValueError(f"invalid assistance channel kind: {channel.channel_id}")
+        if not channel.source_ids or len(set(channel.source_ids)) != len(channel.source_ids):
+            raise ValueError(f"assistance channel sources must be unique and non-empty: {channel.channel_id}")
+        if set(channel.source_ids) - source_ids:
+            raise ValueError(f"assistance channel references an unknown source: {channel.channel_id}")
         if not all(key.startswith(f"assistance.{channel.channel_id}.") for key in (
             channel.label_key, channel.description_key, channel.action_key
         )):
@@ -93,7 +119,7 @@ def parse_assistance_catalogue(data: dict[str, Any]) -> AssistanceCatalogue:
         raise ValueError("assistance helpline must use the reviewed 1950 short code")
     if by_id["email"].href.casefold() != "mailto:complaints@eci.gov.in":
         raise ValueError("assistance email must use the reviewed ECI complaints address")
-    return AssistanceCatalogue(source=source, channels=channels)
+    return AssistanceCatalogue(sources=sources, channels=channels)
 
 
 def load_assistance_catalogue(path: str | Path = DEFAULT_ASSISTANCE_PATH) -> AssistanceCatalogue:
@@ -104,17 +130,17 @@ def load_assistance_catalogue(path: str | Path = DEFAULT_ASSISTANCE_PATH) -> Ass
 def assistance_freshness(*, today: date | None = None) -> dict[str, object]:
     catalogue = load_assistance_catalogue()
     effective_date = today or date.today()
-    age_days = (effective_date - catalogue.source.last_verified).days
+    ages = [(effective_date - source.last_verified).days for source in catalogue.sources]
     blockers = []
-    if age_days < 0:
+    if any(age < 0 for age in ages):
         blockers.append("official_assistance.source_date_in_future")
-    elif age_days > catalogue.source.max_age_days:
+    if any(age > source.max_age_days for age, source in zip(ages, catalogue.sources)):
         blockers.append("official_assistance.source_stale")
     return {
         "ready": not blockers,
-        "source_count": 1,
-        "age_days": age_days,
-        "max_age_days": catalogue.source.max_age_days,
+        "source_count": len(catalogue.sources),
+        "oldest_age_days": max(ages),
+        "stale_count": sum(age > source.max_age_days for age, source in zip(ages, catalogue.sources)),
         "blockers": blockers,
         "values_redacted": True,
     }

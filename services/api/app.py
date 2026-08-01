@@ -180,17 +180,22 @@ def assistance_payload(locale: str = "en") -> dict[str, Any]:
         "locale_requested": resolved.requested,
         "locale_used": resolved.used,
         "locale_fallback": resolved.fallback,
-        "source": {
-            "label": catalogue.source.label,
-            "url": catalogue.source.url,
-            "last_verified": catalogue.source.last_verified.isoformat(),
-            "max_age_days": catalogue.source.max_age_days,
-        },
+        "sources": [
+            {
+                "source_id": source.source_id,
+                "label": source.label,
+                "url": source.url,
+                "last_verified": source.last_verified.isoformat(),
+                "max_age_days": source.max_age_days,
+            }
+            for source in catalogue.sources
+        ],
         "channels": [
             {
                 "channel_id": channel.channel_id,
                 "kind": channel.kind,
                 "href": channel.href,
+                "source_ids": list(channel.source_ids),
                 "label": translate_message(resolved.used, channel.label_key),
                 "description": translate_message(resolved.used, channel.description_key),
                 "action": translate_message(resolved.used, channel.action_key),

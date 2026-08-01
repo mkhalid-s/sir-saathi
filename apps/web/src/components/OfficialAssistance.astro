@@ -1,5 +1,5 @@
 ---
-import { assistanceChannels, assistanceSource } from '../data/assistance';
+import { assistanceChannels, assistanceSources } from '../data/assistance';
 import { formatIndiaDate } from '../data/states';
 import { translate, type MessageKey } from '../lib/i18n';
 
@@ -34,10 +34,12 @@ const message = (key: MessageKey, values: Record<string, string | number> = {}) 
     <p><a class="secondary-button" href={stateOfficialLink} target="_blank" rel="noreferrer">{message('assistance.state_portal', { state: stateName })}</a></p>
   )}
   <p class="notice">{message('assistance.privacy')}</p>
-  <p class="source-note">
-    {message('assistance.source', {
-      source: assistanceSource.label,
-      date: formatIndiaDate(assistanceSource.lastVerified, locale)
-    })} <a href={assistanceSource.url} target="_blank" rel="noreferrer">{message('assistance.portal.action')}</a>
-  </p>
+  {assistanceSources.map((source) => (
+    <p class="source-note">
+      {message('assistance.source', {
+        source: source.label,
+        date: formatIndiaDate(source.lastVerified, locale)
+      })} <a href={source.url} target="_blank" rel="noreferrer">{source.label}</a>
+    </p>
+  ))}
 </section>
