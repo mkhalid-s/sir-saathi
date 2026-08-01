@@ -496,10 +496,12 @@ def test_every_nationwide_guide_surfaces_governed_official_assistance() -> None:
     assert "stateOfficialLink={state.officialLink}" in state_source
     assert "../../../../config/official-assistance.json" in data_source
     assert {source["url"] for source in config["sources"]} == {
-        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us"
+        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us",
+        "https://www.eci.gov.in/ceo-contact-details",
     }
     assert {channel["href"] for channel in config["channels"]} == {
-        "https://voters.eci.gov.in/", "tel:1950", "mailto:complaints@eci.gov.in"
+        "https://voters.eci.gov.in/", "https://www.eci.gov.in/ceo-contact-details",
+        "tel:1950", "mailto:complaints@eci.gov.in"
     }
     assert "<form" not in component_source
     assert "<input" not in component_source

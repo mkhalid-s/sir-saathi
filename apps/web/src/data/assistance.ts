@@ -3,7 +3,7 @@ import assistanceConfig from '../../../../config/official-assistance.json';
 export type AssistanceKind = 'web' | 'phone' | 'email';
 
 export interface AssistanceChannel {
-  channelId: 'portal' | 'helpline' | 'email';
+  channelId: 'portal' | 'ceo_directory' | 'helpline' | 'email';
   kind: AssistanceKind;
   href: string;
   sourceIds: string[];

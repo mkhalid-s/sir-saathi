@@ -67,10 +67,11 @@ def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:
 def test_assistance_payload_exposes_only_governed_official_channels() -> None:
     payload = assistance_payload()
     assert {source["url"] for source in payload["sources"]} == {
-        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us"
+        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us",
+        "https://www.eci.gov.in/ceo-contact-details",
     }
     assert all(source["last_verified"] == "2026-08-01" for source in payload["sources"])
-    assert {channel["channel_id"] for channel in payload["channels"]} == {"portal", "helpline", "email"}
+    assert {channel["channel_id"] for channel in payload["channels"]} == {"portal", "ceo_directory", "helpline", "email"}
     assert next(channel for channel in payload["channels"] if channel["channel_id"] == "helpline")["href"] == "tel:1950"
     assert next(channel for channel in payload["channels"] if channel["channel_id"] == "email")["href"] == "mailto:complaints@eci.gov.in"
     assert all(channel["source_ids"] for channel in payload["channels"])

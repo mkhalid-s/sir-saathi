@@ -17,9 +17,10 @@ def canonical_data() -> dict:
 
 def test_canonical_assistance_catalogue_is_exact_and_official() -> None:
     catalogue = load_assistance_catalogue()
-    assert {channel.channel_id for channel in catalogue.channels} == {"portal", "helpline", "email"}
+    assert {channel.channel_id for channel in catalogue.channels} == {"portal", "ceo_directory", "helpline", "email"}
     assert {source.url for source in catalogue.sources} == {
-        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us"
+        "https://voters.eci.gov.in/", "https://www.eci.gov.in/contact-us",
+        "https://www.eci.gov.in/ceo-contact-details",
     }
     assert all(source.max_age_days == 30 for source in catalogue.sources)
     assert all(channel.source_ids for channel in catalogue.channels)
@@ -30,8 +31,9 @@ def test_canonical_assistance_catalogue_is_exact_and_official() -> None:
     [
         (lambda data: data["sources"][0].update(url="http://voters.eci.gov.in/"), "official ECI HTTPS"),
         (lambda data: data["channels"][0].update(href="https://example.org/"), "official ECI HTTPS"),
-        (lambda data: data["channels"][1].update(href="tel:1800"), "reviewed 1950"),
-        (lambda data: data["channels"][2].update(href="mailto:someone@example.org"), "reviewed ECI"),
+        (lambda data: data["channels"][1].update(href="https://www.eci.gov.in/"), "reviewed ECI URL"),
+        (lambda data: data["channels"][2].update(href="tel:1800"), "reviewed 1950"),
+        (lambda data: data["channels"][3].update(href="mailto:someone@example.org"), "reviewed ECI"),
         (lambda data: data["channels"][0].update(label_key="forms.title"), "translation keys"),
         (lambda data: data["channels"][0].update(source_ids=["missing"]), "unknown source"),
     ],
@@ -46,7 +48,7 @@ def test_assistance_catalogue_rejects_unreviewed_channels(mutate, message: str) 
 def test_assistance_source_freshness_fails_closed() -> None:
     assert assistance_freshness(today=date(2026, 8, 1)) == {
         "ready": True,
-        "source_count": 2,
+        "source_count": 3,
         "oldest_age_days": 0,
         "stale_count": 0,
         "blockers": [],

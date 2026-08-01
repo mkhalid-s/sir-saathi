@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ASSISTANCE_PATH = ROOT / "config" / "official-assistance.json"
-EXPECTED_CHANNELS = {"portal", "helpline", "email"}
+EXPECTED_CHANNELS = {"portal", "ceo_directory", "helpline", "email"}
 
 
 @dataclass(frozen=True)
@@ -99,8 +99,8 @@ def parse_assistance_catalogue(data: dict[str, Any]) -> AssistanceCatalogue:
     except (AttributeError, TypeError) as exc:
         raise ValueError("invalid official assistance channel") from exc
     if {channel.channel_id for channel in channels} != EXPECTED_CHANNELS or len(channels) != len(EXPECTED_CHANNELS):
-        raise ValueError("official assistance must define portal, helpline, and email exactly once")
-    expected_kinds = {"portal": "web", "helpline": "phone", "email": "email"}
+        raise ValueError("official assistance must define portal, CEO directory, helpline, and email exactly once")
+    expected_kinds = {"portal": "web", "ceo_directory": "web", "helpline": "phone", "email": "email"}
     for channel in channels:
         if channel.kind != expected_kinds[channel.channel_id]:
             raise ValueError(f"invalid assistance channel kind: {channel.channel_id}")
@@ -115,6 +115,8 @@ def parse_assistance_catalogue(data: dict[str, Any]) -> AssistanceCatalogue:
     by_id = {channel.channel_id: channel for channel in channels}
     if not _official_https_url(by_id["portal"].href):
         raise ValueError("assistance portal must use an official ECI HTTPS URL")
+    if by_id["ceo_directory"].href != "https://www.eci.gov.in/ceo-contact-details":
+        raise ValueError("assistance CEO directory must use the reviewed ECI URL")
     if by_id["helpline"].href != "tel:1950":
         raise ValueError("assistance helpline must use the reviewed 1950 short code")
     if by_id["email"].href.casefold() != "mailto:complaints@eci.gov.in":

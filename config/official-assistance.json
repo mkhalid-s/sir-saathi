@@ -14,6 +14,13 @@
       "url": "https://www.eci.gov.in/contact-us",
       "last_verified": "2026-08-01",
       "max_age_days": 30
+    },
+    {
+      "source_id": "ceo_directory",
+      "label": "Election Commission of India CEO Contact Directory",
+      "url": "https://www.eci.gov.in/ceo-contact-details",
+      "last_verified": "2026-08-01",
+      "max_age_days": 30
     }
   ],
   "channels": [
@@ -25,6 +32,15 @@
       "label_key": "assistance.portal.label",
       "description_key": "assistance.portal.description",
       "action_key": "assistance.portal.action"
+    },
+    {
+      "channel_id": "ceo_directory",
+      "kind": "web",
+      "href": "https://www.eci.gov.in/ceo-contact-details",
+      "source_ids": ["ceo_directory"],
+      "label_key": "assistance.ceo_directory.label",
+      "description_key": "assistance.ceo_directory.description",
+      "action_key": "assistance.ceo_directory.action"
     },
     {
       "channel_id": "helpline",
