@@ -62,7 +62,7 @@ The public search path is privacy-gated:
 - Search must be scoped by Assembly Constituency.
 - `part_number` can only narrow an already scoped AC search.
 - Responses are redacted and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
-- Search applies a fixed-window rate limit keyed by hashed client identity, state, and AC.
+- Search applies a fixed-window rate limit keyed by hashed client identity across every state and AC, preventing scope rotation from resetting the client burst allowance.
 - Public indexed search requires official schedule provenance and launch readiness.
 
 More detail: `docs/API_AND_DB.md` and `docs/PRIVACY_AND_ABUSE.md`.

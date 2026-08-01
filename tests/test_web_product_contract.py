@@ -106,6 +106,11 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "action: 'voter_search'" in indexed_source
     assert "expired-callback" in indexed_source
     assert "window.turnstile.reset" in indexed_source
+    assert "challengeContext.current !== searchContext" in indexed_source
+    assert "activeRequest.current?.abort()" in indexed_source
+    assert "signal: controller.signal" in indexed_source
+    assert "submittedContext !== currentSearchContext.current" in indexed_source
+    assert "safeSearchResults(payload, stateId, acNumber, partNumber)" in indexed_source
     assert "aria-live=\"polite\"" in indexed_source
 
 

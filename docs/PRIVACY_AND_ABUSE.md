@@ -11,7 +11,7 @@ SIR Saathi treats electoral roll data as public but sensitive.
 - No full EPIC value or raw address in public API responses.
 - Public search requires abuse protection before launch.
 - Public indexed search requires official schedule provenance before launch.
-- The API search route applies a fixed-window rate limit per hashed client/state/AC bucket.
+- Before calling the external challenge verifier, the API applies a fixed-window verification-attempt limit per hashed client. A separate public-search limit uses the same client-global scope across all states and ACs, so invalid-token floods and search-scope rotation cannot reset their respective burst allowances.
 - Logs must not store full EPICs, addresses, phone numbers, documents, or complete search strings.
 - Shared checklists must not include EPIC, address, phone, document, or other private voter details.
 - Scope-authorization reasons and readiness snapshots must contain no voter names, EPIC values, addresses, or search strings.

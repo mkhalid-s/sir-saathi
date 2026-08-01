@@ -16,6 +16,7 @@ from services.api.privacy import (
     resolve_client_ip,
     safe_log_query,
     search_rate_limit_key,
+    verification_rate_limit_key,
 )
 
 
@@ -77,10 +78,24 @@ def test_rate_limiter_blocks_repeated_search_bursts() -> None:
 
 
 def test_rate_limit_key_does_not_store_raw_client_identity() -> None:
-    key = search_rate_limit_key(client_identity="203.0.113.10", state_id="IN-MH", ac_number=172)
+    key = search_rate_limit_key(client_identity="203.0.113.10")
     assert "203.0.113.10" not in key
     assert key.startswith("search:client:")
     assert rate_limit_identity("203.0.113.10") in key
+
+
+def test_rate_limit_key_cannot_be_evaded_by_rotating_search_scope() -> None:
+    first_scope = search_rate_limit_key(client_identity="203.0.113.10")
+    second_scope = search_rate_limit_key(client_identity="203.0.113.10")
+    assert first_scope == second_scope
+
+
+def test_verification_flood_limit_is_separate_and_hides_raw_identity() -> None:
+    search_key = search_rate_limit_key(client_identity="203.0.113.10")
+    verification_key = verification_rate_limit_key(client_identity="203.0.113.10")
+    assert verification_key != search_key
+    assert verification_key.startswith("verification:client:")
+    assert "203.0.113.10" not in verification_key
 
 
 def test_redis_rate_limiter_uses_one_atomic_expiring_counter_operation() -> None:

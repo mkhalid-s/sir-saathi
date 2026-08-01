@@ -231,8 +231,21 @@ def rate_limit_identity(raw_identity: str | None) -> str:
     return f"client:{digest}"
 
 
-def search_rate_limit_key(*, client_identity: str | None, state_id: str, ac_number: int) -> str:
-    return f"search:{rate_limit_identity(client_identity)}:state:{state_id}:ac:{ac_number}"
+def search_rate_limit_key(*, client_identity: str | None) -> str:
+    """Return one public-search bucket per client, regardless of searched scope.
+
+    A state- or constituency-specific bucket can be bypassed by rotating through
+    scopes. The global client bucket keeps the configured burst ceiling meaningful
+    across the nationwide search surface.
+    """
+
+    return f"search:{rate_limit_identity(client_identity)}"
+
+
+def verification_rate_limit_key(*, client_identity: str | None) -> str:
+    """Keep invalid challenge submissions from flooding the external verifier."""
+
+    return f"verification:{rate_limit_identity(client_identity)}"
 
 
 def safe_log_query(query: str) -> str:

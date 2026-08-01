@@ -36,6 +36,7 @@ from .privacy import (
     configured_trusted_proxy_hops,
     resolve_client_ip,
     search_rate_limit_key,
+    verification_rate_limit_key,
 )
 from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
 from .search import SearchRequest, redact_backend_results, search_records
@@ -215,11 +216,7 @@ def search_payload(
         limit=validated.limit,
     )
     if rate_limiter is not None:
-        key = search_rate_limit_key(
-            client_identity=client_identity,
-            state_id=request.state_id,
-            ac_number=request.ac_number,
-        )
+        key = search_rate_limit_key(client_identity=client_identity)
         assert_rate_limit_allowed(rate_limiter.check(key))
     if records is None:
         if not validated.use_sanitized_pilot:
@@ -305,11 +302,27 @@ def create_app(
             )
             validated = _search_request(payload)
             verification_passed = False
-            if not validated.use_sanitized_pilot and abuse_verifier is not None:
-                verification_passed = abuse_verifier.verify(
-                    validated.turnstile_response,
-                    remote_ip=client_host,
+            if not validated.use_sanitized_pilot:
+                states_by_id = load_all_states()
+                if validated.state_id not in states_by_id:
+                    raise ValueError(f"unknown state_id: {validated.state_id}")
+                # Check every launch prerequisite except the token itself before
+                # spending an external verification call.
+                assert_search_launch_allowed(
+                    states_by_id[validated.state_id],
+                    abuse_verification_passed=True,
+                    use_sanitized_pilot=False,
                 )
+                if rate_limiter is None or not rate_limiter.shared:
+                    raise RateLimiterUnavailable("public search requires a shared rate limiter")
+                assert_rate_limit_allowed(
+                    rate_limiter.check(verification_rate_limit_key(client_identity=client_host))
+                )
+                if abuse_verifier is not None:
+                    verification_passed = abuse_verifier.verify(
+                        validated.turnstile_response,
+                        remote_ip=client_host,
+                    )
             return search_payload(
                 validated,
                 rate_limiter=rate_limiter,

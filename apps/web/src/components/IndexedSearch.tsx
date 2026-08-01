@@ -36,6 +36,36 @@ interface Props {
 const SCRIPT_ID = 'sir-saathi-turnstile';
 const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
+function isBoundedString(value: unknown, maximum: number, allowEmpty = false): value is string {
+  return typeof value === 'string' && value.length <= maximum && (allowEmpty || value.trim().length > 0);
+}
+
+function safeSearchResults(payload: unknown, stateId: string, acNumber: number, partNumber: number | null): SearchResult[] | null {
+  if (!payload || typeof payload !== 'object' || !('results' in payload) || !Array.isArray(payload.results) || payload.results.length > 10) {
+    return null;
+  }
+  const results: SearchResult[] = [];
+  for (const candidate of payload.results) {
+    if (!candidate || typeof candidate !== 'object') return null;
+    const result = candidate as Record<string, unknown>;
+    const validPart = partNumber === null
+      ? result.part_number === null || (Number.isInteger(result.part_number) && Number(result.part_number) >= 1 && Number(result.part_number) <= 9999)
+      : result.part_number === partNumber;
+    const validSerial = result.serial_number === null ||
+      (Number.isInteger(result.serial_number) && Number(result.serial_number) >= 1 && Number(result.serial_number) <= 1000000);
+    const validEpicHint = result.epic_hint === null ||
+      (typeof result.epic_hint === 'string' && /^\*{3}\d{4}$/.test(result.epic_hint));
+    if (result.state_id !== stateId || result.ac_number !== acNumber || !validPart || !validSerial ||
+        !isBoundedString(result.display_name, 200) || !Number.isInteger(result.roll_year) || Number(result.roll_year) < 1900 || Number(result.roll_year) > 2100 ||
+        !isBoundedString(result.roll_kind, 80) || !isBoundedString(result.data_quality, 80) || !isBoundedString(result.source_label, 240) ||
+        typeof result.confidence !== 'number' || !Number.isFinite(result.confidence) || result.confidence < 0 || result.confidence > 1 || !validEpicHint) {
+      return null;
+    }
+    results.push(result as unknown as SearchResult);
+  }
+  return results;
+}
+
 function loadTurnstile(): Promise<void> {
   if (window.turnstile) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -65,16 +95,31 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
   const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY as string | undefined;
   const widgetContainer = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
+  const activeRequest = useRef<AbortController | null>(null);
+  const requestVersion = useRef(0);
+  const challengeContext = useRef('');
   const [challengeResponse, setChallengeResponse] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [messageKey, setMessageKey] = useState<MessageKey | null>(null);
   const [searching, setSearching] = useState(false);
   const message = (key: MessageKey, values: MessageValues = {}) => translate(locale, key, values);
+  const searchContext = JSON.stringify([stateId, query.trim(), acHint.trim(), partHint.trim()]);
+  const currentSearchContext = useRef(searchContext);
+  currentSearchContext.current = searchContext;
 
   useEffect(() => {
+    requestVersion.current += 1;
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setSearching(false);
     setResults([]);
     setMessageKey(null);
+    challengeContext.current = '';
+    setChallengeResponse('');
+    if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
   }, [stateId, query, acHint, partHint]);
+
+  useEffect(() => () => activeRequest.current?.abort(), []);
 
   useEffect(() => {
     if (!siteKey || !widgetContainer.current) return;
@@ -87,10 +132,20 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
         theme: 'auto',
         size: 'flexible',
         language: 'auto',
-        callback: (response: string) => setChallengeResponse(response),
-        'expired-callback': () => setChallengeResponse(''),
-        'timeout-callback': () => setChallengeResponse(''),
+        callback: (response: string) => {
+          challengeContext.current = currentSearchContext.current;
+          setChallengeResponse(response);
+        },
+        'expired-callback': () => {
+          challengeContext.current = '';
+          setChallengeResponse('');
+        },
+        'timeout-callback': () => {
+          challengeContext.current = '';
+          setChallengeResponse('');
+        },
         'error-callback': () => {
+          challengeContext.current = '';
           setChallengeResponse('');
           setMessageKey('search.error_unavailable');
         }
@@ -100,6 +155,7 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
       active = false;
       if (widgetId.current && window.turnstile) window.turnstile.remove(widgetId.current);
       widgetId.current = null;
+      challengeContext.current = '';
       setChallengeResponse('');
     };
   }, [siteKey, stateId]);
@@ -114,10 +170,15 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
       setMessageKey('search.invalid_scope');
       return;
     }
-    if (!challengeResponse) {
+    if (!challengeResponse || challengeContext.current !== searchContext) {
       setMessageKey('search.verify');
       return;
     }
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    const version = ++requestVersion.current;
+    const submittedContext = searchContext;
     setSearching(true);
     setMessageKey(null);
     setResults([]);
@@ -125,6 +186,7 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           state_id: stateId,
           query: normalizedQuery,
@@ -134,20 +196,31 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
           turnstile_response: challengeResponse
         })
       });
+      if (controller.signal.aborted || version !== requestVersion.current || submittedContext !== currentSearchContext.current) return;
       if (!response.ok) {
         setMessageKey(response.status === 429 ? 'search.error_rate' : response.status === 503 ? 'search.error_unavailable' : 'search.error_generic');
         return;
       }
-      const payload = await response.json() as { results?: SearchResult[] };
-      const safeResults = Array.isArray(payload.results) ? payload.results.slice(0, 10) : [];
+      const payload: unknown = await response.json();
+      if (controller.signal.aborted || version !== requestVersion.current || submittedContext !== currentSearchContext.current) return;
+      const safeResults = safeSearchResults(payload, stateId, acNumber, partNumber);
+      if (safeResults === null) {
+        setMessageKey('search.error_generic');
+        return;
+      }
       setResults(safeResults);
       setMessageKey(safeResults.length ? null : 'search.no_results');
-    } catch {
+    } catch (error) {
+      if ((error as { name?: string })?.name === 'AbortError') return;
       setMessageKey('search.error_unavailable');
     } finally {
-      setSearching(false);
-      setChallengeResponse('');
-      if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+      if (version === requestVersion.current && submittedContext === currentSearchContext.current) {
+        activeRequest.current = null;
+        setSearching(false);
+        challengeContext.current = '';
+        setChallengeResponse('');
+        if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+      }
     }
   };
 
