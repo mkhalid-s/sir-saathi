@@ -117,10 +117,38 @@ CREATE TABLE IF NOT EXISTS public_search_scopes (
     roll_version_id TEXT NOT NULL REFERENCES roll_versions(roll_version_id),
     ac_id TEXT NOT NULL REFERENCES assembly_constituencies(ac_id),
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
-    reviewed_by TEXT NOT NULL,
+    reviewed_by TEXT NOT NULL CHECK (btrim(reviewed_by) <> '' AND char_length(reviewed_by) <= 200),
     reviewed_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (roll_version_id, ac_id)
 );
+
+-- Append-only audit evidence for every explicit enable or disable decision.
+-- The operator tool writes this and public_search_scopes in one transaction.
+CREATE TABLE IF NOT EXISTS public_search_scope_events (
+    event_id TEXT PRIMARY KEY,
+    roll_version_id TEXT NOT NULL REFERENCES roll_versions(roll_version_id),
+    ac_id TEXT NOT NULL REFERENCES assembly_constituencies(ac_id),
+    action TEXT NOT NULL CHECK (action IN ('enable', 'disable')),
+    reviewed_by TEXT NOT NULL CHECK (btrim(reviewed_by) <> '' AND char_length(reviewed_by) <= 200),
+    reason TEXT NOT NULL CHECK (btrim(reason) <> '' AND char_length(reason) <= 500),
+    readiness_snapshot JSONB NOT NULL,
+    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_search_scope_events_scope_time
+    ON public_search_scope_events (roll_version_id, ac_id, reviewed_at DESC);
+
+CREATE OR REPLACE FUNCTION reject_public_search_scope_event_mutation()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    RAISE EXCEPTION 'public_search_scope_events is append-only';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS public_search_scope_events_append_only ON public_search_scope_events;
+CREATE TRIGGER public_search_scope_events_append_only
+    BEFORE UPDATE OR DELETE ON public_search_scope_events
+    FOR EACH ROW EXECUTE FUNCTION reject_public_search_scope_event_mutation();
 
 CREATE TABLE IF NOT EXISTS guidance_rules (
     rule_id TEXT PRIMARY KEY,

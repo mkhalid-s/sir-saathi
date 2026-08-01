@@ -301,6 +301,7 @@ def verify_ingestion_pipeline_contract() -> None:
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
     readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
     workflow = (ROOT / "pipeline/sir_saathi_pipeline/operator_workflow.py").read_text(encoding="utf-8")
+    public_scope = (ROOT / "pipeline/sir_saathi_pipeline/public_search_scope.py").read_text(encoding="utf-8")
     parser_registry = (ROOT / "pipeline/sir_saathi_pipeline/parsers/registry.py").read_text(encoding="utf-8")
     matching = (ROOT / "pipeline/sir_saathi_pipeline/cross_year_matching.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
@@ -418,6 +419,18 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("operator workflow must verify manifest checksums before parse/load")
     if "Operators can generate the full local onboarding workflow" not in docs:
         raise RuntimeError("API/DB docs must document the local operator workflow")
+    if "public_search_scope_events" not in schema or "readiness_snapshot JSONB NOT NULL" not in schema:
+        raise RuntimeError("public search scope changes must retain append-only readiness evidence")
+    if "public_search_scope_events_append_only" not in schema or "BEFORE UPDATE OR DELETE" not in schema:
+        raise RuntimeError("public search scope audit events must reject mutation at the database layer")
+    if "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE" not in public_scope or "authorization_sql" not in public_scope:
+        raise RuntimeError("scope readiness evidence and authorization changes must be atomic")
+    if "if not apply" not in public_scope or "action == \"enable\" and report[\"blockers\"]" not in public_scope:
+        raise RuntimeError("public search scope promotion must be dry-run-first and fail closed")
+    if "action not in {\"enable\", \"disable\"}" not in public_scope:
+        raise RuntimeError("public search scope authorization must support explicit revocation")
+    if "Exact public-search scopes are managed" not in docs:
+        raise RuntimeError("API/DB docs must document audited exact-scope authorization")
 
 
 def main() -> int:

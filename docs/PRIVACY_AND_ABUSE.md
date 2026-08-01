@@ -14,6 +14,7 @@ SIR Saathi treats electoral roll data as public but sensitive.
 - The API search route applies a fixed-window rate limit per hashed client/state/AC bucket.
 - Logs must not store full EPICs, addresses, phone numbers, documents, or complete search strings.
 - Shared checklists must not include EPIC, address, phone, document, or other private voter details.
+- Scope-authorization reasons and readiness snapshots must contain no voter names, EPIC values, addresses, or search strings.
 
 ## Abuse Protection MVP
 

@@ -73,6 +73,7 @@ The pipeline is designed for local operator use before any public launch decisio
 - Idempotent local PostgreSQL loading in `pipeline/sir_saathi_pipeline/db_loader.py`.
 - Local loaded-roll search validation in `pipeline/sir_saathi_pipeline/local_search.py`.
 - Local readiness reports in `pipeline/sir_saathi_pipeline/readiness_report.py`.
+- Dry-run-first, audited exact-scope authorization in `pipeline/sir_saathi_pipeline/public_search_scope.py`.
 - Local state seeding in `pipeline/sir_saathi_pipeline/seed_states.py`.
 - Operator workflow planning in `pipeline/sir_saathi_pipeline/operator_workflow.py`.
 
@@ -88,6 +89,19 @@ SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" SIR_SAATHI_DATABASE_URL="postgresq
 SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.local_search --state IN-MH --ac 172 --name "<name to test>"
 SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.readiness_report --state IN-MH --ac 172
 ```
+
+After a state has passed human launch review, operators can inspect one exact
+roll/versioned-AC scope and preview an enable decision. The command remains a
+dry run unless `--apply` is explicitly present:
+
+```sh
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id>
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --reviewed-by <reviewer-id> --reason "<approval record>"
+```
+
+No jurisdiction is enabled in the repository by default. Applying an enable or
+disable decision is an accountable production operation described in
+`docs/API_AND_DB.md` and `docs/LAUNCH_CHECKLIST.md`.
 
 The workflow planner can print the full sequence without executing commands:
 

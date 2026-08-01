@@ -19,6 +19,9 @@ Before any public launch:
 - Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
 - The PWA build has the matching `PUBLIC_TURNSTILE_SITE_KEY`; the indexed client is visible only for launch-ready states and resets every single-use or expired response.
 - Every enabled database search scope pins an exact roll version and versioned AC in `public_search_scopes`, with reviewer identity and timestamp; ingestion never enables it.
+- Run the exact-scope command without `--apply`, resolve every blocker, and obtain independent human approval before applying an enable decision.
+- Confirm each applied enable or disable has a matching append-only `public_search_scope_events` record with a non-sensitive rationale and aggregate readiness snapshot.
+- Exercise `--disable --apply` in the deployment runbook and confirm revocation immediately removes the scope from public search.
 - Official links and source freshness are visible.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.

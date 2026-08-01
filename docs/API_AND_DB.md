@@ -10,7 +10,7 @@ The first API surface is intentionally small and served under the `/api` prefix:
 
 Name search fails closed unless the request is explicitly using the sanitized pilot fixture or a future state has passed public launch readiness. Public search must be scoped by Assembly Constituency; `part_number` can only narrow a search when `ac_number` is also present.
 
-The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with reviewer identity and timestamp. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
+The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with reviewer identity and timestamp. Every authorization change also appends a `public_search_scope_events` row with its rationale and aggregate readiness snapshot. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
 
 `GET /api/states` exposes canonical state metadata, including structured SIR schedule dates, CEO portal, official source labels, URLs, types, and `last_verified` dates so clients can show deadlines and source freshness.
 
@@ -97,3 +97,38 @@ python -m pipeline.sir_saathi_pipeline.operator_workflow --state IN-MH --ac 172 
 ```
 
 The workflow planner prints the safe command sequence for state seeding, source manifest validation, PDF dry-run, explicit load, local search validation, and readiness reporting. It does not execute the commands, does not print a raw test name, keeps search names in `SIR_SAATHI_TEST_NAME`, and should be run before considering any public-search work.
+
+### Audited exact-scope authorization
+
+Exact public-search scopes are managed with a separate operator command. It
+checks the exact state, roll version, versioned AC, source/extraction accounting,
+scoped voter counts, issue rate, official provenance, indexed-search capability,
+and state launch flag. Its output contains aggregate counts only. Inspection does
+not write anything:
+
+```bash
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id>
+```
+
+`--enable` and `--disable` both require an accountable reviewer identifier and a
+non-empty reason. They still default to a dry run; `--apply` is the separate,
+explicit mutation switch. The applied readiness check, append-only event, and
+allowlist update run in one serializable transaction. Enable fails closed on any
+blocker; disable remains available when launch or data readiness has degraded.
+
+```bash
+# Preview, with no database write
+python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --reviewed-by <reviewer-id> --reason "<approval record>"
+
+# Apply only after the preview and independent human approval
+python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --reviewed-by <reviewer-id> --reason "<approval record>" --apply
+
+# Emergency or planned revocation
+python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --disable --reviewed-by <reviewer-id> --reason "<revocation record>" --apply
+```
+
+Do not place voter names, EPIC values, addresses, or search strings in
+`--reason`. Enabling the database scope is necessary but not sufficient: the API
+also continues to require the reviewed state launch flag, Turnstile, and shared
+rate limiting. No state config or database scope is automatically promoted by
+ingestion.
