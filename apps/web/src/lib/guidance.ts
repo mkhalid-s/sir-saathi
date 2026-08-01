@@ -75,6 +75,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
   const text = (key: MessageKey, values: MessageValues = {}) => translate(locale, key, values);
   const form = (formId: 'form_6' | 'form_7' | 'form_8') => text(`forms.${formId}.label` as MessageKey);
   const notices = state ? [deadlineNotice(state, answers.situation, locale)].filter(Boolean) as string[] : [];
+  const scheduleUnavailable = state?.currentPhase === 'schedule_unverified' || state?.currentPhase === 'schedule_pending';
 
   if (answers.situation === 'missing_name') {
     const actions = [
@@ -83,7 +84,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
       text('guidance.missing.contact'),
       text('guidance.missing.file_claim')
     ];
-    if (answers.baseRollFound === 'yes') {
+    if (!scheduleUnavailable && answers.baseRollFound === 'yes') {
       actions.splice(2, 0, text('guidance.missing.base_reference'));
     }
     return {
@@ -162,9 +163,8 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     };
   }
 
-  const scheduleUnverified = state?.currentPhase === 'schedule_unverified';
   const enumerationClosed = state && state.currentPhase !== 'pre_enumeration' && state.currentPhase !== 'enumeration_open';
-  const actions = scheduleUnverified
+  const actions = scheduleUnavailable
     ? [
         text('guidance.existing.check_current'),
         text('guidance.existing.check_notices'),
@@ -182,11 +182,11 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
         text('guidance.existing.keep')
       ];
   let priority: GuidanceCard['priority'] = 'medium';
-  if (answers.bloVisited === 'no' || answers.enumerationFormReceived === 'no') {
+  if (!scheduleUnavailable && (answers.bloVisited === 'no' || answers.enumerationFormReceived === 'no')) {
     actions.unshift(text('guidance.existing.contact_missing_form'));
     priority = 'high';
   }
-  if (answers.enumerationFormReceived === 'yes' && answers.enumerationFormSubmitted === 'no') {
+  if (!scheduleUnavailable && answers.enumerationFormReceived === 'yes' && answers.enumerationFormSubmitted === 'no') {
     actions.unshift(text('guidance.existing.submit_received'));
     priority = 'high';
   }
@@ -198,7 +198,7 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
   return {
     title: text(priority === 'urgent' ? 'guidance.existing.title_missing' : 'guidance.existing.title'),
     priority,
-    summary: scheduleUnverified
+    summary: scheduleUnavailable
       ? text('guidance.existing.summary_unverified')
       : text('guidance.existing.summary'),
     actions,

@@ -29,3 +29,4 @@ The first version of SIR Saathi guidance is deterministic. It does not use an LL
 - Do not present guidance as legal advice.
 - Do not expose full EPIC values, addresses, or raw roll records in guidance examples.
 - If a deadline appears close or passed, tell the user to check official channels immediately.
+- Treat both unverified and officially pending schedules as unavailable: hide and ignore BLO, enumeration-form, and base-roll answers, show no inferred SIR deadline, and direct the voter to current rolls and official notices. Clear state-specific status answers whenever the jurisdiction changes.

@@ -59,7 +59,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   const guidance = useMemo(() => guidanceFor(answers, state, uiLanguage), [answers, state, uiLanguage]);
   const deadline = deadlineFor(state, answers.situation, uiLanguage);
   const languageOptions = uiLanguageOptionsForState(state.languageCodes);
-  const scheduleKnown = state.currentPhase !== 'schedule_unverified';
+  const scheduleKnown = state.currentPhase !== 'schedule_unverified' && state.currentPhase !== 'schedule_pending';
   const message = (key: MessageKey, values: MessageValues = {}) => translate(uiLanguage, key, values);
   const plannedLanguages = languageOptions.filter((item) => item.status === 'planned').map((item) => item.label);
   const languageReadiness = plannedLanguages.length
@@ -83,6 +83,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   };
   const updateState = (value: string) => {
     setStateId(value);
+    setAnswers((current) => ({ ...defaultAnswers, situation: current.situation }));
     setNameQuery('');
     setAcHint('');
     setPartHint('');

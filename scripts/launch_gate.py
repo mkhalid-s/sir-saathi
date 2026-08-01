@@ -230,6 +230,14 @@ def verify_source_freshness() -> None:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
     if "guidance.schedule_source" not in web or "guidance.schedule_note" not in web or "schedule_provenance" not in api:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
+    web_guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
+    if "state.currentPhase !== 'schedule_pending'" not in web or "state?.currentPhase === 'schedule_pending'" not in web_guidance:
+        raise RuntimeError("PWA must suppress schedule-specific questions and rules for pending schedules")
+    if 'schedule_unavailable = state.schedule.status in {"schedule_unverified", "schedule_pending"}' not in api_guidance:
+        raise RuntimeError("API must treat pending and unverified schedules as the same fail-closed boundary")
+    if "setAnswers((current) => ({ ...defaultAnswers, situation: current.situation }))" not in web:
+        raise RuntimeError("jurisdiction changes must clear state-specific wizard answers")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
     if "directory.provenance" not in search_availability or "directory.search.unverified" not in search_availability:

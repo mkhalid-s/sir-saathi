@@ -202,8 +202,11 @@ def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> Non
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
-    assert "state.currentPhase !== 'schedule_unverified'" in wizard
-    assert "scheduleUnverified" in guidance
+    assert "state.currentPhase !== 'schedule_unverified' && state.currentPhase !== 'schedule_pending'" in wizard
+    assert "state?.currentPhase === 'schedule_unverified' || state?.currentPhase === 'schedule_pending'" in guidance
+    assert "!scheduleUnavailable && answers.baseRollFound" in guidance
+    assert "!scheduleUnavailable && (answers.bloVisited" in guidance
+    assert "setAnswers((current) => ({ ...defaultAnswers, situation: current.situation }))" in wizard
     assert "official jurisdiction notice" in messages["guidance.existing.summary_unverified"]
 
 

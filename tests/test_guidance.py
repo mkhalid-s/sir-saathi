@@ -68,11 +68,23 @@ def test_unverified_schedule_guidance_does_not_invent_sir_steps_or_deadlines() -
 
 def test_officially_pending_schedule_guidance_does_not_invent_dates() -> None:
     result = get_guidance(
-        GuidanceInput(state_id="IN-HP", situation="existing_voter", today=date(2026, 8, 1))
+        GuidanceInput(
+            state_id="IN-HP",
+            situation="existing_voter",
+            blo_visited="no",
+            enumeration_form_received="no",
+            today=date(2026, 8, 1),
+        )
     )
     assert result.deadline is None
+    assert result.priority == "medium"
     assert "ECI SIR Phase III deferral notice" in result.source_labels
+    assert all("Contact your BLO" not in action for action in result.actions)
     assert all("enumeration deadline" not in action for action in result.actions)
+    missing = get_guidance(
+        GuidanceInput(state_id="IN-HP", situation="missing_name", base_roll_found="yes")
+    )
+    assert all("older/base-roll" not in action for action in missing.actions)
 
 
 def test_shared_phase_three_schedule_drives_source_backed_guidance() -> None:

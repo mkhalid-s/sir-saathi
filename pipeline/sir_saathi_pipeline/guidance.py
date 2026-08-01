@@ -107,9 +107,9 @@ def get_guidance(
     text = lambda key, values=None: translate_message(locale, key, values)
     form = lambda form_id: text(f"forms.{form_id}.label")
     warnings = list(_schedule_warning(state, request.today, deadline, locale))
+    schedule_unavailable = state.schedule.status in {"schedule_unverified", "schedule_pending"}
 
     if request.situation == "existing_voter":
-        schedule_unverified = state.schedule.status in {"schedule_unverified", "schedule_pending"}
         revision_complete = state.schedule.status_on(request.today) == "final_roll_published" if request.today else (
             state.schedule.status == "final_roll_published"
         )
@@ -118,7 +118,7 @@ def get_guidance(
             and state.schedule.enumeration_end
             and request.today > state.schedule.enumeration_end
         )
-        if schedule_unverified:
+        if schedule_unavailable:
             actions = [
                 text("guidance.existing.check_current"),
                 text("guidance.existing.check_notices"),
@@ -142,7 +142,9 @@ def get_guidance(
                 text("guidance.existing.submit_enumeration"),
                 text("guidance.existing.keep"),
             ]
-        if request.enumeration_form_received == "no" or request.blo_visited == "no":
+        if not schedule_unavailable and (
+            request.enumeration_form_received == "no" or request.blo_visited == "no"
+        ):
             actions.insert(0, text("guidance.existing.contact_missing_form"))
             priority: Priority = "high"
         else:
@@ -152,7 +154,7 @@ def get_guidance(
             title=text("guidance.existing.title"),
             summary=(
                 text("guidance.existing.summary_unverified")
-                if schedule_unverified
+                if schedule_unavailable
                 else text("guidance.existing.summary_complete")
                 if revision_complete
                 else text("guidance.existing.summary")
@@ -190,7 +192,7 @@ def get_guidance(
             text("guidance.missing.file_claim"),
             text("guidance.missing.contact"),
         ]
-        if request.base_roll_found == "yes":
+        if not schedule_unavailable and request.base_roll_found == "yes":
             actions.insert(2, text("guidance.missing.base_reference"))
         return GuidanceResult(
             priority="urgent",
