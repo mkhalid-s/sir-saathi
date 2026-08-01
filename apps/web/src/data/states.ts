@@ -78,8 +78,6 @@ export interface UiLanguageOption {
   status: UiLanguageStatus;
 }
 
-const ENGLISH_LABEL = 'English';
-
 const localeByCode = localeCatalogue.locales.reduce<Record<string, UiLanguageOption>>(
   (locales, locale) => ({
     ...locales,
@@ -142,14 +140,6 @@ export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLangu
   return ['en', ...stateLanguageCodes.filter((language) => language !== 'en')]
     .map((code) => localeByCode[code])
     .filter((locale): locale is UiLanguageOption => Boolean(locale));
-}
-
-export function uiLanguageReadiness(stateLanguages: string[]): string {
-  const plannedLanguages = stateLanguages.filter((language) => language !== ENGLISH_LABEL);
-  if (plannedLanguages.length === 0) {
-    return 'English UI is available now.';
-  }
-  return `English UI is available now. ${plannedLanguages.join(', ')} translations are planned and will be added after human review.`;
 }
 
 function stateFromConfig(config: StateConfig): StateSummary {

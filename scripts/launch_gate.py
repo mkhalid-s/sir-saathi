@@ -99,11 +99,12 @@ def verify_source_freshness() -> None:
     from pipeline.sir_saathi_pipeline.source_freshness import build_freshness_report
 
     web = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     search_availability = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
-    if "Sources last checked:" not in web or "last_verified" not in api:
+    if "guidance.sources_checked" not in web or "Sources last checked:" not in messages["guidance.sources_checked"] or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
-    if "Schedule source:" not in web or "Schedule note:" not in web or "schedule_provenance" not in api:
+    if "guidance.schedule_source" not in web or "guidance.schedule_note" not in web or "schedule_provenance" not in api:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
     if "verified " in web.casefold():
         raise RuntimeError("web source freshness copy must not imply official verification")
@@ -162,11 +163,12 @@ def verify_ui_language_readiness() -> None:
     states_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     i18n = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
-    if "uiLanguageReadiness" not in states_source or "English UI is available now" not in states_source:
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
         raise RuntimeError("web must expose explicit UI language readiness")
-    if "human review" not in states_source:
+    if "human review" not in messages["wizard.language_planned"]:
         raise RuntimeError("planned non-English UI translations must require human review")
-    if "UI language" not in wizard or "(planned)" not in wizard:
+    if "wizard.ui_language" not in wizard or "wizard.planned_suffix" not in wizard:
         raise RuntimeError("wizard must show available and planned UI language status")
     if "import.meta.glob" not in i18n or "hasEnabledCatalogue" not in i18n or "translate(uiLanguage" not in wizard:
         raise RuntimeError("reviewed translation catalogues must drive rendered wizard copy")
@@ -209,14 +211,20 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("homepage must expose a clear safe find-name entry point")
     if 'id="find-name"' not in wizard or "Start with a safe official check" not in messages["find.title"]:
         raise RuntimeError("wizard must contain the safe find-name flow")
-    if "State for official check" not in wizard or "updateState" not in wizard:
+    if "find.state_label" not in wizard or "updateState" not in wizard:
         raise RuntimeError("find-name flow must ask for state before official search steps")
     if "setFindSubmitted(false)" not in wizard:
         raise RuntimeError("find-name flow must hide stale official-check results when state changes")
     if "does not send these details to SIR Saathi servers" not in messages["find.privacy_notice"]:
         raise RuntimeError("find-name flow must explain local-only fallback behavior")
-    for expected in ["official-check-steps", "Search with the name as it may appear in the roll", "Try common spelling variations", "contact BLO or ERO"]:
-        if expected not in wizard:
+    if "official-check-steps" not in wizard:
+        raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
+    for key, expected in [
+        ("find.step_search", "Search with the name as it may appear in the roll"),
+        ("find.step_spelling", "Try common spelling variations"),
+        ("find.step_contact", "contact BLO or ERO"),
+    ]:
+        if key not in wizard or expected not in messages[key]:
             raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
     if "call indexed search" not in messages["find.privacy_notice"]:
         raise RuntimeError("official fallback must explain that it does not call indexed search")
@@ -227,7 +235,7 @@ def verify_safe_find_name_flow() -> None:
             raise RuntimeError("indexed-search client must use a fresh action-bound Turnstile response")
     if "find.not_found" not in wizard or "situation: 'missing_name'" not in wizard or "currentRollFound: 'no'" not in wizard:
         raise RuntimeError("find-name flow must hand off to missing-name guidance with current-roll-not-found status")
-    if "Clear entered details" not in wizard or "clearFindNameHints" not in wizard:
+    if "find.clear" not in wizard or "clearFindNameHints" not in wizard:
         raise RuntimeError("find-name flow must let users clear local search hints")
     for setter in ["setNameQuery('')", "setDistrictHint('')", "setAcHint('')", "setPartHint('')"]:
         if setter not in wizard:

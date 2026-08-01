@@ -1,36 +1,37 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { states, uiLanguageOptionsForState, uiLanguageReadiness } from '../data/states';
+import { states, uiLanguageOptionsForState } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
 import { translate, type MessageKey, type MessageValues } from '../lib/i18n';
 import IndexedSearch from './IndexedSearch';
 
-const situations: { value: Situation; label: string }[] = [
-  { value: 'existing_voter', label: 'I am already a voter and want to verify' },
-  { value: 'missing_name', label: 'My name is missing or not found' },
-  { value: 'new_voter', label: 'I need to register as a new voter' },
-  { value: 'shifted_address', label: 'I shifted address' },
-  { value: 'correction', label: 'My name, age, or address needs correction' },
-  { value: 'deceased_family', label: 'I need to report a deceased family member entry' },
-  { value: 'duplicate_entry', label: 'I found a duplicate voter entry' },
-  { value: 'portal_failed', label: 'The official portal is not working for me' }
+const situations: { value: Situation; key: MessageKey }[] = [
+  { value: 'existing_voter', key: 'wizard.situation.existing_voter' },
+  { value: 'missing_name', key: 'wizard.situation.missing_name' },
+  { value: 'new_voter', key: 'wizard.situation.new_voter' },
+  { value: 'shifted_address', key: 'wizard.situation.shifted_address' },
+  { value: 'correction', key: 'wizard.situation.correction' },
+  { value: 'deceased_family', key: 'wizard.situation.deceased_family' },
+  { value: 'duplicate_entry', key: 'wizard.situation.duplicate_entry' },
+  { value: 'portal_failed', key: 'wizard.situation.portal_failed' }
 ];
 
-const statusOptions: { value: StatusAnswer; label: string }[] = [
-  { value: 'unknown', label: 'Not sure' },
-  { value: 'yes', label: 'Yes' },
-  { value: 'no', label: 'No' }
+const statusOptions: { value: StatusAnswer; key: MessageKey }[] = [
+  { value: 'unknown', key: 'wizard.answer.unknown' },
+  { value: 'yes', key: 'wizard.answer.yes' },
+  { value: 'no', key: 'wizard.answer.no' }
 ];
 
 function statusSelect(
   label: string,
   value: StatusAnswer,
-  onChange: (value: StatusAnswer) => void
+  onChange: (value: StatusAnswer) => void,
+  message: (key: MessageKey, values?: MessageValues) => string
 ) {
   return (
     <label class="field">
       {label}
       <select class="select" value={value} onChange={(event) => onChange((event.currentTarget as HTMLSelectElement).value as StatusAnswer)}>
-        {statusOptions.map((item) => <option value={item.value}>{item.label}</option>)}
+        {statusOptions.map((item) => <option value={item.value}>{message(item.key)}</option>)}
       </select>
     </label>
   );
@@ -46,18 +47,21 @@ export default function ActionWizard() {
   const [findSubmitted, setFindSubmitted] = useState(false);
   const [answers, setAnswers] = useState<WizardAnswers>(defaultAnswers);
   const state = states.find((item) => item.stateId === stateId) ?? states[0];
-  const guidance = useMemo(() => guidanceFor(answers, state), [answers, state]);
+  const guidance = useMemo(() => guidanceFor(answers, state, uiLanguage), [answers, state, uiLanguage]);
   const deadline = deadlineFor(state, answers.situation);
   const languageOptions = uiLanguageOptionsForState(state.languageCodes);
-  const languageReadiness = uiLanguageReadiness(state.languages);
   const scheduleKnown = state.currentPhase !== 'schedule_unverified';
   const message = (key: MessageKey, values: MessageValues = {}) => translate(uiLanguage, key, values);
+  const plannedLanguages = languageOptions.filter((item) => item.status === 'planned').map((item) => item.label);
+  const languageReadiness = plannedLanguages.length
+    ? message('wizard.language_planned', { languages: plannedLanguages.join(', ') })
+    : message('wizard.language_available');
   const guidanceBoundaryText = message('safety.guidance_boundary');
   const shareSafetyText = `${message('safety.confirm_official')} ${message('safety.no_private_share')}`;
   const shareText = [
-    `SIR Saathi checklist for ${state.name}: ${guidance.title}.`,
-    `Next: ${guidance.actions[0]}`,
-    `Deadline: ${deadline ?? 'check official portal'}.`,
+    message('share.checklist', { state: state.name, title: guidance.title }),
+    message('share.next', { action: guidance.actions[0] }),
+    message('share.deadline', { deadline: deadline ?? message('guidance.deadline_unknown') }),
     shareSafetyText
   ].join(' ');
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
@@ -93,56 +97,56 @@ export default function ActionWizard() {
     <section class="wizard" id="find-name">
       <div class="find-flow" aria-labelledby="find-name-title">
         <div>
-          <p class="eyebrow dark">Find my name</p>
+          <p class="eyebrow dark">{message('find.eyebrow')}</p>
           <h2 id="find-name-title">{message('find.title')}</h2>
-          <p class="reference-copy">Enter only the hints you would use on the official portal. {message('find.privacy_notice')}</p>
+          <p class="reference-copy">{message('find.intro_prefix')} {message('find.privacy_notice')}</p>
         </div>
         <form class="find-form" onSubmit={(event) => {
           event.preventDefault();
           setFindSubmitted(true);
         }}>
           <label class="field">
-            State for official check
+            {message('find.state_label')}
             <select class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
               {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
             </select>
           </label>
           <label class="field">
-            Name to check
-            <input class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder="Name as it may appear in the roll" />
+            {message('find.name_label')}
+            <input class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.name_placeholder')} />
           </label>
           <label class="field">
-            District or city if known
-            <input class="input" value={districtHint} onInput={(event) => setDistrictHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
+            {message('find.district_label')}
+            <input class="input" value={districtHint} onInput={(event) => setDistrictHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} />
           </label>
           <label class="field">
-            Assembly Constituency if known
-            <input class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
+            {message('find.ac_label')}
+            <input class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} />
           </label>
           <label class="field">
-            Part number if known
-            <input class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder="Optional" />
+            {message('find.part_label')}
+            <input class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} />
           </label>
           {state.publicLaunchReady && (
             <IndexedSearch stateId={state.stateId} query={nameQuery} acHint={acHint} partHint={partHint} locale={uiLanguage} />
           )}
-          <button class="primary-button" type="submit">Show official check steps</button>
+          <button class="primary-button" type="submit">{message('find.show_steps')}</button>
         </form>
         {findSubmitted && (
           <div class="find-result" aria-live="polite">
             <h3>{message('find.official_first', { state: state.name })}</h3>
-            <p>Open the official portal and search with your name plus district, AC, or part number if you know them. Confirm any match on the official portal before acting.</p>
+            <p>{message('find.result_intro')}</p>
             <ol class="official-check-steps">
-              <li>Select {state.name} or the matching state section on the official portal.</li>
-              <li>Search with the name as it may appear in the roll, then narrow with district, AC, or part number if known.</li>
-              <li>Try common spelling variations before assuming the name is missing.</li>
-              <li>If there is still no official match, use the missing-name steps below and contact BLO or ERO.</li>
+              <li>{message('find.step_state', { state: state.name })}</li>
+              <li>{message('find.step_search')}</li>
+              <li>{message('find.step_spelling')}</li>
+              <li>{message('find.step_contact')}</li>
             </ol>
-            <p>Indexed public search is not used here unless a state passes launch readiness, official schedule provenance, privacy, and abuse checks.</p>
+            <p>{message('find.indexed_boundary')}</p>
             <div class="actions">
               <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_official')}</a>
               <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>{message('find.not_found')}</button>
-              <button class="secondary-button" type="button" onClick={clearFindNameHints}>Clear entered details</button>
+              <button class="secondary-button" type="button" onClick={clearFindNameHints}>{message('find.clear')}</button>
             </div>
           </div>
         )}
@@ -150,33 +154,33 @@ export default function ActionWizard() {
 
       <div class="form-grid" id="guidance">
         <label class="field">
-          State
+          {message('wizard.state')}
           <select class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
             {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
           </select>
         </label>
 
         <label class="field">
-          What is your situation?
+          {message('wizard.situation')}
           <select class="select" value={answers.situation} onChange={(event) => updateAnswer('situation', (event.currentTarget as HTMLSelectElement).value as Situation)}>
-            {situations.map((item) => <option value={item.value}>{item.label}</option>)}
+            {situations.map((item) => <option value={item.value}>{message(item.key)}</option>)}
           </select>
         </label>
 
         <label class="field">
-          UI language
+          {message('wizard.ui_language')}
           <select class="select" value={uiLanguage} onChange={(event) => setUiLanguage((event.currentTarget as HTMLSelectElement).value)}>
-            {languageOptions.map((item) => <option value={item.code} disabled={item.status === 'planned'}>{item.label}{item.status === 'planned' ? ' (planned)' : ''}</option>)}
+            {languageOptions.map((item) => <option value={item.code} disabled={item.status === 'planned'}>{item.label}{item.status === 'planned' ? message('wizard.planned_suffix') : ''}</option>)}
           </select>
         </label>
       </div>
 
-      <div class="question-grid" aria-label="SIR follow-up questions">
-        {scheduleKnown && statusSelect('Did a BLO visit your home?', answers.bloVisited, (value) => updateAnswer('bloVisited', value))}
-        {scheduleKnown && statusSelect('Did you receive an enumeration form?', answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value))}
-        {scheduleKnown && statusSelect('Did you submit the enumeration form?', answers.enumerationFormSubmitted, (value) => updateAnswer('enumerationFormSubmitted', value))}
-        {statusSelect('Is your name found in the current/draft roll?', answers.currentRollFound, (value) => updateAnswer('currentRollFound', value))}
-        {scheduleKnown && statusSelect('Is your name found in the old/base roll?', answers.baseRollFound, (value) => updateAnswer('baseRollFound', value))}
+      <div class="question-grid" aria-label={message('wizard.questions_label')}>
+        {scheduleKnown && statusSelect(message('wizard.question.blo'), answers.bloVisited, (value) => updateAnswer('bloVisited', value), message)}
+        {scheduleKnown && statusSelect(message('wizard.question.received'), answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value), message)}
+        {scheduleKnown && statusSelect(message('wizard.question.submitted'), answers.enumerationFormSubmitted, (value) => updateAnswer('enumerationFormSubmitted', value), message)}
+        {statusSelect(message('wizard.question.current_roll'), answers.currentRollFound, (value) => updateAnswer('currentRollFound', value), message)}
+        {scheduleKnown && statusSelect(message('wizard.question.base_roll'), answers.baseRollFound, (value) => updateAnswer('baseRollFound', value), message)}
       </div>
 
       <div class="result-card priority-${guidance.priority}">
@@ -186,17 +190,17 @@ export default function ActionWizard() {
         <p class="source-note">{guidanceBoundaryText}</p>
         <p class="deadline">{message('guidance.deadline', { deadline: deadline ?? message('guidance.deadline_unknown') })}</p>
         <p class="source-note">{message('guidance.sources', { sources: state.sourceLabels.join(', ') })}</p>
-        <p class="source-note">Schedule source: {state.scheduleProvenance.label} ({state.scheduleProvenance.confidence}).</p>
-        <p class="source-note">Schedule note: {state.scheduleProvenance.notes}</p>
-        <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>
+        <p class="source-note">{message('guidance.schedule_source', { label: state.scheduleProvenance.label, confidence: state.scheduleProvenance.confidence })}</p>
+        <p class="source-note">{message('guidance.schedule_note', { note: state.scheduleProvenance.notes })}</p>
+        <p class="source-note">{message('guidance.sources_checked', { sources: state.sourceFreshness.join('; ') })}</p>
         <p class="source-note">{message('safety.confirm_official')}</p>
         <p class="source-note">{message('guidance.language_status', { status: languageReadiness })}</p>
-        <p class="source-note">State languages tracked: {state.languages.join(', ')}. Default: {state.defaultLanguage}.</p>
+        <p class="source-note">{message('guidance.state_languages', { languages: state.languages.join(', '), default_language: state.defaultLanguage })}</p>
         {!state.publicLaunchReady && <p class="warning-note">{message('safety.search_unavailable')}</p>}
       </div>
 
       {guidance.notices.length > 0 && (
-        <div class="notice-list" aria-label="Important notices">
+        <div class="notice-list" aria-label={message('guidance.important_notices')}>
           {guidance.notices.map((notice) => <p>{notice}</p>)}
         </div>
       )}

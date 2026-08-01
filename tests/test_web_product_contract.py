@@ -26,9 +26,9 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
     ]:
         assert field in source
     assert "guidance.sources" in source
-    assert "Schedule source:" in source
-    assert "Schedule note:" in source
-    assert "Sources last checked:" in source
+    assert "guidance.schedule_source" in source
+    assert "guidance.schedule_note" in source
+    assert "guidance.sources_checked" in source
     assert "Confirm deadlines and eligibility on the official portal" in messages["safety.confirm_official"]
     assert "Indexed public search is not launch-ready" in messages["safety.search_unavailable"]
     assert "Guidance only: SIR Saathi does not decide voter eligibility" in messages["safety.guidance_boundary"]
@@ -45,18 +45,18 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert 'href="#find-name"' in page_source
     assert 'id="find-name"' in wizard_source
     assert "Start with a safe official check" in messages["find.title"]
-    assert "State for official check" in wizard_source
+    assert "find.state_label" in wizard_source
     assert "updateState" in wizard_source
     assert "setFindSubmitted(false)" in wizard_source
     assert "does not send these details to SIR Saathi servers" in messages["find.privacy_notice"]
     assert "call indexed search" in messages["find.privacy_notice"]
     assert "official-check-steps" in wizard_source
-    assert "Search with the name as it may appear in the roll" in wizard_source
-    assert "Try common spelling variations" in wizard_source
-    assert "contact BLO or ERO" in wizard_source
+    assert "Search with the name as it may appear in the roll" in messages["find.step_search"]
+    assert "Try common spelling variations" in messages["find.step_spelling"]
+    assert "contact BLO or ERO" in messages["find.step_contact"]
     assert "Open official portal" in messages["find.open_official"]
     assert "If not found, show missing-name steps" in messages["find.not_found"]
-    assert "Clear entered details" in wizard_source
+    assert "find.clear" in wizard_source
     assert "clearFindNameHints" in wizard_source
     assert "setNameQuery('')" in wizard_source
     assert "setDistrictHint('')" in wizard_source
@@ -126,9 +126,10 @@ def test_web_preserves_canonical_language_codes() -> None:
 def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> None:
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "state.currentPhase !== 'schedule_unverified'" in wizard
     assert "scheduleUnverified" in guidance
-    assert "official jurisdiction notice" in guidance
+    assert "official jurisdiction notice" in messages["guidance.existing.summary_unverified"]
 
 
 def test_web_builds_a_shareable_page_for_every_jurisdiction() -> None:
@@ -154,15 +155,33 @@ def test_web_surfaces_reviewed_ui_language_readiness() -> None:
     state_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     assert "uiLanguageOptionsForState" in state_source
-    assert "uiLanguageReadiness" in state_source
-    assert "English UI is available now" in state_source
-    assert "human review" in state_source
-    assert "UI language" in wizard_source
-    assert "(planned)" in wizard_source
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    assert "wizard.language_planned" in wizard_source
+    assert "English UI is available now" in messages["wizard.language_available"]
+    assert "human review" in messages["wizard.language_planned"]
+    assert "wizard.ui_language" in wizard_source
+    assert "wizard.planned_suffix" in wizard_source
     assert "guidance.language_status" in wizard_source
     i18n_source = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
     assert "import.meta.glob" in i18n_source
     assert "locale.status === 'available'" in i18n_source
+
+
+def test_wizard_controls_and_generated_guidance_are_catalogue_driven() -> None:
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    indexed = (ROOT / "apps/web/src/components/IndexedSearch.tsx").read_text(encoding="utf-8")
+    for key in messages:
+        if key.startswith(("guidance.missing.", "guidance.new.", "guidance.shift.", "guidance.correction.",
+                           "guidance.deceased.", "guidance.duplicate.", "guidance.portal.",
+                           "guidance.existing.", "document.")):
+            assert f"'{key}'" in guidance
+        if key.startswith(("find.", "wizard.", "share.")):
+            assert f"'{key}'" in wizard
+        if key.startswith("search."):
+            assert f"'{key}'" in indexed
+    assert "guidanceFor(answers, state, uiLanguage)" in wizard
 
 
 def test_web_copy_does_not_overstate_source_certainty() -> None:
@@ -226,7 +245,9 @@ def test_web_guidance_imports_canonical_forms_catalogue() -> None:
     assert "formLabel('form_6')" in guidance_source
     assert "formLabel('form_7')" in guidance_source
     assert "formLabel('form_8')" in guidance_source
-    assert "documentsFor('identity', 'address', 'age')" in guidance_source
+    assert "document.identity" in guidance_source
+    assert "document.address" in guidance_source
+    assert "document.age" in guidance_source
 
 
 def test_homepage_surfaces_canonical_forms_reference() -> None:

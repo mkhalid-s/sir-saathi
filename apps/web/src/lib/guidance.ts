@@ -1,5 +1,6 @@
 import type { StateSummary } from '../data/states';
-import { documentsFor, formLabel } from '../data/forms';
+import { formLabel } from '../data/forms';
+import { translate, type MessageKey, type MessageValues } from './i18n';
 
 export type Situation =
   | 'existing_voter'
@@ -47,9 +48,11 @@ function normalizeInput(input: Situation | WizardAnswers): WizardAnswers {
   return input;
 }
 
-function deadlineNotice(state: StateSummary, situation: Situation): string | undefined {
+function deadlineNotice(state: StateSummary, situation: Situation, locale: string): string | undefined {
   const deadline = deadlineFor(state, situation);
-  return deadline ? `Use official channels before ${deadline}.` : 'Check the official portal for the latest deadline.';
+  return deadline
+    ? translate(locale, 'guidance.deadline_before', { deadline })
+    : translate(locale, 'guidance.deadline_latest');
 }
 
 export function deadlineFor(state: StateSummary, situation: Situation): string | undefined {
@@ -65,92 +68,93 @@ export function deadlineFor(state: StateSummary, situation: Situation): string |
   return state.claimsEnd ?? state.finalRollDate;
 }
 
-export function guidanceFor(input: Situation | WizardAnswers, state?: StateSummary): GuidanceCard {
+export function guidanceFor(input: Situation | WizardAnswers, state?: StateSummary, locale = 'en'): GuidanceCard {
   const answers = normalizeInput(input);
-  const notices = state ? [deadlineNotice(state, answers.situation)].filter(Boolean) as string[] : [];
+  const text = (key: MessageKey, values: MessageValues = {}) => translate(locale, key, values);
+  const notices = state ? [deadlineNotice(state, answers.situation, locale)].filter(Boolean) as string[] : [];
 
   if (answers.situation === 'missing_name') {
     const actions = [
-      'Search again with alternate spelling, age, district, AC, and family details.',
-      'Check the draft/current roll through official channels.',
-      'Contact BLO or ERO and keep acknowledgement.',
-      'File the appropriate claim before the deadline.'
+      text('guidance.missing.search_again'),
+      text('guidance.missing.check_roll'),
+      text('guidance.missing.contact'),
+      text('guidance.missing.file_claim')
     ];
     if (answers.baseRollFound === 'yes') {
-      actions.splice(2, 0, 'Mention that an older/base-roll record appears to exist when contacting officials.');
+      actions.splice(2, 0, text('guidance.missing.base_reference'));
     }
     return {
-      title: 'Act quickly on a missing name',
+      title: text('guidance.missing.title'),
       priority: 'urgent',
-      summary: 'A missing name during SIR needs fast official follow-up, especially during the claims and objections window.',
+      summary: text('guidance.missing.summary'),
       actions,
-      documents: ['Identity proof', 'Address proof', 'Previous voter reference if available'],
+      documents: [text('document.identity'), text('document.address'), text('document.previous_reference')],
       notices
     };
   }
 
   if (answers.situation === 'new_voter') {
     return {
-      title: 'Register as a new voter',
+      title: text('guidance.new.title'),
       priority: 'high',
-      summary: `Use ${formLabel('form_6')} through official online or offline channels if you are eligible and not registered.`,
-      actions: ['Check eligibility for the qualifying date.', 'Prepare identity, address, and age proof.', `Submit ${formLabel('form_6')} through the official voter portal or ERO/BLO route.`],
-      documents: documentsFor('identity', 'address', 'age'),
+      summary: text('guidance.new.summary', { form: formLabel('form_6') }),
+      actions: [text('guidance.new.eligibility'), text('guidance.new.prepare'), text('guidance.new.submit', { form: formLabel('form_6') })],
+      documents: [text('document.identity'), text('document.address'), text('document.age')],
       notices
     };
   }
 
   if (answers.situation === 'shifted_address') {
     return {
-      title: 'Update your shifted address',
+      title: text('guidance.shift.title'),
       priority: 'high',
-      summary: 'Use the official correction or shift workflow so your roll entry matches your current residence.',
-      actions: ['Confirm whether the move is within the same AC.', 'Prepare current address proof.', `Submit ${formLabel('form_8')} or the official shift workflow.`, 'Verify your updated polling station after disposal.'],
-      documents: [...documentsFor('address'), 'Existing voter reference'],
+      summary: text('guidance.shift.summary'),
+      actions: [text('guidance.shift.confirm_ac'), text('guidance.shift.prepare'), text('guidance.shift.submit', { form: formLabel('form_8') }), text('guidance.shift.verify_station')],
+      documents: [text('document.address'), text('document.existing_reference')],
       notices
     };
   }
 
   if (answers.situation === 'correction') {
     return {
-      title: 'Correct voter details',
+      title: text('guidance.correction.title'),
       priority: 'medium',
-      summary: `Use ${formLabel('form_8')} for spelling, age, address, replacement EPIC, or similar corrections.`,
-      actions: ['Identify the incorrect field.', 'Prepare supporting proof.', `Submit ${formLabel('form_8')} and track the request.`],
-      documents: ['Existing voter reference', ...documentsFor('correction')],
+      summary: text('guidance.correction.summary', { form: formLabel('form_8') }),
+      actions: [text('guidance.correction.identify'), text('guidance.correction.prepare'), text('guidance.correction.submit', { form: formLabel('form_8') })],
+      documents: [text('document.existing_reference'), text('document.correction')],
       notices
     };
   }
 
   if (answers.situation === 'deceased_family') {
     return {
-      title: 'Report a deceased family member entry',
+      title: text('guidance.deceased.title'),
       priority: 'medium',
-      summary: 'Use the official objection or deletion route only with supporting details and documents.',
-      actions: ['Confirm the entry in the current roll.', 'Prepare available supporting record for the deceased elector.', `Submit ${formLabel('form_7')} or contact the local ERO/BLO route.`, 'Keep acknowledgement details for follow-up.'],
-      documents: ['Supporting record for deletion request', 'Your contact details for official follow-up'],
+      summary: text('guidance.deceased.summary'),
+      actions: [text('guidance.deceased.confirm'), text('guidance.deceased.prepare'), text('guidance.deceased.submit', { form: formLabel('form_7') }), text('guidance.deceased.keep')],
+      documents: [text('document.deletion'), text('document.contact')],
       notices
     };
   }
 
   if (answers.situation === 'duplicate_entry') {
     return {
-      title: 'Report or resolve duplicate entries',
+      title: text('guidance.duplicate.title'),
       priority: 'medium',
-      summary: 'Duplicate entries should be corrected through official ERO/BLO channels so the valid entry is retained.',
-      actions: ['Note both duplicate entries without sharing them publicly.', 'Contact the BLO or ERO and ask which entry should remain active.', 'Submit the official objection or correction form if instructed.'],
-      documents: ['Existing voter reference', ...documentsFor('address')],
+      summary: text('guidance.duplicate.summary'),
+      actions: [text('guidance.duplicate.note'), text('guidance.duplicate.contact'), text('guidance.duplicate.submit')],
+      documents: [text('document.existing_reference'), text('document.address')],
       notices
     };
   }
 
   if (answers.situation === 'portal_failed') {
     return {
-      title: 'Use offline fallback if the portal fails',
+      title: text('guidance.portal.title'),
       priority: 'high',
-      summary: 'Portal issues should not block SIR action. Contact BLO or ERO before the deadline.',
-      actions: ['Retry the official portal once.', 'Record the error without sharing private details publicly.', 'Submit the relevant form offline and keep acknowledgement.'],
-      documents: ['Relevant form details', 'Identity proof', 'Address proof'],
+      summary: text('guidance.portal.summary'),
+      actions: [text('guidance.portal.retry'), text('guidance.portal.record'), text('guidance.portal.submit')],
+      documents: [text('document.form_details'), text('document.identity'), text('document.address')],
       notices
     };
   }
@@ -159,43 +163,43 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
   const enumerationClosed = state && state.currentPhase !== 'pre_enumeration' && state.currentPhase !== 'enumeration_open';
   const actions = scheduleUnverified
     ? [
-        'Check your name in the current electoral roll through the official ECI or CEO portal.',
-        'Check the official CEO notices to learn which revision process and dates currently apply.',
-        'If your entry is missing or incorrect, contact your BLO or ERO and use the form they confirm is appropriate.'
+        text('guidance.existing.check_current'),
+        text('guidance.existing.check_notices'),
+        text('guidance.existing.contact_unverified')
       ]
     : enumerationClosed
     ? [
-        'Check your entry in the draft or current roll through official sources.',
-        'If it is missing or incorrect, file the appropriate claim during the claims and objections window.',
-        'Keep every acknowledgement safely.'
+        text('guidance.existing.check_draft'),
+        text('guidance.existing.file_claim'),
+        text('guidance.existing.keep_every')
       ]
     : [
-        'Verify your name through official sources.',
-        'Submit the enumeration form before the deadline if you receive one.',
-        'Keep the acknowledgement safely.'
+        text('guidance.existing.verify'),
+        text('guidance.existing.submit_enumeration'),
+        text('guidance.existing.keep')
       ];
   let priority: GuidanceCard['priority'] = 'medium';
   if (answers.bloVisited === 'no' || answers.enumerationFormReceived === 'no') {
-    actions.unshift('Contact your BLO or local ERO because the enumeration form has not reached you yet.');
+    actions.unshift(text('guidance.existing.contact_missing_form'));
     priority = 'high';
   }
   if (answers.enumerationFormReceived === 'yes' && answers.enumerationFormSubmitted === 'no') {
-    actions.unshift('Submit the received enumeration form as soon as possible and keep the acknowledgement.');
+    actions.unshift(text('guidance.existing.submit_received'));
     priority = 'high';
   }
   if (answers.currentRollFound === 'no') {
-    actions.unshift('Treat this as urgent: use the missing-name flow and contact BLO or ERO.');
+    actions.unshift(text('guidance.existing.urgent_missing'));
     priority = 'urgent';
   }
 
   return {
-    title: priority === 'urgent' ? 'Resolve your missing current-roll entry' : 'Verify and submit your SIR details',
+    title: text(priority === 'urgent' ? 'guidance.existing.title_missing' : 'guidance.existing.title'),
     priority,
     summary: scheduleUnverified
-      ? 'Confirm your current roll entry and check the official jurisdiction notice before relying on any SIR dates or steps.'
-      : 'Confirm your roll entry and complete the SIR enumeration form if you receive one.',
+      ? text('guidance.existing.summary_unverified')
+      : text('guidance.existing.summary'),
     actions,
-    documents: ['Existing voter reference', 'Proof for any changed detail'],
+    documents: [text('document.existing_reference'), text('document.changed_detail')],
     notices
   };
 }
