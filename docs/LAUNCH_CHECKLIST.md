@@ -25,7 +25,7 @@ Before any public launch:
 - The deterministic PWA release bundle verifies against that exact commit and its 42-route manifest; its SHA-256 digest and GitHub provenance attestation are retained with the private release record before extraction into a new immutable release directory.
 - The value-redacting deployment preflight passes in the intended `guidance` or `indexed-search` mode; indexed mode remains configuration evidence, not search-scope authorization.
 - The deployed-origin probe passes all 90 same-origin routing, release-identity, nationwide route-manifest/hash, PWA, security-header, hash-bound CSP, liveness/readiness/version, API no-store, and no-index 404 checks against the candidate HTTPS release and expected commit.
-- A private guidance-only rehearsal record for the exact deployed commit passes `deployment_rehearsal --require-full-pass`, with distinct operator/reviewer identities, no voter data, public indexed search disabled, and all 11 required checks evidenced.
+- A private guidance-only schema-v3 rehearsal record for the exact deployed commit passes `deployment_rehearsal --require-full-pass`, with distinct operator/reviewer identities, no voter data, public indexed search disabled, and all 12 required checks—including accessibility-feedback ownership/rehearsal—evidenced.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public indexed search requires official schedule provenance, not reported-only dates.

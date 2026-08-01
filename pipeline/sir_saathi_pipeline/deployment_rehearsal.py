@@ -13,7 +13,7 @@ from .deployment_preflight import _public_origin
 from .translation_catalog import _load_json
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 RESULTS = {"pass", "fail", "not_tested"}
 CHECKS = (
@@ -27,6 +27,10 @@ CHECKS = (
     ("isolated_restore_drill", "Isolated PostgreSQL restore with aggregate-only comparison"),
     ("monitoring_alert", "Readiness monitor and alert delivery rehearsal"),
     ("accessibility_evidence", "Manual accessibility evidence validator passed for this release"),
+    (
+        "accessibility_feedback",
+        "Authorized feedback owner and synthetic acknowledgement, remediation, and retest rehearsal",
+    ),
     ("rollback_rehearsal", "Application and static-release rollback rehearsal"),
 )
 

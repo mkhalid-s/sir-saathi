@@ -238,6 +238,7 @@ def verify_deploy_templates() -> None:
         "deployment_probe_release_binding",
         "independent_reviewer",
         "isolated_restore_drill",
+        "accessibility_feedback",
         "rollback_rehearsal",
         "values_redacted",
     ]:

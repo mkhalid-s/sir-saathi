@@ -39,9 +39,10 @@ def test_template_starts_unreviewed_and_fails_closed() -> None:
 
     report = validate_evidence(template, today=date(2026, 8, 1))
     assert report["ready_for_guidance_rehearsal_signoff"] is False
-    assert report["required_check_count"] == 11
+    assert report["required_check_count"] == 12
     assert "evidence.no_voter_data_attestation" in report["blockers"]
     assert "check.release_build.not_tested" in report["blockers"]
+    assert "check.accessibility_feedback.not_tested" in report["blockers"]
 
 
 def test_complete_evidence_passes_without_exposing_private_values() -> None:
@@ -51,7 +52,7 @@ def test_complete_evidence_passes_without_exposing_private_values() -> None:
     assert report == {
         "ready_for_guidance_rehearsal_signoff": True,
         "blockers": [],
-        "required_check_count": 11,
+        "required_check_count": 12,
         "values_redacted": True,
     }
     assert "private-release-ticket-123" not in str(report)
