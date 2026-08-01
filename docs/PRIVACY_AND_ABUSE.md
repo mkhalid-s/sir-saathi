@@ -28,6 +28,8 @@ Real indexed search also requires server-side Cloudflare Turnstile verification.
 
 The MVP does not require accounts, document uploads, or phone numbers. If future reminder features are added, they must be opt-in, purpose-limited, and deletable.
 
+Guidance-only and official-link fallback flows must not ask users to enter names, addresses, districts, constituencies, or part numbers. Name and exact AC/optional part inputs may render only for an explicitly launch-ready indexed-search jurisdiction, and the interface must explain that those scoped values leave the device only when the user submits the protected search action.
+
 ## Cross-Year Matching Rules
 
 - Matching runs locally and remains scoped to one state and Assembly Constituency.

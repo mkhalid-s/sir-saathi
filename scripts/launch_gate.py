@@ -401,8 +401,10 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("find-name flow must ask for state before official search steps")
     if "setFindSubmitted(false)" not in wizard:
         raise RuntimeError("find-name flow must hide stale official-check results when state changes")
-    if "does not send these details to SIR Saathi servers" not in messages["find.privacy_notice"]:
-        raise RuntimeError("find-name flow must explain local-only fallback behavior")
+    if "No name, address, district, constituency, or part number is needed" not in messages["find.privacy_notice"]:
+        raise RuntimeError("official fallback must not request unused voter details")
+    if "sent only when you choose the protected search action" not in messages["find.indexed_privacy_notice"]:
+        raise RuntimeError("indexed search must explain when scoped voter details leave the device")
     if "official-check-steps" not in wizard:
         raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
     for key, expected in [
@@ -412,10 +414,13 @@ def verify_safe_find_name_flow() -> None:
     ]:
         if key not in wizard or expected not in messages[key]:
             raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
-    if "call indexed search" not in messages["find.privacy_notice"]:
-        raise RuntimeError("official fallback must explain that it does not call indexed search")
     if "state.publicLaunchReady" not in wizard or "fetch('/api/search'" not in indexed:
         raise RuntimeError("indexed-search client must render only for launch-ready jurisdictions")
+    private_boundary = wizard.index("state.publicLaunchReady && (")
+    if any(wizard.index(field) < private_boundary for field in ['id="find-voter-name"', 'id="find-ac"', 'id="find-part"']):
+        raise RuntimeError("private search inputs must render only inside the launch-ready boundary")
+    if "districtHint" in wizard or 'id="find-district"' in wizard:
+        raise RuntimeError("find-name flow must not collect unused district hints")
     for expected in ["turnstile_response: challengeResponse", "action: 'voter_search'", "expired-callback", "window.turnstile.reset"]:
         if expected not in indexed:
             raise RuntimeError("indexed-search client must use a fresh action-bound Turnstile response")
@@ -423,7 +428,7 @@ def verify_safe_find_name_flow() -> None:
         raise RuntimeError("find-name flow must hand off to missing-name guidance with current-roll-not-found status")
     if "find.clear" not in wizard or "clearFindNameHints" not in wizard:
         raise RuntimeError("find-name flow must let users clear local search hints")
-    for setter in ["setNameQuery('')", "setDistrictHint('')", "setAcHint('')", "setPartHint('')"]:
+    for setter in ["setNameQuery('')", "setAcHint('')", "setPartHint('')"]:
         if setter not in wizard:
             raise RuntimeError("find-name flow must clear all local search hint fields")
 

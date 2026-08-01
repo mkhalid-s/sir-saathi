@@ -49,7 +49,6 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
     hasEnabledCatalogue(initialLocale) ? initialLocale : 'en'
   );
   const [nameQuery, setNameQuery] = useState('');
-  const [districtHint, setDistrictHint] = useState('');
   const [acHint, setAcHint] = useState('');
   const [partHint, setPartHint] = useState('');
   const [findSubmitted, setFindSubmitted] = useState(false);
@@ -83,6 +82,9 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   };
   const updateState = (value: string) => {
     setStateId(value);
+    setNameQuery('');
+    setAcHint('');
+    setPartHint('');
     setFindSubmitted(false);
   };
   const navigateToLocale = (locale: string, replace = false) => {
@@ -143,7 +145,6 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
   }, [uiLanguage]);
   const clearFindNameHints = () => {
     setNameQuery('');
-    setDistrictHint('');
     setAcHint('');
     setPartHint('');
     setFindSubmitted(false);
@@ -162,7 +163,9 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
         <div>
           <p class="eyebrow dark">{message('find.eyebrow')}</p>
           <h2 id="find-name-title">{message('find.title')}</h2>
-          <p class="reference-copy" id="find-privacy-notice">{message('find.intro_prefix')} {message('find.privacy_notice')}</p>
+          <p class="reference-copy" id="find-privacy-notice">
+            {message(state.publicLaunchReady ? 'find.indexed_privacy_notice' : 'find.privacy_notice')}
+          </p>
         </div>
         <form class="find-form" onSubmit={(event) => {
           event.preventDefault();
@@ -174,24 +177,22 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
               {states.map((item) => <option value={item.stateId}>{jurisdictionName(uiLanguage, item.stateId)}</option>)}
             </select>
           </label>
-          <label class="field">
-            {message('find.name_label')}
-            <input id="find-voter-name" class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.name_placeholder')} aria-describedby="find-privacy-notice" autoComplete="off" dir="auto" />
-          </label>
-          <label class="field">
-            {message('find.district_label')}
-            <input id="find-district" class="input" value={districtHint} onInput={(event) => setDistrictHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} autoComplete="off" dir="auto" />
-          </label>
-          <label class="field">
-            {message('find.ac_label')}
-            <input id="find-ac" class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} inputMode="numeric" autoComplete="off" />
-          </label>
-          <label class="field">
-            {message('find.part_label')}
-            <input id="find-part" class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} inputMode="numeric" autoComplete="off" />
-          </label>
           {state.publicLaunchReady && (
-            <IndexedSearch stateId={state.stateId} query={nameQuery} acHint={acHint} partHint={partHint} locale={uiLanguage} />
+            <>
+              <label class="field">
+                {message('find.name_label')}
+                <input id="find-voter-name" class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.name_placeholder')} aria-describedby="find-privacy-notice" autoComplete="off" dir="auto" />
+              </label>
+              <label class="field">
+                {message('find.ac_label')}
+                <input id="find-ac" class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} inputMode="numeric" autoComplete="off" />
+              </label>
+              <label class="field">
+                {message('find.part_label')}
+                <input id="find-part" class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} inputMode="numeric" autoComplete="off" />
+              </label>
+              <IndexedSearch stateId={state.stateId} query={nameQuery} acHint={acHint} partHint={partHint} locale={uiLanguage} />
+            </>
           )}
           <button class="primary-button" type="submit">{message('find.show_steps')}</button>
         </form>
@@ -209,7 +210,7 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
             <div class="actions">
               <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_official')}</a>
               <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>{message('find.not_found')}</button>
-              <button class="secondary-button" type="button" onClick={clearFindNameHints}>{message('find.clear')}</button>
+              {state.publicLaunchReady && <button class="secondary-button" type="button" onClick={clearFindNameHints}>{message('find.clear')}</button>}
             </div>
           </div>
         )}

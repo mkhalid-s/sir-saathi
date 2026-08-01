@@ -80,8 +80,8 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "find.state_label" in wizard_source
     assert "updateState" in wizard_source
     assert "setFindSubmitted(false)" in wizard_source
-    assert "does not send these details to SIR Saathi servers" in messages["find.privacy_notice"]
-    assert "call indexed search" in messages["find.privacy_notice"]
+    assert "No name, address, district, constituency, or part number is needed" in messages["find.privacy_notice"]
+    assert "sent only when you choose the protected search action" in messages["find.indexed_privacy_notice"]
     assert "official-check-steps" in wizard_source
     assert "Search with the name as it may appear in the roll" in messages["find.step_search"]
     assert "Try common spelling variations" in messages["find.step_spelling"]
@@ -91,12 +91,16 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     assert "find.clear" in wizard_source
     assert "clearFindNameHints" in wizard_source
     assert "setNameQuery('')" in wizard_source
-    assert "setDistrictHint('')" in wizard_source
     assert "setAcHint('')" in wizard_source
     assert "setPartHint('')" in wizard_source
+    assert "districtHint" not in wizard_source
+    assert 'id="find-district"' not in wizard_source
     assert "situation: 'missing_name'" in wizard_source
     assert "currentRollFound: 'no'" in wizard_source
     assert "state.publicLaunchReady" in wizard_source
+    private_boundary = wizard_source.index("state.publicLaunchReady && (")
+    for private_field in ('id="find-voter-name"', 'id="find-ac"', 'id="find-part"'):
+        assert wizard_source.index(private_field) > private_boundary
     assert "fetch('/api/search'" in indexed_source
     assert "turnstile_response: challengeResponse" in indexed_source
     assert "action: 'voter_search'" in indexed_source
