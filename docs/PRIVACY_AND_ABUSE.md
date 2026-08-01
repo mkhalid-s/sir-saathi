@@ -23,6 +23,14 @@ The first implementation uses an in-process fixed-window limiter. Bucket keys ha
 
 The MVP does not require accounts, document uploads, or phone numbers. If future reminder features are added, they must be opt-in, purpose-limited, and deletable.
 
+## Cross-Year Matching Rules
+
+- Matching runs locally and remains scoped to one state and Assembly Constituency.
+- Scores create review candidates only; they never establish identity, registration status, or eligibility.
+- Confirmation and rejection require reviewer identity and timestamp.
+- Safe reports contain aggregate score bands and ambiguity counts, not names or record identifiers.
+- Public APIs do not expose match-candidate tables or bulk relationship graphs.
+
 ## AI Rules
 
 AI may help explain source-backed guidance, translate copy, or summarize checklists. AI must not decide eligibility, invent deadlines, or process raw voter data by default.

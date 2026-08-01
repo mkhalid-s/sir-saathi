@@ -244,6 +244,7 @@ def verify_ingestion_pipeline_contract() -> None:
     readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
     workflow = (ROOT / "pipeline/sir_saathi_pipeline/operator_workflow.py").read_text(encoding="utf-8")
     parser_registry = (ROOT / "pipeline/sir_saathi_pipeline/parsers/registry.py").read_text(encoding="utf-8")
+    matching = (ROOT / "pipeline/sir_saathi_pipeline/cross_year_matching.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
@@ -258,6 +259,10 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("ingestion must preserve reviewed district relationships")
     if "INSERT INTO districts" not in db_loader or "source_updated_at" not in schema:
         raise RuntimeError("database loading must preserve geographic source provenance")
+    if "status: str = \"proposed\"" not in matching or "human review" not in matching:
+        raise RuntimeError("cross-year matching must remain proposal-only and human-reviewed")
+    if "voter_record_match_candidates" not in schema or "reviewed_at IS NOT NULL" not in schema:
+        raise RuntimeError("cross-year match persistence must require review metadata for decisions")
     if "local-only staging mapper" not in docs:
         raise RuntimeError("API/DB docs must document local-only ingestion boundaries")
     if "parsed_roll_from_pdf" not in ingest_cli or "build_ingestion_batch" not in ingest_cli:
