@@ -11,9 +11,10 @@ Build before running the audit:
 ```sh
 npm run web:build
 python scripts/check_accessibility.py
+python scripts/check_visual_accessibility.py
 ```
 
-The audit examines all generated HTML pages and fails on missing page language or direction, missing titles, invalid main/H1 structure, broken skip links, duplicate IDs, unresolved ARIA references, unlabelled form controls, and unsafe new-tab link relationships. The launch gate runs it after the production build.
+The generated-page audit examines all HTML pages and fails on missing page language or direction, missing titles, invalid main/H1 structure, broken skip links, duplicate IDs, unresolved ARIA references, unlabelled form controls, and unsafe new-tab link relationships. The shared-style audit independently calculates WCAG relative-luminance ratios for 17 governed text, focus, and control-boundary pairs and verifies critical selectors still use those audited roles. The launch gate runs both after the production build. These deterministic checks do not evaluate raster content, browser rendering, typography, overlays, or every possible state and therefore do not replace the manual matrix.
 
 ## Manual Release Matrix
 
