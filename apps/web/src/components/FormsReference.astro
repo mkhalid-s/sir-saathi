@@ -7,7 +7,7 @@ interface Props {
 }
 
 const { locale = 'en' } = Astro.props;
-const message = (key: MessageKey) => translate(locale, key);
+const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
 const formList = Object.values(forms);
 const documentGroups = Object.entries(commonDocuments);
 ---
@@ -23,6 +23,9 @@ const documentGroups = Object.entries(commonDocuments);
       <article class="form-card">
         <h3>{message(`forms.${form.formId}.label` as MessageKey)}</h3>
         <p>{message(`forms.${form.formId}.purpose` as MessageKey)}</p>
+        <a href={form.officialPortal} target="_blank" rel="noreferrer">
+          {message('forms.open_official', { form: message(`forms.${form.formId}.label` as MessageKey) })}
+        </a>
       </article>
     ))}
   </div>

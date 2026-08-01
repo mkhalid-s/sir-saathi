@@ -21,6 +21,8 @@ interface StateConfig {
   languages: string[];
   default_language: string;
   sir_schedule: {
+    phase: string;
+    qualifying_date: string | null;
     enumeration_start: string | null;
     enumeration_end: string | null;
     draft_roll_date: string | null;
@@ -51,8 +53,6 @@ interface JurisdictionConfig {
 
 type ScheduleGroupConfig = StateConfig['sir_schedule'] & {
   state_ids: string[];
-  phase: string;
-  qualifying_date: string;
   source?: SourceConfig;
 };
 
@@ -67,10 +67,15 @@ export interface StateSummary {
   publicLaunchReady: boolean;
   currentPhase: string;
   status: string;
+  schedulePhase: string;
+  qualifyingDateIso?: string;
+  enumerationStartIso?: string;
   enumerationEnd?: string;
   claimsEnd?: string;
   finalRollDate?: string;
   enumerationEndIso?: string;
+  draftRollDateIso?: string;
+  claimsStartIso?: string;
   claimsEndIso?: string;
   finalRollDateIso?: string;
   officialLink: string;
@@ -188,10 +193,15 @@ function stateFromConfig(config: StateConfig): StateSummary {
     publicLaunchReady: config.public_launch_ready,
     currentPhase,
     status: statusLabels[currentPhase] ?? currentPhase.replaceAll('_', ' '),
+    schedulePhase: config.sir_schedule.phase,
+    qualifyingDateIso: config.sir_schedule.qualifying_date ?? undefined,
+    enumerationStartIso: config.sir_schedule.enumeration_start ?? undefined,
     enumerationEnd: displayDate(config.sir_schedule.enumeration_end),
     claimsEnd: displayDate(config.sir_schedule.claims_end),
     finalRollDate: displayDate(config.sir_schedule.final_roll_date),
     enumerationEndIso: config.sir_schedule.enumeration_end ?? undefined,
+    draftRollDateIso: config.sir_schedule.draft_roll_date ?? undefined,
+    claimsStartIso: config.sir_schedule.claims_start ?? undefined,
     claimsEndIso: config.sir_schedule.claims_end ?? undefined,
     finalRollDateIso: config.sir_schedule.final_roll_date ?? undefined,
     officialLink: config.ceo_portal,
@@ -220,6 +230,7 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     publicLaunchReady: false,
     currentPhase: 'schedule_unverified',
     status: statusLabels.schedule_unverified,
+    schedulePhase: 'Not independently confirmed',
     officialLink: config.ceo_portal,
     sourceLabels: [`CEO ${config.name}`, 'ECI voters portal', source.label],
     sourceFreshness: [`${source.label}: last checked ${displayDate(source.last_verified)}`],
@@ -239,10 +250,15 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     ...baseline,
     currentPhase,
     status: statusLabels[currentPhase] ?? currentPhase.replaceAll('_', ' '),
+    schedulePhase: schedule.phase,
+    qualifyingDateIso: schedule.qualifying_date ?? undefined,
+    enumerationStartIso: schedule.enumeration_start ?? undefined,
     enumerationEnd: displayDate(schedule.enumeration_end),
     claimsEnd: displayDate(schedule.claims_end),
     finalRollDate: displayDate(schedule.final_roll_date),
     enumerationEndIso: schedule.enumeration_end ?? undefined,
+    draftRollDateIso: schedule.draft_roll_date ?? undefined,
+    claimsStartIso: schedule.claims_start ?? undefined,
     claimsEndIso: schedule.claims_end ?? undefined,
     finalRollDateIso: schedule.final_roll_date ?? undefined,
     sourceLabels: [scheduleSource.label, ...baseline.sourceLabels],

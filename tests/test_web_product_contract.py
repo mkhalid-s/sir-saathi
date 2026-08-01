@@ -397,6 +397,30 @@ def test_homepage_surfaces_canonical_forms_reference() -> None:
     assert messages["forms.eyebrow"] == "Official form guide"
     assert "forms.common_categories" in component_source
     assert messages["forms.common_categories"] == "Common document categories"
+    assert "form.officialPortal" in component_source
+    assert "forms.open_official" in component_source
+
+
+def test_state_guides_render_the_complete_governed_schedule_timeline() -> None:
+    state_data = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    state_content = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    fields = {
+        "qualifyingDateIso": "state.schedule.qualifying_date",
+        "enumerationStartIso": "state.schedule.enumeration_start",
+        "enumerationEndIso": "state.schedule.enumeration_end",
+        "draftRollDateIso": "state.schedule.draft_roll",
+        "claimsStartIso": "state.schedule.claims_start",
+        "claimsEndIso": "state.schedule.claims_end",
+        "finalRollDateIso": "state.schedule.final_roll",
+    }
+    for field, message_key in fields.items():
+        assert field in state_data
+        assert field in state_content
+        assert message_key in messages
+        assert message_key in state_content
+    assert "state.schedule.phase" in state_content
+    assert "schedule.phase" in state_data
 
 
 def test_homepage_surfaces_privacy_safe_search_availability() -> None:

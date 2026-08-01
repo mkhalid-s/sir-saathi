@@ -11,9 +11,16 @@ interface Props {
 const { state, locale } = Astro.props;
 const stateName = jurisdictionName(locale, state.stateId);
 const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
-const hasScheduleDates = Boolean(state.enumerationEndIso || state.claimsEndIso || state.finalRollDateIso);
+const hasScheduleDates = Boolean(
+  state.qualifyingDateIso || state.enumerationStartIso || state.enumerationEndIso ||
+  state.draftRollDateIso || state.claimsStartIso || state.claimsEndIso || state.finalRollDateIso
+);
 const scheduleItems: [MessageKey, string | undefined][] = [
+  ['state.schedule.qualifying_date', state.qualifyingDateIso],
+  ['state.schedule.enumeration_start', state.enumerationStartIso],
   ['state.schedule.enumeration_end', state.enumerationEndIso],
+  ['state.schedule.draft_roll', state.draftRollDateIso],
+  ['state.schedule.claims_start', state.claimsStartIso],
   ['state.schedule.claims_end', state.claimsEndIso],
   ['state.schedule.final_roll', state.finalRollDateIso]
 ];
@@ -57,9 +64,12 @@ const nextState = states[(states.indexOf(state) + 1) % states.length];
   <section class="state-section" aria-labelledby="schedule-title">
     <h2 id="schedule-title">{message('state.schedule.title')}</h2>
     {hasScheduleDates ? (
-      <dl class="schedule-list">
-        {scheduleItems.filter(([, value]) => Boolean(value)).map(([key, value]) => <div><dt>{message(key)}</dt><dd>{formatIndiaDate(value!, locale)}</dd></div>)}
-      </dl>
+      <>
+        <p class="source-note">{message('state.schedule.phase', { phase: state.schedulePhase })}</p>
+        <dl class="schedule-list">
+          {scheduleItems.filter(([, value]) => Boolean(value)).map(([key, value]) => <div><dt>{message(key)}</dt><dd>{formatIndiaDate(value!, locale)}</dd></div>)}
+        </dl>
+      </>
     ) : (
       <p>{message(state.currentPhase === 'schedule_pending' ? 'state.schedule.pending' : 'state.schedule.unverified')}</p>
     )}
