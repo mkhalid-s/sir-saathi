@@ -692,3 +692,70 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .hero,
+  .skip-link,
+  .locale-switcher,
+  .find-flow,
+  .form-grid,
+  .question-grid,
+  .wizard > .sr-only,
+  .wizard > .actions,
+  .search-availability,
+  .forms-reference,
+  .info-grid,
+  .connectivity-notice,
+  main > footer {
+    display: none !important;
+  }
+
+  .shell {
+    max-width: none;
+    padding: 0;
+  }
+
+  .wizard,
+  .result-card,
+  .notice-list,
+  .action-grid {
+    border: 0;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .wizard {
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .print-title {
+    margin-top: 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+  }
+
+  .result-card,
+  .notice-list,
+  .action-grid {
+    margin-top: 1rem;
+    padding: 0;
+  }
+}

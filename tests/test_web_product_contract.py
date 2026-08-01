@@ -275,6 +275,26 @@ def test_wizard_controls_and_generated_guidance_are_catalogue_driven() -> None:
     assert "guidanceFor(answers, state, uiLanguage)" in wizard
 
 
+def test_printable_checklist_excludes_private_entry_fields_and_unrelated_content() -> None:
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "apps/web/src/styles/global.css").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    assert "window.print()" in wizard
+    assert "guidance.print_note" in wizard
+    assert "print.title" in wizard
+    assert messages["guidance.print_note"] == "The printout excludes the name and location fields entered above."
+    assert "@media print" in styles
+    for private_or_unrelated_surface in (
+        ".find-flow",
+        ".form-grid",
+        ".question-grid",
+        ".wizard > .actions",
+        ".search-availability",
+        ".forms-reference",
+    ):
+        assert private_or_unrelated_surface in styles
+
+
 def test_homepage_static_content_and_reviewed_locale_routes_are_catalogue_driven() -> None:
     homepage = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
     route = (ROOT / "apps/web/src/pages/[locale]/index.astro").read_text(encoding="utf-8")

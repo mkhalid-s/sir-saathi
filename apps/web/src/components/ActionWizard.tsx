@@ -243,6 +243,11 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
         {message('wizard.guidance_updated', { title: guidance.title })}
       </p>
 
+      <div class="print-only">
+        <p class="print-title">{message('print.title', { state: stateName })}</p>
+        <p>{guidanceBoundaryText}</p>
+      </div>
+
       <div class="question-grid" aria-label={message('wizard.questions_label')}>
         {scheduleKnown && statusSelect(message('wizard.question.blo'), answers.bloVisited, (value) => updateAnswer('bloVisited', value), message)}
         {scheduleKnown && statusSelect(message('wizard.question.received'), answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value), message)}
@@ -290,8 +295,10 @@ export default function ActionWizard({ initialLocale = 'en' }: Props) {
 
       <div class="actions">
         <p class="share-note">{shareSafetyText}</p>
+        <p class="share-note">{message('guidance.print_note')}</p>
         <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_official')}</a>
         <a class="secondary-button" href={shareUrl} target="_blank" rel="noreferrer">{message('guidance.share')}</a>
+        <button class="secondary-button" type="button" onClick={() => window.print()}>{message('guidance.print')}</button>
       </div>
     </section>
   );

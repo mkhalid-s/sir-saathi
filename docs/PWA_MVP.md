@@ -12,7 +12,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - SIR deadline card.
 - Next-action checklist.
 - Guidance boundary note that SIR Saathi does not decide eligibility or replace official channels.
-- Document checklist backed by `config/forms/sir-actions.json`.
+- Document checklist backed by `config/forms/sir-actions.json`, with a device-neutral print/save view that excludes entered name and location fields.
 - Source-backed forms and common documents reference.
 - State-by-state search availability status that stays privacy-safe and explains official schedule-provenance requirements.
 - Separate governed links for each jurisdiction's CEO portal and its schedule evidence, so an action button never labels a PDF or evidence subpage as the CEO homepage.
