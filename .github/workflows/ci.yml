@@ -33,6 +33,8 @@ jobs:
         run: npm run pwa:icons:check
       - name: Build web PWA
         run: ASTRO_TELEMETRY_DISABLED=1 npm run web:build
+      - name: Verify complete offline asset precache
+        run: npm run pwa:offline:check
       - name: Audit generated accessibility structure
         run: python scripts/check_accessibility.py
       - name: Audit generated discoverability metadata

@@ -254,6 +254,8 @@ def verify_pwa_installability() -> None:
         raise RuntimeError("PWA layout must register the service worker")
     if "APP_SHELL_URLS" not in service_worker or "url.pathname.startsWith('/api/')" not in service_worker:
         raise RuntimeError("service worker must cache the app shell and avoid API caching")
+    if "BUILD_ASSET_URLS = []" not in service_worker or "PRECACHE_URLS" not in service_worker:
+        raise RuntimeError("service worker source must accept the complete generated offline asset list")
     if "response.ok && response.type === 'basic'" not in service_worker:
         raise RuntimeError("service worker must not cache failed or opaque responses")
     if "localizedHome" not in service_worker or "firstSegment" not in service_worker:
@@ -588,6 +590,7 @@ def main() -> int:
     run(["npm", "audit", "--workspace", "apps/web"])
     run(["npm", "run", "pwa:icons:check"])
     run(["npm", "run", "web:build"])
+    run(["npm", "run", "pwa:offline:check"])
     run([sys.executable, "scripts/check_accessibility.py"])
     run([sys.executable, "scripts/check_discoverability.py"])
     print("Launch gate passed.")

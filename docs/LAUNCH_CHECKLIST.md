@@ -8,6 +8,7 @@ Before any public launch:
 - PWA manifest, icon, and service worker registration are present.
 - `npm run pwa:icons:check` confirms the 192px, 512px, maskable, and Apple touch PNG assets still match the reviewed SVG icon source.
 - Service worker excludes `/api/*` from offline caching.
+- `npm run pwa:offline:check` confirms the built service worker precaches every generated HTML, hashed UI asset, manifest, and public icon required by the nationwide offline guidance surface.
 - npm audit reports no vulnerabilities for the web workspace.
 - `python3 scripts/launch_gate.py` passes.
 - API routes are served under `/api/*` and match reverse-proxy configuration.

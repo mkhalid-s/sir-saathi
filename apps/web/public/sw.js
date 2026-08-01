@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sir-saathi-app-shell-v3';
+const CACHE_NAME = 'sir-saathi-app-shell-v4';
 const APP_SHELL_URLS = [
   '/',
   '/privacy/',
@@ -11,9 +11,11 @@ const APP_SHELL_URLS = [
   '/icons/icon-maskable-512.png',
   '/icons/apple-touch-icon.png'
 ];
+const BUILD_ASSET_URLS = [];
+const PRECACHE_URLS = [...new Set([...APP_SHELL_URLS, ...BUILD_ASSET_URLS])];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL_URLS)));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
   self.skipWaiting();
 });
 

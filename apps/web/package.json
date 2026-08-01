@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node ../../scripts/finalize_service_worker.mjs",
     "preview": "astro preview"
   },
   "dependencies": {

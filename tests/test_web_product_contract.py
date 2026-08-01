@@ -412,11 +412,24 @@ def test_pwa_registers_offline_app_shell_service_worker() -> None:
     assert "serviceWorker" in layout
     assert "register('/sw.js')" in layout
     assert "APP_SHELL_URLS" in service_worker
+    assert "BUILD_ASSET_URLS = []" in service_worker
+    assert "PRECACHE_URLS" in service_worker
     assert "'/privacy/'" in service_worker
     assert "url.pathname.startsWith('/api/')" in service_worker
     assert "response.ok && response.type === 'basic'" in service_worker
     assert "localizedHome" in service_worker
     assert "caches.match(`/${firstSegment}/`)" in service_worker
+
+
+def test_web_build_finalizes_the_complete_offline_asset_list() -> None:
+    package = json.loads((ROOT / "apps/web/package.json").read_text(encoding="utf-8"))
+    finalizer = (ROOT / "scripts/finalize_service_worker.mjs").read_text(encoding="utf-8")
+
+    assert "finalize_service_worker.mjs" in package["scripts"]["build"]
+    assert "filesUnder(dist)" in finalizer
+    assert "eligibleExtensions" in finalizer
+    assert "index.html" in finalizer
+    assert "--check" in finalizer
 
 
 def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
