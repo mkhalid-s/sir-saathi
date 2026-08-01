@@ -39,6 +39,7 @@ REQUIRED_FILES = [
     "pipeline/sir_saathi_pipeline/backups.py",
     "pipeline/sir_saathi_pipeline/deployment_preflight.py",
     "pipeline/sir_saathi_pipeline/deployment_probe.py",
+    "pipeline/sir_saathi_pipeline/accessibility_evidence.py",
     "scripts/check_accessibility.py",
     "scripts/check_discoverability.py",
 ]
@@ -150,6 +151,16 @@ def verify_deploy_templates() -> None:
     ]:
         if contract not in probe:
             raise RuntimeError(f"deployment probe is missing release contract: {contract}")
+    accessibility_evidence = (ROOT / "pipeline/sir_saathi_pipeline/accessibility_evidence.py").read_text(encoding="utf-8")
+    for contract in [
+        "ready_for_accessibility_signoff",
+        "privacy_attestation",
+        "publishable_locales_tested",
+        "retest_not_passed",
+        "values_redacted",
+    ]:
+        if contract not in accessibility_evidence:
+            raise RuntimeError(f"manual accessibility evidence is missing contract: {contract}")
 
 
 def verify_abuse_protection() -> None:

@@ -33,3 +33,23 @@ Use synthetic names and scopes only. Never put real EPIC numbers, addresses, pho
 ## Release Evidence
 
 Record the deployed commit, URL, browsers and assistive technologies with versions, reviewer identity, review date, failed checks, remediation links, and retest outcome. Do not record voter queries or personal data. A material navigation, form, translation, search-result, colour, or typography change requires a focused retest; a public-launch review requires the full matrix.
+
+Create a fail-closed evidence template under an ignored local directory:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.accessibility_evidence \
+  --create-template \
+  --output reports/accessibility/release.json
+```
+
+The template starts with no reviewer, no deployment identity, a false privacy attestation, and every check/environment marked `not_tested`. A human reviewer must record the deployed commit and real HTTPS origin; identity/date; every publishable locale; browser, OS, assistive-technology and version details; concise non-sensitive observations; failures, remediation references, and passing retests. Keep the detailed file in the access-controlled release evidence store and out of Git.
+
+Validate it before launch:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.accessibility_evidence \
+  --validate reports/accessibility/release.json \
+  --require-full-pass
+```
+
+The validator requires full-release scope, all 11 matrix checks, the desktop keyboard plus NVDA/Windows, VoiceOver/Apple, and TalkBack/Android environments, exact coverage of every currently publishable locale, a non-future review date, and an explicit no-personal-data attestation. A recorded failure is acceptable only after a remediation reference and passing retest. Its JSON output contains counts and stable blocker IDs only; it never repeats the deployed URL, reviewer, versions, or evidence notes. Validation establishes evidence completeness, not WCAG conformance by itself, and cannot replace the named human reviewer.
