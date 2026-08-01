@@ -70,7 +70,12 @@ def test_complete_reviewed_translation_can_be_promoted(tmp_path: Path) -> None:
     _write(catalog_dir / "mr.json", {
         "schema_version": 1,
         "locale": "mr",
-        "review": {"status": "reviewed", "reviewed_by": "language reviewer", "reviewed_at": "2026-08-01"},
+        "review": {
+            "status": "reviewed",
+            "translated_by": "language translator",
+            "reviewed_by": "language reviewer",
+            "reviewed_at": "2026-08-01",
+        },
         "messages": {"hello": "नमस्कार {name}"},
     })
     report = translation_readiness(locales_path=locales, catalog_dir=catalog_dir)
@@ -109,12 +114,17 @@ def test_review_packet_is_source_pinned_and_compiles_only_after_human_review(tmp
     })
 
     packet = create_review_packet("mr", locales_path=locales, catalog_dir=catalog_dir)
+    assert packet["schema_version"] == 2
+    assert packet["direction"] == "ltr"
     assert packet["review"]["status"] == "draft"
     assert packet["entries"]["hello"]["translation"] == ""
     assert packet["entries"]["hello"]["placeholders"] == ["name"]
+    assert packet["entries"]["hello"]["section"] == "hello"
+    assert packet["entries"]["safety"]["risk"] == "standard"
 
     packet["review"] = {
         "status": "reviewed",
+        "translated_by": "Marathi translator",
         "reviewed_by": "fluent Marathi reviewer",
         "reviewed_at": "2026-08-01",
     }
@@ -144,7 +154,12 @@ def test_review_packet_rejects_stale_source_and_placeholder_loss(tmp_path: Path)
     }
     _write(catalog_dir / "en.json", source)
     packet = create_review_packet("mr", locales_path=locales, catalog_dir=catalog_dir)
-    packet["review"] = {"status": "reviewed", "reviewed_by": "reviewer", "reviewed_at": "2026-08-01"}
+    packet["review"] = {
+        "status": "reviewed",
+        "translated_by": "translator",
+        "reviewed_by": "reviewer",
+        "reviewed_at": "2026-08-01",
+    }
     packet["entries"]["hello"]["translation"] = "नमस्कार"
     packet_path = tmp_path / "mr-review.json"
     _write(packet_path, packet)
@@ -157,6 +172,40 @@ def test_review_packet_rejects_stale_source_and_placeholder_loss(tmp_path: Path)
     source["messages"]["new"] = "New copy"
     _write(catalog_dir / "en.json", source)
     with pytest.raises(ValueError, match="stale"):
+        compile_reviewed_packet(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+
+
+def test_review_packet_requires_distinct_people_and_untampered_risk_metadata(tmp_path: Path) -> None:
+    locales = tmp_path / "locales.json"
+    catalog_dir = tmp_path / "translations"
+    _write(locales, {"locales": [
+        {"code": "en", "label": "English", "direction": "ltr", "status": "available"},
+        {"code": "mr", "label": "Marathi", "direction": "ltr", "status": "planned"},
+    ]})
+    _write(catalog_dir / "en.json", {
+        "schema_version": 1,
+        "locale": "en",
+        "review": {"status": "source"},
+        "messages": {"safety.notice": "Check official sources"},
+    })
+    packet = create_review_packet("mr", locales_path=locales, catalog_dir=catalog_dir)
+    assert packet["entries"]["safety.notice"]["risk"] == "safety_critical"
+    packet["entries"]["safety.notice"]["translation"] = "अधिकृत स्रोत तपासा"
+    packet["review"] = {
+        "status": "reviewed",
+        "translated_by": "same person",
+        "reviewed_by": "Same Person",
+        "reviewed_at": "2026-08-01",
+    }
+    packet_path = tmp_path / "mr-review.json"
+    _write(packet_path, packet)
+    with pytest.raises(ValueError, match="different people"):
+        compile_reviewed_packet(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+
+    packet["review"]["reviewed_by"] = "independent reviewer"
+    packet["entries"]["safety.notice"]["risk"] = "standard"
+    _write(packet_path, packet)
+    with pytest.raises(ValueError, match="review metadata mismatch"):
         compile_reviewed_packet(packet_path, locales_path=locales, catalog_dir=catalog_dir)
 
 

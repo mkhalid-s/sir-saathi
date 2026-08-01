@@ -6,6 +6,7 @@ interface TranslationCatalog {
   locale: string;
   review: {
     status: string;
+    translated_by?: string | null;
     reviewed_by?: string | null;
     reviewed_at?: string | null;
   };
@@ -46,7 +47,9 @@ function catalogueIsRuntimeReady(catalogue: TranslationCatalog): boolean {
   if (catalogue.locale === 'en') return catalogue.review?.status === 'source';
   const reviewedAt = catalogue.review?.reviewed_at ?? '';
   return catalogue.review?.status === 'reviewed'
+    && Boolean(catalogue.review.translated_by?.trim())
     && Boolean(catalogue.review.reviewed_by?.trim())
+    && catalogue.review.translated_by?.trim().toLocaleLowerCase() !== catalogue.review.reviewed_by?.trim().toLocaleLowerCase()
     && /^\d{4}-\d{2}-\d{2}$/.test(reviewedAt)
     && !Number.isNaN(Date.parse(`${reviewedAt}T00:00:00Z`));
 }

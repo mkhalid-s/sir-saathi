@@ -15,6 +15,18 @@ DEFAULT_LOCALES_PATH = ROOT / "config" / "locales.json"
 DEFAULT_CATALOG_DIR = ROOT / "config" / "translations"
 REFERENCE_LOCALE = "en"
 PLACEHOLDER_PATTERN = re.compile(r"\{([a-z][a-z0-9_]*)\}")
+REVIEW_PACKET_SCHEMA_VERSION = 2
+SAFETY_CRITICAL_PREFIXES = (
+    "document.",
+    "find.",
+    "forms.",
+    "guidance.",
+    "safety.",
+    "search.",
+    "state.schedule.",
+    "status.",
+    "wizard.",
+)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -48,6 +60,10 @@ def _locale_entry(locales_path: Path, locale: str) -> dict[str, Any]:
     return matches[0]
 
 
+def _review_risk(key: str) -> str:
+    return "safety_critical" if key.startswith(SAFETY_CRITICAL_PREFIXES) else "standard"
+
+
 def create_review_packet(
     locale: str,
     *,
@@ -61,18 +77,32 @@ def create_review_packet(
     locale_entry = _locale_entry(locales_path, locale)
     reference_path = catalog_dir / f"{REFERENCE_LOCALE}.json"
     reference_messages = _messages(_load_json(reference_path), path=reference_path)
+    critical_count = sum(_review_risk(key) == "safety_critical" for key in reference_messages)
     return {
-        "schema_version": 1,
+        "schema_version": REVIEW_PACKET_SCHEMA_VERSION,
         "locale": locale,
         "label": locale_entry.get("label"),
+        "direction": locale_entry.get("direction"),
         "source_locale": REFERENCE_LOCALE,
         "source_catalogue_sha256": _source_digest(reference_messages),
-        "review": {"status": "draft", "reviewed_by": None, "reviewed_at": None},
+        "review_requirements": {
+            "distinct_translator_and_reviewer": True,
+            "safety_critical_entry_count": critical_count,
+            "preserve_placeholders_exactly": True,
+        },
+        "review": {
+            "status": "draft",
+            "translated_by": None,
+            "reviewed_by": None,
+            "reviewed_at": None,
+        },
         "entries": {
             key: {
                 "source": value,
                 "translation": "",
                 "placeholders": sorted(set(PLACEHOLDER_PATTERN.findall(value))),
+                "section": key.split(".", 1)[0],
+                "risk": _review_risk(key),
             }
             for key, value in sorted(reference_messages.items())
         },
@@ -88,24 +118,39 @@ def compile_reviewed_packet(
     """Validate a completed human-review packet and return a runtime catalogue."""
 
     packet = _load_json(packet_path)
-    if packet.get("schema_version") != 1:
-        raise ValueError("unsupported review packet schema_version")
+    if packet.get("schema_version") != REVIEW_PACKET_SCHEMA_VERSION:
+        raise ValueError("unsupported review packet schema_version; create a fresh review packet")
     locale = packet.get("locale")
     if not isinstance(locale, str) or not locale or locale == REFERENCE_LOCALE:
         raise ValueError("review packet must name a registered non-English locale")
-    _locale_entry(locales_path, locale)
+    locale_entry = _locale_entry(locales_path, locale)
+    if packet.get("direction") != locale_entry.get("direction"):
+        raise ValueError("review packet direction does not match the locale registry")
 
     reference_path = catalog_dir / f"{REFERENCE_LOCALE}.json"
     reference_messages = _messages(_load_json(reference_path), path=reference_path)
     if packet.get("source_catalogue_sha256") != _source_digest(reference_messages):
         raise ValueError("review packet is stale; create it again from the current English catalogue")
+    expected_critical_count = sum(_review_risk(key) == "safety_critical" for key in reference_messages)
+    requirements = packet.get("review_requirements")
+    if requirements != {
+        "distinct_translator_and_reviewer": True,
+        "safety_critical_entry_count": expected_critical_count,
+        "preserve_placeholders_exactly": True,
+    }:
+        raise ValueError("review packet requirements do not match the current review policy")
 
     review = packet.get("review")
     if not isinstance(review, dict) or review.get("status") != "reviewed":
         raise ValueError("fluent human review status is required")
+    translator = review.get("translated_by")
     reviewer = review.get("reviewed_by")
+    if not isinstance(translator, str) or not translator.strip():
+        raise ValueError("translated_by is required")
     if not isinstance(reviewer, str) or not reviewer.strip():
         raise ValueError("reviewed_by is required")
+    if translator.strip().casefold() == reviewer.strip().casefold():
+        raise ValueError("translated_by and reviewed_by must identify different people")
     try:
         date.fromisoformat(review.get("reviewed_at"))
     except (TypeError, ValueError):
@@ -119,10 +164,17 @@ def compile_reviewed_packet(
         entry = entries.get(key)
         if not isinstance(entry, dict) or entry.get("source") != source:
             raise ValueError(f"source text mismatch for {key}")
+        expected_placeholders = sorted(set(PLACEHOLDER_PATTERN.findall(source)))
+        if (
+            entry.get("section") != key.split(".", 1)[0]
+            or entry.get("risk") != _review_risk(key)
+            or entry.get("placeholders") != expected_placeholders
+        ):
+            raise ValueError(f"review metadata mismatch for {key}")
         translation = entry.get("translation")
         if not isinstance(translation, str) or not translation.strip():
             raise ValueError(f"translation is required for {key}")
-        expected = set(PLACEHOLDER_PATTERN.findall(source))
+        expected = set(expected_placeholders)
         actual = set(PLACEHOLDER_PATTERN.findall(translation))
         if expected != actual:
             raise ValueError(f"placeholder mismatch for {key}")
@@ -133,6 +185,7 @@ def compile_reviewed_packet(
         "locale": locale,
         "review": {
             "status": "reviewed",
+            "translated_by": translator.strip(),
             "reviewed_by": reviewer.strip(),
             "reviewed_at": review["reviewed_at"],
         },
@@ -175,10 +228,21 @@ def validate_catalog(path: Path, *, locale: str, reference_messages: dict[str, s
         if not isinstance(review, dict) or review.get("status") != "reviewed":
             blockers.append("fluent human review is required")
         else:
+            translator = review.get("translated_by")
             reviewer = review.get("reviewed_by")
             reviewed_at = review.get("reviewed_at")
+            if not isinstance(translator, str) or not translator.strip():
+                blockers.append("translated_by is required")
             if not isinstance(reviewer, str) or not reviewer.strip():
                 blockers.append("reviewed_by is required")
+            if (
+                isinstance(translator, str)
+                and translator.strip()
+                and isinstance(reviewer, str)
+                and reviewer.strip()
+                and translator.strip().casefold() == reviewer.strip().casefold()
+            ):
+                blockers.append("translated_by and reviewed_by must identify different people")
             try:
                 date.fromisoformat(reviewed_at)
             except (TypeError, ValueError):

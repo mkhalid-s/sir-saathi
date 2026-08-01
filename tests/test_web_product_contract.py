@@ -358,6 +358,7 @@ def test_web_runtime_revalidates_catalogues_before_generating_locale_routes() ->
     assert "referenceKeys.length !== candidateKeys.length" in i18n
     assert "placeholders(englishCatalog.messages[key])" in i18n
     assert "catalogue.review?.status === 'reviewed'" in i18n
+    assert "catalogue.review.translated_by?.trim()" in i18n
     assert "catalogue.review.reviewed_by?.trim()" in i18n
 
 

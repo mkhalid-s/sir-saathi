@@ -34,7 +34,12 @@ def test_runtime_uses_only_a_complete_reviewed_catalogue(tmp_path: Path) -> None
     _write(catalogues / "mr.json", {
         "schema_version": 1,
         "locale": "mr",
-        "review": {"status": "reviewed", "reviewed_by": "fixture reviewer", "reviewed_at": "2026-08-01"},
+        "review": {
+            "status": "reviewed",
+            "translated_by": "fixture translator",
+            "reviewed_by": "fixture reviewer",
+            "reviewed_at": "2026-08-01",
+        },
         "messages": {"hello": "नमस्कार {name}"},
     })
 

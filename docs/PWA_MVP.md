@@ -44,7 +44,7 @@ python -m pipeline.sir_saathi_pipeline.translation_catalog \
   --output data/translation-review/mr.json
 ```
 
-The packet records every English source string, required placeholder, and a digest of the complete source catalogue. A fluent reviewer fills `translation`, changes the packet review status to `reviewed`, and records `reviewed_by` plus an ISO `reviewed_at` date. Compile it only after that review:
+The schema-v2 packet records locale direction, every English source string, its section, required placeholders, a deterministic `safety_critical` or `standard` risk label, the number of critical entries, and a digest of the complete source catalogue. A fluent translator fills `translation` and records `translated_by`. A different fluent reviewer checks the complete catalogue—with extra care for safety-critical guidance—then changes the packet status to `reviewed` and records `reviewed_by` plus an ISO `reviewed_at` date. Compile it only after that independent review:
 
 ```sh
 python -m pipeline.sir_saathi_pipeline.translation_catalog \
@@ -52,7 +52,7 @@ python -m pipeline.sir_saathi_pipeline.translation_catalog \
   --output config/translations/mr.json
 ```
 
-Compilation rejects incomplete strings, changed keys or source copy, lost placeholders, missing reviewer accountability, and stale source digests. It does not activate the locale: `config/locales.json` must still be changed from `planned` to `available` in a reviewed code change. This keeps draft or stale translations fail-closed.
+Compilation rejects incomplete strings, changed keys or source copy, tampered risk/section/placeholder metadata, lost placeholders, missing identities, the same person acting as translator and reviewer, direction drift, changed review requirements, and stale source digests. The compiled runtime catalogue retains both accountable identities. Compilation does not activate the locale: `config/locales.json` must still be changed from `planned` to `available` in a reviewed code change. This keeps draft, singly reviewed, or stale translations fail-closed.
 
 The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalogue discovery is automatic at build time, but only locales marked `available` in the governed registry can render. Safety text, all form controls, official and indexed-search instructions, every situation-specific guidance title/summary/action/document, status, deadline, provenance, and checklist sharing use keyed messages with checked placeholders. Draft or missing catalogues cannot be selected and fall back to the reviewed English source copy.
 

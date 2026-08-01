@@ -334,6 +334,7 @@ def verify_ui_language_readiness() -> None:
     api_schema = (ROOT / "services/api/schemas.py").read_text(encoding="utf-8")
     api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
     runtime_translations = (ROOT / "pipeline/sir_saathi_pipeline/translations.py").read_text(encoding="utf-8")
+    catalogue_governance = (ROOT / "pipeline/sir_saathi_pipeline/translation_catalog.py").read_text(encoding="utf-8")
     locale_switcher = (ROOT / "apps/web/src/components/LocaleSwitcher.astro").read_text(encoding="utf-8")
     if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
         raise RuntimeError("web must expose explicit UI language readiness")
@@ -345,6 +346,10 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("reviewed translation catalogues must drive rendered wizard copy")
     if "catalogueIsRuntimeReady" not in i18n or "referenceKeys.length !== candidateKeys.length" not in i18n:
         raise RuntimeError("web runtime must independently reject incomplete available catalogues")
+    if "translated_by" not in i18n or "translated_by" not in catalogue_governance:
+        raise RuntimeError("reviewed locales must identify both translator and reviewer")
+    if "different people" not in catalogue_governance or "safety_critical" not in catalogue_governance:
+        raise RuntimeError("translation packets must enforce independent safety-critical review")
     if not all(path.is_file() for path in (localized_home, localized_state, localized_policy)):
         raise RuntimeError("reviewed locales must generate home, state, and policy routes")
     if "localizedPath" not in i18n or "navigateToLocale" not in wizard:
