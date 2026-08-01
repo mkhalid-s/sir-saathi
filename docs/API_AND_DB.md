@@ -18,7 +18,7 @@ The deployed `/api/search` handler also applies a fixed-window rate limit keyed 
 
 API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 
-The PostgreSQL schema is in `db/schema.sql`; `db/migrations/0001_initial.sql` creates a fresh database and `db/migrations/0002_geography_provenance.sql` upgrades existing databases with geographic source fields.
+The PostgreSQL schema is in `db/schema.sql`; `db/migrations/0001_initial.sql` creates a fresh database, `0002_geography_provenance.sql` adds geographic source fields, and `0003_transliterated_name_search.sql` indexes the derived Roman search form for existing databases.
 
 Before loading rolls, seed canonical state rows from `config/states` into local Postgres:
 
@@ -76,7 +76,7 @@ Local loaded-roll search can be validated against Postgres without exposing the 
 SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.local_search --state IN-MH --ac 172 --name "<name to test>"
 ```
 
-The local search validator uses `pg_trgm` similarity on `name_normalized`, requires state and Assembly Constituency scope, caps results, and prints timing plus redacted match fields. It reports `safe_for_public: false`, does not print the raw query, excludes `epic_hash`, hides `epic_last4` unless explicitly requested with `--include-epic-last4`, and does not change `/api/search` launch behavior.
+The local search validator uses `pg_trgm` similarity across the source-normalized and explicitly derived Roman name forms, requires state and Assembly Constituency scope, caps results, and prints timing plus redacted match fields. Legacy VirgoD3 conversion is used only when parser metadata declares that encoding; ingestion does not guess legacy encodings. It reports `safe_for_public: false`, does not print the raw query, excludes `epic_hash`, hides `epic_last4` unless explicitly requested with `--include-epic-last4`, and does not change `/api/search` launch behavior.
 
 Loaded data readiness can be checked with a local operator report:
 

@@ -79,6 +79,8 @@ CREATE TABLE IF NOT EXISTS voter_records (
 
 CREATE INDEX IF NOT EXISTS idx_voter_records_state_ac_name_trgm
     ON voter_records USING GIN (name_normalized gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_voter_records_name_phonetic_trgm
+    ON voter_records USING GIN (name_phonetic gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_voter_records_scoped_lookup
     ON voter_records (state_id, ac_id, polling_station_id, serial_number);
 CREATE INDEX IF NOT EXISTS idx_voter_records_epic_hash

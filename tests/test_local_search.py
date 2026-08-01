@@ -58,11 +58,12 @@ def test_search_loaded_rolls_uses_state_ac_and_trigram_similarity() -> None:
     query, params = connection.cursor_obj.executed[0]
 
     assert "similarity(vr.name_normalized" in query
+    assert "similarity(COALESCE(vr.name_phonetic" in query
     assert "FROM voter_records" in query
     assert "JOIN assembly_constituencies" in query
     assert "WHERE vr.state_id = %s" in query
     assert "AND ac.ac_number = %s" in query
-    assert params == ("hidden query", "IN-MH", 172, "hidden query", 0.2, 10)
+    assert params == ("hidden query", "IN-MH", 172, 0.2, 10)
     assert len(results) == 1
     assert results[0].name == "Matched Person"
 

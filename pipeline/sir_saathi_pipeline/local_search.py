@@ -91,6 +91,7 @@ def safe_query_summary(query: str) -> str:
 
 def local_search_sql() -> str:
     return """
+        WITH search_input AS (SELECT %s::text AS query)
         SELECT
             vr.name_original AS name,
             vr.age,
@@ -101,13 +102,20 @@ def local_search_sql() -> str:
             vr.serial_number,
             vr.epic_last4,
             vr.data_quality,
-            similarity(vr.name_normalized, %s) AS score
+            GREATEST(
+                similarity(vr.name_normalized, search_input.query),
+                similarity(COALESCE(vr.name_phonetic, ''), search_input.query)
+            ) AS score
         FROM voter_records vr
+        CROSS JOIN search_input
         JOIN assembly_constituencies ac ON vr.ac_id = ac.ac_id
         LEFT JOIN polling_stations ps ON vr.polling_station_id = ps.polling_station_id
         WHERE vr.state_id = %s
           AND ac.ac_number = %s
-          AND similarity(vr.name_normalized, %s) >= %s
+          AND GREATEST(
+              similarity(vr.name_normalized, search_input.query),
+              similarity(COALESCE(vr.name_phonetic, ''), search_input.query)
+          ) >= %s
         ORDER BY score DESC, vr.serial_number ASC
         LIMIT %s
     """
@@ -123,7 +131,6 @@ def search_loaded_rolls(connection: ConnectionLike, request: LocalSearchRequest)
                 normalized_query,
                 request.state_id,
                 request.ac_number,
-                normalized_query,
                 request.threshold,
                 request.limit,
             ),

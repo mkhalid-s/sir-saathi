@@ -197,6 +197,7 @@ def extract_metadata_from_page1(pdf):
     lines = [decode_bold(l.strip()) for l in lines_raw]
 
     meta = {
+        "source_encoding": "VirgoD3",
         # Will be filled below — all from the PDF, nothing hardcoded
         "state_code": "",
         "state_name_encoded": "",

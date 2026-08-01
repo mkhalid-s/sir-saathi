@@ -19,6 +19,7 @@ def sample_roll(total_voters: int = 2) -> ParsedRollInput:
         source_url="https://example.test/roll.pdf",
         parser_name="parse_2002",
         metadata={
+            "source_encoding": "unicode",
             "ac_number": 172,
             "part_number": 21,
             "total_voters": total_voters,
@@ -75,6 +76,7 @@ def test_build_ingestion_batch_maps_parsed_roll_to_db_rows() -> None:
     first = batch.voter_records[0]
     assert first["name_original"] == "  Sample   Voter  "
     assert first["name_normalized"] == "sample voter"
+    assert first["name_phonetic"] == "sample voter"
     assert first["relative_name_normalized"] == "example parent"
     assert first["epic_hash"] is not None
     assert first["epic_last4"] == "0001"

@@ -89,9 +89,12 @@ def quality_summary(voters: tuple[dict[str, Any], ...]) -> dict[str, int]:
 
 
 def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> IngestionBatch:
+    from .transliteration import searchable_name_forms
+
     validate_parsed_roll(parsed_roll)
 
     metadata = parsed_roll.metadata
+    source_encoding = str(metadata.get("source_encoding") or "") or None
     ac_number = int(metadata["ac_number"])
     part_number = int(metadata["part_number"])
     roll_version_id = stable_id(
@@ -182,6 +185,11 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
         serial_number = int(voter["serial_number"])
         voter_name = str(voter.get("voter_name") or "")
         relative_name = str(voter.get("relative_name") or "")
+        name_normalized, name_phonetic = searchable_name_forms(voter_name, source_encoding=source_encoding)
+        relative_name_normalized, _relative_roman = searchable_name_forms(
+            relative_name,
+            source_encoding=source_encoding,
+        )
         epic_hash, epic_last4 = epic_fingerprint(voter.get("epic_number"), hash_salt=hash_salt)
         voter_rows.append(
             {
@@ -192,10 +200,10 @@ def build_ingestion_batch(parsed_roll: ParsedRollInput, *, hash_salt: str) -> In
                 "polling_station_id": polling_station_id,
                 "serial_number": serial_number,
                 "name_original": voter_name,
-                "name_normalized": normalize_name(voter_name),
-                "name_phonetic": None,
+                "name_normalized": name_normalized,
+                "name_phonetic": name_phonetic,
                 "relation_type": voter.get("relation_type") or None,
-                "relative_name_normalized": normalize_name(relative_name),
+                "relative_name_normalized": relative_name_normalized,
                 "age": voter.get("age"),
                 "gender": voter.get("gender") or None,
                 "epic_hash": epic_hash,

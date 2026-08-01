@@ -1,12 +1,24 @@
 from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
 from pipeline.sir_saathi_pipeline.parsers.maharashtra_2002 import parse_voter_line
 from pipeline.sir_saathi_pipeline.sources import SourceManifest
-from pipeline.sir_saathi_pipeline.transliteration import virgo_to_devanagari, virgo_to_english
+from pipeline.sir_saathi_pipeline.transliteration import searchable_name_forms, virgo_to_devanagari, virgo_to_english
 
 
 def test_transliteration_package_exports_legacy_helpers() -> None:
     assert virgo_to_devanagari("¶ÉäJÉ") == "शेख"
     assert "she" in virgo_to_english("¶ÉäJÉ")
+
+
+def test_searchable_name_forms_transliterates_only_known_scripts() -> None:
+    normalized, roman = searchable_name_forms("महाराष्ट्र")
+    assert normalized == "महाराष्ट्र"
+    assert roman == "mahaaraashtra"
+    latin, latin_search = searchable_name_forms("Sample Voter")
+    assert latin == "sample voter"
+    assert latin_search == "sample voter"
+    legacy, legacy_search = searchable_name_forms("¶ÉäJÉ", source_encoding="VirgoD3")
+    assert legacy == legacy_search
+    assert legacy is not None and "she" in legacy
 
 
 def test_maharashtra_2002_parser_adapter_parses_sanitized_line() -> None:
