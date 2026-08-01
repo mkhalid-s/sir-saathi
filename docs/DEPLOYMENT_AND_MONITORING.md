@@ -5,6 +5,7 @@
 - PWA: Cloudflare Pages from `apps/web`.
 - API: VM running FastAPI behind Caddy under `/api/*`.
 - Database: PostgreSQL 16 with `pg_trgm`.
+- Shared abuse limiter: secured Redis reachable only by the API.
 - Monitoring: health endpoint checks and uptime monitor.
 - Backups: encrypted database dumps or managed backups before public launch.
 
@@ -24,13 +25,15 @@ Cloudflare Pages settings:
 ## API Smoke Check
 
 ```sh
-uvicorn services.api.app:create_app --factory --host 127.0.0.1 --port 8000
+uvicorn services.api.app:create_configured_app --factory --host 127.0.0.1 --port 8000
 curl -fsS http://127.0.0.1:8000/api/health
 ```
 
+Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all five. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
+
 ## Local Database
 
-`infra/docker-compose.yml` is for local development only. It binds PostgreSQL to `127.0.0.1` and reads the database secret from an ignored file at `infra/.secrets/pg_secret`.
+`infra/docker-compose.yml` is for local development only. It binds PostgreSQL and Redis to `127.0.0.1`; PostgreSQL reads its database secret from an ignored file at `infra/.secrets/pg_secret`. A production Redis deployment must require authentication and transport security appropriate to its network.
 
 ## VM Services
 

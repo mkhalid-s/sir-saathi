@@ -1,3 +1,5 @@
+import importlib
+
 from services.api.abuse_verification import (
     CloudflareTurnstileVerifier,
     TURNSTILE_HOSTNAME_ENV,
@@ -5,6 +7,8 @@ from services.api.abuse_verification import (
     TURNSTILE_VERIFY_URL,
 )
 from services.api.app import configured_abuse_verifier
+
+app_module = importlib.import_module("services.api.app")
 
 
 def test_turnstile_verification_is_server_owned_and_checks_context() -> None:
@@ -66,3 +70,18 @@ def test_abuse_verifier_is_configured_only_from_server_environment(monkeypatch) 
     monkeypatch.setenv(TURNSTILE_SECRET_ENV, "server-only-test-value")
     monkeypatch.setenv(TURNSTILE_HOSTNAME_ENV, "sir-saathi.example")
     assert isinstance(configured_abuse_verifier(), CloudflareTurnstileVerifier)
+
+
+def test_deployment_factory_applies_all_server_owned_configuration(monkeypatch) -> None:
+    sentinels = {
+        "abuse_verifier": object(),
+        "search_backend": object(),
+        "rate_limiter": object(),
+        "trusted_proxy_hops": 1,
+    }
+    monkeypatch.setattr(app_module, "configured_abuse_verifier", lambda: sentinels["abuse_verifier"])
+    monkeypatch.setattr(app_module, "configured_search_backend", lambda: sentinels["search_backend"])
+    monkeypatch.setattr(app_module, "configured_rate_limiter", lambda: sentinels["rate_limiter"])
+    monkeypatch.setattr(app_module, "configured_trusted_proxy_hops", lambda: sentinels["trusted_proxy_hops"])
+    monkeypatch.setattr(app_module, "create_app", lambda **kwargs: kwargs)
+    assert app_module.create_configured_app() == sentinels

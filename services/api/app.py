@@ -26,10 +26,14 @@ from .models import InternalVoterRecord
 from .pilot_data import load_sanitized_pilot_records
 from .privacy import (
     DEFAULT_SEARCH_RATE_LIMITER,
-    InMemoryRateLimiter,
+    RateLimiter,
     RateLimitExceeded,
+    RateLimiterUnavailable,
     assert_rate_limit_allowed,
     assert_search_launch_allowed,
+    configured_rate_limiter,
+    configured_trusted_proxy_hops,
+    resolve_client_ip,
     search_rate_limit_key,
 )
 from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
@@ -165,7 +169,7 @@ def search_payload(
     payload: dict[str, Any] | SearchRequestPayload,
     records: list[InternalVoterRecord] | None = None,
     *,
-    rate_limiter: InMemoryRateLimiter | None = None,
+    rate_limiter: RateLimiter | None = None,
     client_identity: str | None = None,
     abuse_verification_passed: bool = False,
     search_backend: SearchBackend | None = None,
@@ -179,6 +183,8 @@ def search_payload(
         abuse_verification_passed=abuse_verification_passed,
         use_sanitized_pilot=validated.use_sanitized_pilot,
     )
+    if not validated.use_sanitized_pilot and (rate_limiter is None or not rate_limiter.shared):
+        raise RateLimiterUnavailable("public search requires a shared rate limiter")
     request = SearchRequest(
         state_id=validated.state_id,
         query=validated.query,
@@ -222,7 +228,13 @@ def configured_abuse_verifier() -> AbuseVerifier | None:
     )
 
 
-def create_app(*, abuse_verifier: AbuseVerifier | None = None, search_backend: SearchBackend | None = None):
+def create_app(
+    *,
+    abuse_verifier: AbuseVerifier | None = None,
+    search_backend: SearchBackend | None = None,
+    rate_limiter: RateLimiter = DEFAULT_SEARCH_RATE_LIMITER,
+    trusted_proxy_hops: int = 0,
+):
     if FastAPI is None:
         raise RuntimeError("FastAPI is required to create the API app")
 
@@ -250,7 +262,11 @@ def create_app(*, abuse_verifier: AbuseVerifier | None = None, search_backend: S
     @app.post(f"{API_PREFIX}/search")
     def search(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         try:
-            client_host = request.client.host if request.client else None
+            client_host = resolve_client_ip(
+                peer_ip=request.client.host if request.client else None,
+                forwarded_for=request.headers.get("x-forwarded-for"),
+                trusted_proxy_hops=trusted_proxy_hops,
+            )
             validated = _search_request(payload)
             verification_passed = False
             if not validated.use_sanitized_pilot and abuse_verifier is not None:
@@ -260,24 +276,30 @@ def create_app(*, abuse_verifier: AbuseVerifier | None = None, search_backend: S
                 )
             return search_payload(
                 validated,
-                rate_limiter=DEFAULT_SEARCH_RATE_LIMITER,
+                rate_limiter=rate_limiter,
                 client_identity=client_host,
                 abuse_verification_passed=verification_passed,
                 search_backend=search_backend,
             )
         except RateLimitExceeded as exc:
             raise HTTPException(status_code=429, detail=str(exc)) from exc
+        except RateLimiterUnavailable as exc:
+            raise HTTPException(status_code=503, detail="Search is temporarily unavailable") from exc
         except (KeyError, ValueError, ValidationError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return app
 
 
-app = (
-    create_app(
+def create_configured_app():
+    """Deployment factory that applies every server-owned environment setting."""
+
+    return create_app(
         abuse_verifier=configured_abuse_verifier(),
         search_backend=configured_search_backend(),
+        rate_limiter=configured_rate_limiter(),
+        trusted_proxy_hops=configured_trusted_proxy_hops(),
     )
-    if FastAPI is not None
-    else None
-)
+
+
+app = create_configured_app() if FastAPI is not None else None

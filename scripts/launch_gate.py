@@ -50,10 +50,15 @@ def verify_api_routes() -> None:
 def verify_deploy_templates() -> None:
     caddy = (ROOT / "infra/caddy/Caddyfile.example").read_text(encoding="utf-8")
     compose = (ROOT / "infra/docker-compose.yml").read_text(encoding="utf-8")
+    systemd = (ROOT / "infra/systemd/sir-saathi-api.service").read_text(encoding="utf-8")
     if "handle /api/*" not in caddy or "reverse_proxy 127.0.0.1:8000" not in caddy:
         raise RuntimeError("Caddy template must proxy /api/* to the local API service")
     if "POSTGRES_HOST_AUTH_METHOD" in compose or "127.0.0.1:5432:5432" not in compose:
         raise RuntimeError("local compose must not expose unauthenticated Postgres")
+    if "redis:8-alpine" not in compose or "127.0.0.1:6379:6379" not in compose:
+        raise RuntimeError("local compose must provide a loopback-only shared rate-limit store")
+    if "services.api.app:create_configured_app --factory" not in systemd:
+        raise RuntimeError("API service must use the environment-configured application factory")
 
 
 def verify_abuse_protection() -> None:
@@ -61,6 +66,7 @@ def verify_abuse_protection() -> None:
     app = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
     schemas = (ROOT / "services/api/schemas.py").read_text(encoding="utf-8")
     verifier = (ROOT / "services/api/abuse_verification.py").read_text(encoding="utf-8")
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "InMemoryRateLimiter" not in privacy or "search_rate_limit_key" not in privacy:
         raise RuntimeError("public search must define rate limiting helpers")
     if "DEFAULT_SEARCH_RATE_LIMITER" not in app or "request.client.host" not in app:
@@ -79,6 +85,12 @@ def verify_abuse_protection() -> None:
         raise RuntimeError("public search scope activation must retain reviewer metadata")
     if "search_backend=search_backend" not in app:
         raise RuntimeError("public route must pass only its configured server-side search backend")
+    if "RedisRateLimiter" not in privacy or "REDIS_RATE_LIMIT_SCRIPT" not in privacy or "redis>=" not in requirements:
+        raise RuntimeError("real public search must have an atomic shared Redis limiter")
+    if "not rate_limiter.shared" not in app or "RateLimiterUnavailable" not in app:
+        raise RuntimeError("real public search must fail closed without the shared limiter")
+    if "resolve_client_ip" not in app or "TRUSTED_PROXY_HOPS_ENV" not in privacy:
+        raise RuntimeError("client identity must use explicit trusted-proxy configuration")
 
 
 def verify_source_freshness() -> None:

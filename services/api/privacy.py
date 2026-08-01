@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-import time
 from dataclasses import dataclass, field
+import ipaddress
+import os
+import time
+from typing import Any, Protocol
 
 from pipeline.sir_saathi_pipeline.state_registry import StateConfig
 
@@ -37,6 +40,16 @@ class RateLimitExceeded(ValueError):
     """Search rate limit was exceeded."""
 
 
+class RateLimiterUnavailable(RuntimeError):
+    """The required shared rate-limit store could not make a decision."""
+
+
+class RateLimiter(Protocol):
+    shared: bool
+
+    def check(self, key: str, *, now: float | None = None) -> RateLimitDecision: ...
+
+
 @dataclass
 class InMemoryRateLimiter:
     """Small fixed-window limiter for the MVP API process."""
@@ -44,6 +57,7 @@ class InMemoryRateLimiter:
     max_requests: int = DEFAULT_RATE_LIMIT_MAX_REQUESTS
     window_seconds: int = DEFAULT_RATE_LIMIT_WINDOW_SECONDS
     _buckets: dict[str, list[float]] = field(default_factory=dict)
+    shared: bool = field(default=False, init=False)
 
     def check(self, key: str, *, now: float | None = None) -> RateLimitDecision:
         current_time = time.monotonic() if now is None else now
@@ -57,6 +71,98 @@ class InMemoryRateLimiter:
         bucket.append(current_time)
         self._buckets[key] = bucket
         return RateLimitDecision(allowed=True, remaining=self.max_requests - len(bucket))
+
+
+REDIS_URL_ENV = "SIR_SAATHI_REDIS_URL"
+TRUSTED_PROXY_HOPS_ENV = "SIR_SAATHI_TRUSTED_PROXY_HOPS"
+REDIS_RATE_LIMIT_SCRIPT = """
+local current = redis.call('INCR', KEYS[1])
+local ttl = redis.call('TTL', KEYS[1])
+if current == 1 or ttl < 0 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+  ttl = tonumber(ARGV[1])
+end
+return {current, ttl}
+"""
+
+
+@dataclass
+class RedisRateLimiter:
+    """Atomic fixed-window limiter shared by every API worker."""
+
+    client: Any
+    max_requests: int = DEFAULT_RATE_LIMIT_MAX_REQUESTS
+    window_seconds: int = DEFAULT_RATE_LIMIT_WINDOW_SECONDS
+    shared: bool = field(default=True, init=False)
+
+    def check(self, key: str, *, now: float | None = None) -> RateLimitDecision:
+        del now  # Redis owns the shared window clock/TTL.
+        try:
+            result = self.client.eval(
+                REDIS_RATE_LIMIT_SCRIPT,
+                1,
+                f"sir-saathi:rate-limit:{key}",
+                self.window_seconds,
+            )
+            if not isinstance(result, (list, tuple)) or len(result) != 2:
+                raise ValueError("malformed Redis limiter response")
+            current, ttl = int(result[0]), int(result[1])
+        except Exception as exc:
+            raise RateLimiterUnavailable("shared search rate limiter is unavailable") from exc
+        allowed = current <= self.max_requests
+        return RateLimitDecision(
+            allowed=allowed,
+            remaining=max(0, self.max_requests - current),
+            retry_after_seconds=0 if allowed else max(1, ttl),
+        )
+
+
+def configured_rate_limiter() -> RateLimiter:
+    redis_url = os.environ.get(REDIS_URL_ENV)
+    if not redis_url:
+        return InMemoryRateLimiter(
+            max_requests=DEFAULT_PUBLIC_SEARCH_POLICY.rate_limit_max_requests,
+            window_seconds=DEFAULT_PUBLIC_SEARCH_POLICY.rate_limit_window_seconds,
+        )
+    import redis
+
+    return RedisRateLimiter(
+        client=redis.Redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_connect_timeout=2.0,
+            socket_timeout=2.0,
+        ),
+        max_requests=DEFAULT_PUBLIC_SEARCH_POLICY.rate_limit_max_requests,
+        window_seconds=DEFAULT_PUBLIC_SEARCH_POLICY.rate_limit_window_seconds,
+    )
+
+
+def configured_trusted_proxy_hops() -> int:
+    raw_value = os.environ.get(TRUSTED_PROXY_HOPS_ENV, "0")
+    try:
+        hops = int(raw_value)
+    except ValueError as exc:
+        raise ValueError(f"{TRUSTED_PROXY_HOPS_ENV} must be an integer") from exc
+    if hops < 0 or hops > 5:
+        raise ValueError(f"{TRUSTED_PROXY_HOPS_ENV} must be between 0 and 5")
+    return hops
+
+
+def resolve_client_ip(*, peer_ip: str | None, forwarded_for: str | None, trusted_proxy_hops: int) -> str | None:
+    """Resolve a client IP only across an explicitly configured trusted proxy chain."""
+
+    if trusted_proxy_hops == 0 or not forwarded_for:
+        candidate = peer_ip
+    else:
+        forwarded = [item.strip() for item in forwarded_for.split(",") if item.strip()]
+        if len(forwarded) < trusted_proxy_hops:
+            return None
+        candidate = forwarded[-trusted_proxy_hops]
+    try:
+        return str(ipaddress.ip_address(candidate)) if candidate else None
+    except ValueError:
+        return None
 
 
 DEFAULT_PUBLIC_SEARCH_POLICY = PublicSearchPolicy()

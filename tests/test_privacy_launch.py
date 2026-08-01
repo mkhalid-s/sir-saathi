@@ -7,10 +7,13 @@ from services.api.privacy import (
     InMemoryRateLimiter,
     PublicSearchPolicy,
     RateLimitExceeded,
+    RateLimiterUnavailable,
+    RedisRateLimiter,
     assert_public_search_policy,
     assert_rate_limit_allowed,
     assert_search_launch_allowed,
     rate_limit_identity,
+    resolve_client_ip,
     safe_log_query,
     search_rate_limit_key,
 )
@@ -78,3 +81,49 @@ def test_rate_limit_key_does_not_store_raw_client_identity() -> None:
     assert "203.0.113.10" not in key
     assert key.startswith("search:client:")
     assert rate_limit_identity("203.0.113.10") in key
+
+
+def test_redis_rate_limiter_uses_one_atomic_expiring_counter_operation() -> None:
+    class Client:
+        def __init__(self):
+            self.calls = []
+            self.result = [1, 60]
+
+        def eval(self, *args):
+            self.calls.append(args)
+            return self.result
+
+    client = Client()
+    limiter = RedisRateLimiter(client=client, max_requests=2, window_seconds=60)
+    first = limiter.check("search:hashed-scope")
+    assert first.allowed is True
+    assert first.remaining == 1
+    script, key_count, key, window = client.calls[0]
+    assert "INCR" in script and "EXPIRE" in script
+    assert key_count == 1
+    assert key == "sir-saathi:rate-limit:search:hashed-scope"
+    assert window == 60
+
+    client.result = [3, 42]
+    blocked = limiter.check("search:hashed-scope")
+    assert blocked.allowed is False
+    assert blocked.remaining == 0
+    assert blocked.retry_after_seconds == 42
+
+
+def test_redis_rate_limiter_fails_closed_when_store_is_unavailable() -> None:
+    class Client:
+        def eval(self, *_args):
+            raise TimeoutError("synthetic timeout")
+
+    with pytest.raises(RateLimiterUnavailable, match="shared search rate limiter is unavailable"):
+        RedisRateLimiter(client=Client()).check("search:hashed-scope")
+
+
+def test_client_ip_resolution_trusts_only_configured_proxy_hops() -> None:
+    forwarded = "198.51.100.9, 203.0.113.8"
+    assert resolve_client_ip(peer_ip="127.0.0.1", forwarded_for=forwarded, trusted_proxy_hops=0) == "127.0.0.1"
+    assert resolve_client_ip(peer_ip="127.0.0.1", forwarded_for=forwarded, trusted_proxy_hops=1) == "203.0.113.8"
+    assert resolve_client_ip(peer_ip="127.0.0.1", forwarded_for=forwarded, trusted_proxy_hops=2) == "198.51.100.9"
+    assert resolve_client_ip(peer_ip="127.0.0.1", forwarded_for="spoofed", trusted_proxy_hops=1) is None
+    assert resolve_client_ip(peer_ip="127.0.0.1", forwarded_for="", trusted_proxy_hops=1) == "127.0.0.1"

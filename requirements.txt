@@ -2,3 +2,4 @@ pdfplumber
 fastapi
 uvicorn
 psycopg[binary]
+redis>=6,<7

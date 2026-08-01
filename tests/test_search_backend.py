@@ -6,8 +6,16 @@ import pytest
 from services.api.search import SearchRequest
 from services.api.search_backend import PostgresSearchBackend, public_search_sql
 from services.api.models import InternalVoterRecord
+from services.api.privacy import RateLimitDecision
 
 api_app = importlib.import_module("services.api.app")
+
+
+class SharedLimiter:
+    shared = True
+
+    def check(self, _key, *, now=None):
+        return RateLimitDecision(allowed=True, remaining=29)
 
 
 class FakeCursor:
@@ -83,6 +91,7 @@ def test_search_backend_is_called_only_after_launch_policy_passes(monkeypatch) -
         {"state_id": "IN-MH", "query": "sample", "ac_number": 172},
         abuse_verification_passed=True,
         search_backend=backend,
+        rate_limiter=SharedLimiter(),
     )
     assert result == {"results": [], "count": 0}
     assert backend.called is True
@@ -98,6 +107,7 @@ def test_search_backend_is_not_called_when_launch_policy_fails() -> None:
             {"state_id": "IN-MH", "query": "sample", "ac_number": 172},
             abuse_verification_passed=True,
             search_backend=Backend(),
+            rate_limiter=SharedLimiter(),
         )
 
 
@@ -124,6 +134,7 @@ def test_backend_results_are_redacted_and_fail_closed_on_scope_breach(monkeypatc
         {"state_id": "IN-MH", "query": "aasa", "ac_number": 172},
         abuse_verification_passed=True,
         search_backend=Backend([voter()]),
+        rate_limiter=SharedLimiter(),
     )
     assert result["results"][0]["display_name"] == "Asha Patil"
     assert result["results"][0]["epic_hint"] == "***1234"
@@ -132,4 +143,5 @@ def test_backend_results_are_redacted_and_fail_closed_on_scope_breach(monkeypatc
             {"state_id": "IN-MH", "query": "aasa", "ac_number": 172},
             abuse_verification_passed=True,
             search_backend=Backend([voter(state_id="IN-WB")]),
+            rate_limiter=SharedLimiter(),
         )

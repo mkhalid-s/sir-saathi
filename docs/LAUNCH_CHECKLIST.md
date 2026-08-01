@@ -14,7 +14,8 @@ Before any public launch:
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public indexed search requires official schedule provenance, not reported-only dates.
-- Public search has rate limiting and abuse protection; production multi-process deployments use a shared limiter store.
+- Real public search uses the atomic shared Redis limiter configured by `SIR_SAATHI_REDIS_URL`; missing or unavailable Redis fails closed before database search.
+- `SIR_SAATHI_TRUSTED_PROXY_HOPS` matches the deployed proxy chain, and direct client access to the API is blocked before forwarded IP headers are trusted.
 - Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
 - Every enabled database search scope pins an exact roll version and versioned AC in `public_search_scopes`, with reviewer identity and timestamp; ingestion never enables it.
 - Official links and source freshness are visible.
