@@ -41,6 +41,7 @@ REQUIRED_FILES = [
     "pipeline/sir_saathi_pipeline/migrations.py",
     "pipeline/sir_saathi_pipeline/backups.py",
     "pipeline/sir_saathi_pipeline/assistance_registry.py",
+    "pipeline/sir_saathi_pipeline/translation_campaign.py",
     "pipeline/sir_saathi_pipeline/deployment_preflight.py",
     "pipeline/sir_saathi_pipeline/deployment_probe.py",
     "pipeline/sir_saathi_pipeline/accessibility_evidence.py",
@@ -402,6 +403,7 @@ def verify_ui_language_readiness() -> None:
     api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
     runtime_translations = (ROOT / "pipeline/sir_saathi_pipeline/translations.py").read_text(encoding="utf-8")
     catalogue_governance = (ROOT / "pipeline/sir_saathi_pipeline/translation_catalog.py").read_text(encoding="utf-8")
+    campaign = (ROOT / "pipeline/sir_saathi_pipeline/translation_campaign.py").read_text(encoding="utf-8")
     locale_switcher = (ROOT / "apps/web/src/components/LocaleSwitcher.astro").read_text(encoding="utf-8")
     language_page = (ROOT / "apps/web/src/components/LanguageAvailability.astro").read_text(encoding="utf-8")
     if "wizard.language_planned" not in wizard or "English UI is available now" not in messages["wizard.language_available"]:
@@ -426,6 +428,12 @@ def verify_ui_language_readiness() -> None:
     ]:
         if contract not in catalogue_governance:
             raise RuntimeError(f"translation workflow is missing safe in-context review contract: {contract}")
+    for contract in [
+        "create_campaign", "validate_campaign", "human_translation_required",
+        "independent_review_required", "campaign.packet_invalid", "values_redacted",
+    ]:
+        if contract not in campaign:
+            raise RuntimeError(f"batch translation campaign is missing contract: {contract}")
     if not all(path.is_file() for path in (localized_home, localized_state, localized_policy)):
         raise RuntimeError("reviewed locales must generate home, state, and policy routes")
     if "localizedPath" not in i18n or "navigateToLocale" not in wizard:

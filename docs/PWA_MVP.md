@@ -39,6 +39,17 @@ The first web app is a mobile-first Astro + Preact PWA.
 
 Run `python -m pipeline.sir_saathi_pipeline.translation_catalog --fail-on-invalid-available` in review and deployment workflows. Missing planned catalogues are reported as pending, while any locale marked available without a complete reviewed catalogue fails the command.
 
+Create a new private campaign bundle for every planned language in one atomic operation:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.translation_campaign \
+  --create data/translation-campaign/source-2026-08-01
+python -m pipeline.sir_saathi_pipeline.translation_campaign \
+  --check data/translation-campaign/source-2026-08-01
+```
+
+The bundle contains one source-pinned review packet per planned locale plus a manifest with counts, directions, and safety-critical workload. Creation refuses to overwrite any existing directory, keeping human work recoverable. The redacted check permits in-progress translations and private review identities but rejects changed English source text, missing locales, altered source/risk/placeholder metadata, or stale manifests. It never translates, approves, compiles, or activates a locale. Repository bundles are allowed only under ignored `data/`, `reports/`, or `samples/` directories.
+
 Start a human translation review without placing draft copy in the runtime catalogue:
 
 ```sh
