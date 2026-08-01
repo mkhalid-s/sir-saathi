@@ -6,10 +6,11 @@ The first API surface is intentionally small and served under the `/api` prefix:
 - `GET /api/ready`
 - `GET /api/states`
 - `GET /api/forms`
+- `GET /api/assistance`
 - `POST /api/guidance`
 - `POST /api/search`
 
-`GET /api/states?locale=<code>`, `GET /api/forms?locale=<code>`, and the optional `locale` field on `POST /api/guidance` use the same reviewed catalogue as the PWA. Human-readable display fields are translated only when the requested locale is publishable. Responses include `locale_requested`, `locale_used`, and `locale_fallback`; planned, unknown, incomplete, or unreviewed locales visibly fall back to English. Stable state IDs, capability codes, dates, URLs, and source evidence remain language-neutral or verbatim.
+`GET /api/states?locale=<code>`, `GET /api/forms?locale=<code>`, `GET /api/assistance?locale=<code>`, and the optional `locale` field on `POST /api/guidance` use the same reviewed catalogue as the PWA. Human-readable display fields are translated only when the requested locale is publishable. Responses include `locale_requested`, `locale_used`, and `locale_fallback`; planned, unknown, incomplete, or unreviewed locales visibly fall back to English. Stable state IDs, capability codes, dates, URLs, and source evidence remain language-neutral or verbatim.
 
 Name search fails closed unless a future state has passed public launch readiness. The pure `search_payload` test/local-demo harness can explicitly use the sanitized pilot fixture, but the deployed `POST /api/search` route rejects that client-controlled flag so it cannot bypass server-owned launch controls. Public search must be scoped by Assembly Constituency; `part_number` can only narrow a search when `ac_number` is also present.
 
@@ -20,6 +21,8 @@ The public adapter uses a dedicated connection configuration with a three-second
 `GET /api/states` exposes canonical state metadata, including structured SIR schedule dates, CEO portal, official source labels, URLs, types, and `last_verified` dates so clients can show deadlines and source freshness.
 
 `GET /api/forms` exposes the canonical SIR form catalogue and common document categories from `config/forms/sir-actions.json`.
+
+`GET /api/assistance` exposes the canonical nationwide official-help catalogue from `config/official-assistance.json`: ECI web, phone, and email destinations plus their source date. It accepts no complaint or voter data and does not proxy submissions.
 
 `GET /api/health` is process liveness. `GET /api/ready` is deployment-mode-aware readiness: guidance mode does not depend on indexed-search infrastructure, while indexed-search mode returns HTTP 503 unless server-side Turnstile is configured, PostgreSQL answers a data-free `SELECT 1`, the shared Redis limiter answers a non-mutating `PING`, and the trusted proxy boundary is configured. Readiness reports stable blocker IDs and never returns connection strings or exception details.
 

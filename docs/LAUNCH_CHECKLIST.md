@@ -37,6 +37,7 @@ Before any public launch:
 - Confirm each applied enable or disable has a matching append-only `public_search_scope_events` record with both identities, a non-sensitive rationale, and an aggregate readiness snapshot. Emergency disables may use the same accountable identity for both roles so revocation is never delayed.
 - Exercise `--disable --apply` in the deployment runbook and confirm revocation immediately removes the scope from public search.
 - Official links and source freshness are visible.
+- `python -m pipeline.sir_saathi_pipeline.assistance_registry --fail-on-stale` passes; the homepage, a sampled state guide, `tel:1950`, complaints email, and ECI portal actions match the reviewed official source and accept no data in SIR Saathi.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
 - The daily `Official source freshness` workflow is enabled on the default branch, has a tested failure-notification owner, and retains its safe report when stale evidence fails the check.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.

@@ -1,0 +1,43 @@
+---
+import { assistanceChannels, assistanceSource } from '../data/assistance';
+import { formatIndiaDate } from '../data/states';
+import { translate, type MessageKey } from '../lib/i18n';
+
+interface Props {
+  locale: string;
+  stateOfficialLink?: string;
+  stateName?: string;
+}
+
+const { locale, stateOfficialLink, stateName } = Astro.props;
+const message = (key: MessageKey, values: Record<string, string | number> = {}) => translate(locale, key, values);
+---
+<section class="assistance-reference" aria-labelledby="official-assistance-title">
+  <p class="eyebrow dark">{message('assistance.eyebrow')}</p>
+  <h2 id="official-assistance-title">{message('assistance.title')}</h2>
+  <p class="reference-copy">{message('assistance.intro')}</p>
+  <div class="forms-list">
+    {assistanceChannels.map((channel) => (
+      <article class="form-card">
+        <h3>{message(channel.labelKey as MessageKey)}</h3>
+        <p>{message(channel.descriptionKey as MessageKey)}</p>
+        <a
+          class="secondary-button"
+          href={channel.href}
+          target={channel.kind === 'web' ? '_blank' : undefined}
+          rel={channel.kind === 'web' ? 'noreferrer' : undefined}
+        >{message(channel.actionKey as MessageKey)}</a>
+      </article>
+    ))}
+  </div>
+  {stateOfficialLink && stateName && (
+    <p><a class="secondary-button" href={stateOfficialLink} target="_blank" rel="noreferrer">{message('assistance.state_portal', { state: stateName })}</a></p>
+  )}
+  <p class="notice">{message('assistance.privacy')}</p>
+  <p class="source-note">
+    {message('assistance.source', {
+      source: assistanceSource.label,
+      date: formatIndiaDate(assistanceSource.lastVerified, locale)
+    })} <a href={assistanceSource.url} target="_blank" rel="noreferrer">{message('assistance.portal.action')}</a>
+  </p>
+</section>

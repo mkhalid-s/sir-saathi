@@ -169,6 +169,7 @@ a {
 .wizard,
 .info-card,
 .forms-reference,
+.assistance-reference,
 .search-availability {
   border-radius: 1.5rem;
   background: var(--color-surface);
@@ -315,11 +316,13 @@ a {
   font-weight: 800;
 }
 
-.forms-reference {
+.forms-reference,
+.assistance-reference {
   margin-top: 1.5rem;
 }
 
 .forms-reference h2,
+.assistance-reference h2,
 .search-availability h2 {
   margin: 0.5rem 0 0;
   font-size: clamp(1.75rem, 4vw, 2.5rem);
@@ -751,6 +754,7 @@ a {
   .wizard > .actions,
   .search-availability,
   .forms-reference,
+  .assistance-reference,
   .info-grid,
   .connectivity-notice,
   main > footer {

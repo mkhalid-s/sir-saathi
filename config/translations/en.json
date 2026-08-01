@@ -337,6 +337,21 @@
     "status.pre_draft_publication": "Draft roll publication is next",
     "status.claims_and_objections_open": "Claims and objections are open",
     "status.claims_disposal": "Claims and objections are being decided",
-    "status.final_roll_published": "Final roll published"
+    "status.final_roll_published": "Final roll published",
+    "assistance.eyebrow": "Official help",
+    "assistance.title": "Need help from an election official?",
+    "assistance.intro": "SIR Saathi does not collect complaints or application details. Use an official ECI or state channel.",
+    "assistance.portal.label": "Voters' Service Portal",
+    "assistance.portal.description": "Register a complaint or suggestion, track an application, or request a call with your BLO.",
+    "assistance.portal.action": "Open official voter services",
+    "assistance.helpline.label": "Voter Helpline 1950",
+    "assistance.helpline.description": "Call 1950 for election information, feedback, suggestions, or complaints.",
+    "assistance.helpline.action": "Call 1950",
+    "assistance.email.label": "ECI complaints email",
+    "assistance.email.description": "Use the official complaints address when portal or phone support is not suitable. Send only information ECI requests.",
+    "assistance.email.action": "Email ECI complaints",
+    "assistance.privacy": "Do not post or send voter documents publicly. SIR Saathi does not receive anything you submit through these official channels.",
+    "assistance.source": "Official channel source: {source}. Last checked {date}.",
+    "assistance.state_portal": "Open {state} CEO portal"
   }
 }

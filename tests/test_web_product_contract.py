@@ -484,6 +484,34 @@ def test_homepage_surfaces_canonical_forms_reference() -> None:
     assert "forms.open_official" in component_source
 
 
+def test_every_nationwide_guide_surfaces_governed_official_assistance() -> None:
+    home_source = (ROOT / "apps/web/src/components/HomeContent.astro").read_text(encoding="utf-8")
+    state_source = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")
+    component_source = (ROOT / "apps/web/src/components/OfficialAssistance.astro").read_text(encoding="utf-8")
+    data_source = (ROOT / "apps/web/src/data/assistance.ts").read_text(encoding="utf-8")
+    config = json.loads((ROOT / "config/official-assistance.json").read_text(encoding="utf-8"))
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    assert "<OfficialAssistance" in home_source
+    assert "<OfficialAssistance" in state_source
+    assert "stateOfficialLink={state.officialLink}" in state_source
+    assert "../../../../config/official-assistance.json" in data_source
+    assert config["source"]["url"] == "https://voters.eci.gov.in/"
+    assert {channel["href"] for channel in config["channels"]} == {
+        "https://voters.eci.gov.in/", "tel:1950", "mailto:complaints@eci.gov.in"
+    }
+    assert "<form" not in component_source
+    assert "<input" not in component_source
+    assert "<textarea" not in component_source
+    assert "target={channel.kind === 'web' ? '_blank' : undefined}" in component_source
+    assert "rel={channel.kind === 'web' ? 'noreferrer' : undefined}" in component_source
+    for key in (
+        "assistance.eyebrow", "assistance.title", "assistance.intro", "assistance.privacy",
+        "assistance.source", "assistance.state_portal",
+    ):
+        assert key in messages
+        assert key in component_source
+
+
 def test_state_guides_render_the_complete_governed_schedule_timeline() -> None:
     state_data = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     state_content = (ROOT / "apps/web/src/components/StateContent.astro").read_text(encoding="utf-8")

@@ -14,6 +14,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Guidance boundary note that SIR Saathi does not decide eligibility or replace official channels.
 - Document checklist backed by `config/forms/sir-actions.json`, with a device-neutral print/save view that excludes entered name and location fields.
 - Source-backed forms and common documents reference.
+- A source-governed official-assistance panel on the homepage and every state/UT guide links to ECI complaint, application-tracking, BLO callback, 1950, email, and the relevant CEO portal without collecting a complaint or voter document.
 - State-by-state search availability status that stays privacy-safe and explains official schedule-provenance requirements.
 - A progressively enhanced keyboard-labelled directory filter searches localized jurisdiction names and canonical `IN-*` codes, announces the visible count, and leaves all 36 guide rows in the static no-JavaScript page.
 - Separate governed links for each jurisdiction's CEO portal and its schedule evidence, so an action button never labels a PDF or evidence subpage as the CEO homepage.

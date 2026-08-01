@@ -1,6 +1,7 @@
 ---
 import ActionWizard from './ActionWizard';
 import FormsReference from './FormsReference.astro';
+import OfficialAssistance from './OfficialAssistance.astro';
 import SearchAvailability from './SearchAvailability.astro';
 import LocaleSwitcher from './LocaleSwitcher.astro';
 import { localizedPath, translate } from '../lib/i18n';
@@ -26,6 +27,7 @@ const message = (key: Parameters<typeof translate>[1], values: Parameters<typeof
   <ActionWizard initialLocale={locale} client:load />
   <SearchAvailability locale={locale} />
   <FormsReference locale={locale} />
+  <OfficialAssistance locale={locale} />
   <section class="info-grid">
     <div class="info-card">
       <h2>{message('home.info.guidance_title')}</h2>

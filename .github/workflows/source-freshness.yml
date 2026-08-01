@@ -30,11 +30,19 @@ jobs:
           python -m pipeline.sir_saathi_pipeline.source_freshness \
             --fail-on-stale \
             | tee source-freshness-report.json
+      - name: Check nationwide assistance source freshness
+        run: |
+          set -o pipefail
+          python -m pipeline.sir_saathi_pipeline.assistance_registry \
+            --fail-on-stale \
+            | tee assistance-freshness-report.json
       - name: Retain the non-sensitive freshness report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: official-source-freshness-${{ github.run_id }}
-          path: source-freshness-report.json
+          path: |
+            source-freshness-report.json
+            assistance-freshness-report.json
           if-no-files-found: error
           retention-days: 30

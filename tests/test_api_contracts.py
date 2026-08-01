@@ -1,7 +1,7 @@
 from datetime import date
 
 import pytest
-from services.api.app import api_route_paths, create_app, forms_payload, guidance_payload, list_states_payload, search_payload
+from services.api.app import assistance_payload, api_route_paths, create_app, forms_payload, guidance_payload, list_states_payload, search_payload
 from services.api.body_limit import BoundedApiBodyMiddleware, MAX_API_BODY_BYTES
 from services.api.models import InternalVoterRecord, redact_voter_record
 from services.api.privacy import InMemoryRateLimiter
@@ -14,6 +14,7 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
     assert "/api/ready" in paths
     assert "/api/states" in paths
     assert "/api/forms" in paths
+    assert "/api/assistance" in paths
     assert "/api/guidance" in paths
     assert "/api/search" in paths
     assert "/health" not in paths
@@ -61,6 +62,21 @@ def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:
     assert "epic_number" not in str(payload).casefold()
     assert payload["locale_used"] == "en"
     assert payload["locale_fallback"] is False
+
+
+def test_assistance_payload_exposes_only_governed_official_channels() -> None:
+    payload = assistance_payload()
+    assert payload["source"]["url"] == "https://voters.eci.gov.in/"
+    assert payload["source"]["last_verified"] == "2026-08-01"
+    assert {channel["channel_id"] for channel in payload["channels"]} == {"portal", "helpline", "email"}
+    assert next(channel for channel in payload["channels"] if channel["channel_id"] == "helpline")["href"] == "tel:1950"
+    assert next(channel for channel in payload["channels"] if channel["channel_id"] == "email")["href"] == "mailto:complaints@eci.gov.in"
+    assert "epic" not in str(payload).casefold()
+
+    fallback = assistance_payload("mr")
+    assert fallback["locale_requested"] == "mr"
+    assert fallback["locale_used"] == "en"
+    assert fallback["locale_fallback"] is True
 
 
 def test_api_locale_negotiation_is_explicit_and_fail_closed() -> None:

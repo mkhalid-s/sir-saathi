@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "source": {
+    "label": "Election Commission of India Citizen Service Portal and National Voter Helpline notice",
+    "url": "https://voters.eci.gov.in/",
+    "last_verified": "2026-08-01",
+    "max_age_days": 30
+  },
+  "channels": [
+    {
+      "channel_id": "portal",
+      "kind": "web",
+      "href": "https://voters.eci.gov.in/",
+      "label_key": "assistance.portal.label",
+      "description_key": "assistance.portal.description",
+      "action_key": "assistance.portal.action"
+    },
+    {
+      "channel_id": "helpline",
+      "kind": "phone",
+      "href": "tel:1950",
+      "label_key": "assistance.helpline.label",
+      "description_key": "assistance.helpline.description",
+      "action_key": "assistance.helpline.action"
+    },
+    {
+      "channel_id": "email",
+      "kind": "email",
+      "href": "mailto:complaints@eci.gov.in",
+      "label_key": "assistance.email.label",
+      "description_key": "assistance.email.description",
+      "action_key": "assistance.email.action"
+    }
+  ]
+}

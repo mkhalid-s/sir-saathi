@@ -13,6 +13,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from pipeline.sir_saathi_pipeline.forms_registry import load_forms_catalogue
+from pipeline.sir_saathi_pipeline.assistance_registry import load_assistance_catalogue
 from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 from pipeline.sir_saathi_pipeline.source_freshness import assess_source, freshness_window_days
@@ -60,6 +61,7 @@ API_ROUTES = {
     f"{API_PREFIX}/ready",
     f"{API_PREFIX}/states",
     f"{API_PREFIX}/forms",
+    f"{API_PREFIX}/assistance",
     f"{API_PREFIX}/guidance",
     f"{API_PREFIX}/search",
 }
@@ -166,6 +168,35 @@ def forms_payload(locale: str = "en") -> dict[str, Any]:
             category: [translate_message(resolved.used, f"document.{category}") for _document in documents]
             for category, documents in catalogue.common_documents.items()
         },
+    }
+
+
+def assistance_payload(locale: str = "en") -> dict[str, Any]:
+    """Return the governed official escalation catalogue without user data."""
+
+    catalogue = load_assistance_catalogue()
+    resolved = resolve_locale(locale)
+    return {
+        "locale_requested": resolved.requested,
+        "locale_used": resolved.used,
+        "locale_fallback": resolved.fallback,
+        "source": {
+            "label": catalogue.source.label,
+            "url": catalogue.source.url,
+            "last_verified": catalogue.source.last_verified.isoformat(),
+            "max_age_days": catalogue.source.max_age_days,
+        },
+        "channels": [
+            {
+                "channel_id": channel.channel_id,
+                "kind": channel.kind,
+                "href": channel.href,
+                "label": translate_message(resolved.used, channel.label_key),
+                "description": translate_message(resolved.used, channel.description_key),
+                "action": translate_message(resolved.used, channel.action_key),
+            }
+            for channel in catalogue.channels
+        ],
     }
 
 
@@ -305,6 +336,10 @@ def create_app(
     @app.get(f"{API_PREFIX}/forms")
     def forms(locale: str = "en") -> dict[str, Any]:
         return forms_payload(locale=locale)
+
+    @app.get(f"{API_PREFIX}/assistance")
+    def assistance(locale: str = "en") -> dict[str, Any]:
+        return assistance_payload(locale=locale)
 
     @app.post(f"{API_PREFIX}/guidance")
     def guidance(payload: dict[str, Any]) -> dict[str, Any]:

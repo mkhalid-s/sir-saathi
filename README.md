@@ -36,6 +36,7 @@ The web app is a mobile-first Progressive Web App. It currently provides:
 - Next-action checklist and WhatsApp-shareable checklist copy.
 - Reminders to confirm official sources and avoid sharing private voter details.
 - Forms and common document reference backed by `config/forms/sir-actions.json`.
+- Governed nationwide official-assistance links for complaints, application tracking, a BLO callback, Voter Helpline 1950, ECI email, and each state/UT CEO portal; SIR Saathi collects none of those submissions.
 - Search availability status that explains when indexed search is off and why.
 - UI language readiness messaging. English is available; non-English UI translations are marked planned until human review.
 - A translation-catalogue readiness command that enforces exact keys, placeholders, and fluent human-review attestations before a locale can be enabled.
@@ -54,6 +55,7 @@ The initial API is intentionally small and served under `/api`:
 - `GET /api/ready`
 - `GET /api/states`
 - `GET /api/forms`
+- `GET /api/assistance`
 - `POST /api/guidance`
 - `POST /api/search`
 

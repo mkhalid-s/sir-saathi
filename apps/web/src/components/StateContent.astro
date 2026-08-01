@@ -2,6 +2,7 @@
 import { jurisdictionName, localizedPath, translate, type MessageKey } from '../lib/i18n';
 import { formatIndiaDate, statePath, states, type StateSummary } from '../data/states';
 import LocaleSwitcher from './LocaleSwitcher.astro';
+import OfficialAssistance from './OfficialAssistance.astro';
 
 interface Props {
   state: StateSummary;
@@ -82,6 +83,8 @@ const nextState = states[(states.indexOf(state) + 1) % states.length];
     <p>{message('state.language.tracked', { languages: state.languages.join(', '), default_language: state.defaultLanguage })}</p>
     <p>{message('state.language.review')}</p>
   </section>
+
+  <OfficialAssistance locale={locale} stateOfficialLink={state.officialLink} stateName={stateName} />
 
   <section class="state-section safety-panel" aria-labelledby="safety-title">
     <h2 id="safety-title">{message('state.safety.title')}</h2>

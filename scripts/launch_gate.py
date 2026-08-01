@@ -25,6 +25,7 @@ REQUIRED_FILES = [
     "apps/web/src/pages/data-use.astro",
     "apps/web/src/pages/states/[stateId].astro",
     "config/forms/sir-actions.json",
+    "config/official-assistance.json",
     "docs/PRIVACY_AND_ABUSE.md",
     "docs/LAUNCH_CHECKLIST.md",
     "docs/ACCESSIBILITY.md",
@@ -38,6 +39,7 @@ REQUIRED_FILES = [
     "requirements.lock",
     "pipeline/sir_saathi_pipeline/migrations.py",
     "pipeline/sir_saathi_pipeline/backups.py",
+    "pipeline/sir_saathi_pipeline/assistance_registry.py",
     "pipeline/sir_saathi_pipeline/deployment_preflight.py",
     "pipeline/sir_saathi_pipeline/deployment_probe.py",
     "pipeline/sir_saathi_pipeline/accessibility_evidence.py",
@@ -59,7 +61,7 @@ def verify_api_routes() -> None:
     from services.api.app import api_route_paths
 
     paths = api_route_paths()
-    required = {"/api/health", "/api/ready", "/api/states", "/api/forms", "/api/guidance", "/api/search"}
+    required = {"/api/health", "/api/ready", "/api/states", "/api/forms", "/api/assistance", "/api/guidance", "/api/search"}
     missing = sorted(required - paths)
     if missing:
         raise RuntimeError(f"missing API routes: {missing}")
@@ -216,6 +218,7 @@ def verify_abuse_protection() -> None:
 def verify_source_freshness() -> None:
     from datetime import datetime
     from zoneinfo import ZoneInfo
+    from pipeline.sir_saathi_pipeline.assistance_registry import assistance_freshness
     from pipeline.sir_saathi_pipeline.source_freshness import build_freshness_report
 
     web = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
@@ -230,12 +233,17 @@ def verify_source_freshness() -> None:
         raise RuntimeError("official source freshness must support an operator-triggered run")
     if "source_freshness" not in freshness_workflow or "--fail-on-stale" not in freshness_workflow:
         raise RuntimeError("scheduled source freshness must fail closed on stale evidence")
+    if "assistance_registry" not in freshness_workflow or "assistance-freshness-report.json" not in freshness_workflow:
+        raise RuntimeError("scheduled freshness must include the nationwide assistance source")
     if "upload-artifact@v4" not in freshness_workflow or "if: always()" not in freshness_workflow:
         raise RuntimeError("scheduled source freshness must retain its safe report on failure")
     if "guidance.sources_checked" not in web or "Sources last checked:" not in messages["guidance.sources_checked"] or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
     if "guidance.schedule_source" not in web or "guidance.schedule_note" not in web or "schedule_provenance" not in api:
         raise RuntimeError("schedule provenance must be visible in web and API surfaces")
+    assistance_report = assistance_freshness(today=datetime.now(ZoneInfo("Asia/Kolkata")).date())
+    if not assistance_report["ready"]:
+        raise RuntimeError(f"official assistance source is not fresh: {assistance_report['blockers']}")
     web_guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     api_guidance = (ROOT / "pipeline/sir_saathi_pipeline/guidance.py").read_text(encoding="utf-8")
     if "state.currentPhase !== 'schedule_pending'" not in web or "state?.currentPhase === 'schedule_pending'" not in web_guidance:
