@@ -6,6 +6,7 @@ import argparse
 from dataclasses import dataclass
 import json
 import os
+import re
 import ssl
 from typing import Callable, Mapping
 from urllib.error import HTTPError
@@ -16,6 +17,10 @@ from .deployment_preflight import PUBLIC_SITE_URL_ENV, _public_origin
 
 MAX_RESPONSE_BYTES = 1_048_576
 NOT_FOUND_PATH = "/.well-known/sir-saathi-deployment-probe-not-found"
+CSP_META = re.compile(
+    r'<meta\s+http-equiv="content-security-policy"\s+content="([^"]+)"',
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -99,7 +104,8 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
     home = request_surface("home", "/")
     if home:
         headers = {name.casefold(): value for name, value in home.headers.items()}
-        body = home.body.decode("utf-8", errors="replace").casefold()
+        raw_body = home.body.decode("utf-8", errors="replace")
+        body = raw_body.casefold()
         check("home.status_200", home.status == 200)
         check("home.html_content_type", "text/html" in headers.get("content-type", "").casefold())
         check("home.pwa_manifest", 'rel="manifest"' in body and "/manifest.webmanifest" in body)
@@ -117,6 +123,21 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
         check("csp.no_object", csp.get("object-src") == {"'none'"})
         check("csp.no_framing", csp.get("frame-ancestors") == {"'none'"})
         check("csp.turnstile_frame", "https://challenges.cloudflare.com" in csp.get("frame-src", set()))
+        meta_match = CSP_META.search(raw_body)
+        meta_csp = _csp_directives(meta_match.group(1)) if meta_match else {}
+        meta_scripts = meta_csp.get("script-src", set())
+        meta_styles = meta_csp.get("style-src", set())
+        check(
+            "csp.hash_bound_meta",
+            meta_csp.get("default-src") == {"'none'"}
+            and "'self'" in meta_scripts
+            and "https://challenges.cloudflare.com" in meta_scripts
+            and any(source.startswith("'sha256-") for source in meta_scripts)
+            and "'unsafe-inline'" not in meta_scripts
+            and "'self'" in meta_styles
+            and any(source.startswith("'sha256-") for source in meta_styles)
+            and "'unsafe-inline'" not in meta_styles,
+        )
 
     health = request_surface("api_health", "/api/health")
     if health:

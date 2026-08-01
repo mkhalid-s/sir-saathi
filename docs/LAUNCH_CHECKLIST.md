@@ -13,7 +13,7 @@ Before any public launch:
 - `python3 scripts/launch_gate.py` passes.
 - API routes are served under `/api/*` and match reverse-proxy configuration.
 - Caddy serves the reviewed PWA release and proxies `/api/*` on the same public HTTPS origin; no placeholder or static-only origin can intercept API requests.
-- The deployed origin returns the reviewed HSTS, anti-framing, referrer, permissions, cross-origin-resource, and deny-by-default CSP headers, and Turnstile completes without CSP violations.
+- The deployed origin returns the reviewed HSTS, anti-framing, referrer, permissions, cross-origin-resource, and deny-by-default CSP header plus Astro's generated hash-only inner policy; the generated CSP audit passes and Turnstile completes without CSP violations.
 - The systemd service reads `/etc/sir-saathi/api.env`, the file is `root:sir-saathi` mode `0640`, and the default monitor successfully probes deployment-mode-aware `/api/ready` with a bounded timeout.
 - A recoverable pre-migration backup exists; the migration dry run was reviewed, `--apply` completed under the advisory lock, and `python -m pipeline.sir_saathi_pipeline.migrations --check` reports no pending or drifted history.
 - The backup was streamed directly into `age`, its private SHA-256 sidecar and `pg_restore --list` verification pass, and a trusted backup has been fully restored into an isolated PostgreSQL 16 drill database with aggregate readiness counts recorded.
@@ -21,7 +21,7 @@ Before any public launch:
 - The generated 41-page accessibility audit, including the no-index error page, passes, and the deployed build has a recorded manual review using the browser, assistive-technology, zoom, reflow, contrast, forced-colour, reduced-motion, and locale-direction matrix in `docs/ACCESSIBILITY.md`; `accessibility_evidence --require-full-pass` validates that private external record as complete.
 - `PUBLIC_SITE_URL` was set to the final HTTPS origin; the generated discoverability audit passes and no canonical, alternate, sitemap, or robots URL uses the `.example` CI origin.
 - The value-redacting deployment preflight passes in the intended `guidance` or `indexed-search` mode; indexed mode remains configuration evidence, not search-scope authorization.
-- The deployed-origin probe passes all 32 same-origin routing, PWA, security-header, CSP, liveness/readiness, API no-store, and no-index 404 checks against the candidate HTTPS release.
+- The deployed-origin probe passes all 33 same-origin routing, PWA, security-header, hash-bound CSP, liveness/readiness, API no-store, and no-index 404 checks against the candidate HTTPS release.
 - A private guidance-only rehearsal record for the exact deployed commit passes `deployment_rehearsal --require-full-pass`, with distinct operator/reviewer identities, no voter data, public indexed search disabled, and all 11 required checks evidenced.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.

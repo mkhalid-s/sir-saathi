@@ -24,6 +24,11 @@ def test_launch_gate_audits_generated_discoverability() -> None:
     assert "scripts/check_discoverability.py" in workflow
 
 
+def test_launch_gate_audits_generated_hash_only_csp() -> None:
+    gate = (ROOT / "scripts/launch_gate.py").read_text(encoding="utf-8")
+    assert "scripts/check_csp.py" in gate
+
+
 def test_official_source_freshness_has_an_unattended_fail_closed_monitor() -> None:
     workflow = (ROOT / ".github/workflows/source-freshness.yml").read_text(encoding="utf-8")
 

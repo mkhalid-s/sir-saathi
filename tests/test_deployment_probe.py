@@ -14,6 +14,11 @@ SECURITY_HEADERS = {
         "frame-src https://challenges.cloudflare.com"
     ),
 }
+HASHED_META = (
+    '<meta http-equiv="content-security-policy" content="default-src \'none\'; '
+    "script-src 'self' https://challenges.cloudflare.com 'sha256-example'; "
+    "style-src 'self' 'sha256-example';\">"
+)
 
 
 def valid_fetcher(url: str, _timeout: float) -> ProbeResponse:
@@ -41,7 +46,7 @@ def valid_fetcher(url: str, _timeout: float) -> ProbeResponse:
     return ProbeResponse(
         200,
         SECURITY_HEADERS,
-        b'<link rel="manifest" href="/manifest.webmanifest">',
+        f'{HASHED_META}<link rel="manifest" href="/manifest.webmanifest">'.encode(),
         url,
     )
 
@@ -51,7 +56,7 @@ def test_deployment_probe_accepts_complete_same_origin_surface() -> None:
 
     assert report["ready"] is True
     assert report["checks_passed"] == report["checks_total"]
-    assert report["checks_total"] == 32
+    assert report["checks_total"] == 33
     assert report["blockers"] == []
     assert report["values_redacted"] is True
 

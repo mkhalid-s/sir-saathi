@@ -41,6 +41,7 @@ REQUIRED_FILES = [
     "pipeline/sir_saathi_pipeline/deployment_probe.py",
     "pipeline/sir_saathi_pipeline/accessibility_evidence.py",
     "scripts/check_accessibility.py",
+    "scripts/check_csp.py",
     "scripts/check_visual_accessibility.py",
     "scripts/check_discoverability.py",
 ]
@@ -147,6 +148,7 @@ def verify_deploy_templates() -> None:
         "api_health.no_store",
         "api_readiness.no_store",
         "csp.default_deny",
+        "csp.hash_bound_meta",
         "not_found.noindex",
         "values_redacted",
     ]:
@@ -725,6 +727,7 @@ def main() -> int:
     run(["npm", "run", "web:build"])
     run(["npm", "run", "pwa:offline:check"])
     run([sys.executable, "scripts/check_accessibility.py"])
+    run([sys.executable, "scripts/check_csp.py"])
     run([sys.executable, "scripts/check_visual_accessibility.py"])
     run([sys.executable, "scripts/check_discoverability.py"])
     print("Launch gate passed.")
