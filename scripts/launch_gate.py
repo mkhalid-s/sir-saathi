@@ -102,6 +102,7 @@ def verify_source_freshness() -> None:
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     search_availability = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
+    schedule_catalogue = json.loads((ROOT / "config/sir-schedules.json").read_text(encoding="utf-8"))
     if "guidance.sources_checked" not in web or "Sources last checked:" not in messages["guidance.sources_checked"] or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
     if "guidance.schedule_source" not in web or "guidance.schedule_note" not in web or "schedule_provenance" not in api:
@@ -110,6 +111,18 @@ def verify_source_freshness() -> None:
         raise RuntimeError("web source freshness copy must not imply official verification")
     if "Schedule provenance:" not in search_availability or "current schedule is verified from an official source" not in search_availability:
         raise RuntimeError("search availability must show official schedule provenance requirement")
+    schedule_source = schedule_catalogue.get("source", {})
+    if schedule_source.get("source_type") != "official_portal" or not schedule_source.get("last_verified"):
+        raise RuntimeError("shared nationwide schedule must retain official provenance and freshness")
+    scheduled_ids = [
+        state_id
+        for group in schedule_catalogue.get("schedule_groups", [])
+        for state_id in group.get("state_ids", [])
+    ]
+    if len(scheduled_ids) != 19 or len(set(scheduled_ids)) != 19:
+        raise RuntimeError("Phase III schedule catalogue must cover exactly 19 unique jurisdictions")
+    if "sir-schedules.json" not in (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8"):
+        raise RuntimeError("web state catalogue must consume shared reviewed schedules")
     for path in sorted((ROOT / "config/states").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         provenance = data.get("schedule_provenance", {})

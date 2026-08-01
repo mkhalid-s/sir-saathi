@@ -23,14 +23,29 @@ def test_loads_initial_state_registry() -> None:
 
 def test_nationwide_baselines_are_official_link_only_and_unverified() -> None:
     states = load_all_states()
-    baseline = states["IN-AP"]
+    baseline = states["IN-HP"]
     assert baseline.data_capability == "official_link_search"
     assert baseline.public_launch_ready is False
     assert baseline.schedule.status == "schedule_unverified"
     assert baseline.schedule_provenance.confidence == "unverified"
     assert baseline.schedule.final_roll_date is None
-    assert baseline.ceo_portal == "https://ceoandhra.nic.in"
+    assert baseline.ceo_portal == "https://ceohimachal.hp.gov.in"
     assert any(source.label == "ECI CEO contact directory" for source in baseline.official_sources)
+
+
+def test_phase_three_schedule_is_shared_across_19_reviewed_jurisdictions() -> None:
+    states = load_all_states()
+    phase_three = {state_id for state_id, state in states.items() if state.schedule.phase == "Phase III"}
+
+    assert phase_three == {
+        "IN-AP", "IN-AR", "IN-CH", "IN-DH", "IN-DL", "IN-HR", "IN-JH", "IN-KA", "IN-MH",
+        "IN-ML", "IN-MN", "IN-MZ", "IN-NL", "IN-OD", "IN-PB", "IN-SK", "IN-TG", "IN-TR", "IN-UK",
+    }
+    assert all(states[state_id].schedule_provenance.confidence == "official" for state_id in phase_three)
+    assert states["IN-AP"].schedule.final_roll_date == date(2026, 9, 22)
+    assert states["IN-NL"].schedule.enumeration_start == date(2026, 8, 16)
+    assert states["IN-TR"].schedule.final_roll_date == date(2026, 12, 23)
+    assert all(states[state_id].public_launch_ready is False for state_id in phase_three)
 
 
 def test_nationwide_registry_has_unique_eci_codes_and_valid_language_defaults() -> None:

@@ -55,7 +55,7 @@ def test_west_bengal_guidance_uses_official_sources() -> None:
 def test_unverified_schedule_guidance_does_not_invent_sir_steps_or_deadlines() -> None:
     result = get_guidance(
         GuidanceInput(
-            state_id="IN-AP",
+            state_id="IN-HP",
             situation="existing_voter",
             today=date(2026, 8, 1),
         )
@@ -64,6 +64,19 @@ def test_unverified_schedule_guidance_does_not_invent_sir_steps_or_deadlines() -
     assert "official jurisdiction notice" in result.summary
     assert any("official CEO notices" in action for action in result.actions)
     assert all("enumeration deadline" not in action for action in result.actions)
+
+
+def test_shared_phase_three_schedule_drives_source_backed_guidance() -> None:
+    result = get_guidance(
+        GuidanceInput(
+            state_id="IN-AP",
+            situation="existing_voter",
+            today=date(2026, 8, 1),
+        )
+    )
+    assert result.deadline == date(2026, 8, 20)
+    assert "ECI SIR Phase III schedule" in result.source_labels
+    assert not result.warnings
 
 
 def test_deadline_warning_when_close() -> None:

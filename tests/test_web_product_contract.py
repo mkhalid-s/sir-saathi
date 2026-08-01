@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_web_state_data_imports_canonical_state_configs() -> None:
     source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    assert "../../../../config/sir-schedules.json" in source
     for config_path in sorted((ROOT / "config/states").glob("*.json")):
         config = json.loads(config_path.read_text(encoding="utf-8"))
         assert f"../../../../config/states/{config_path.name}" in source
@@ -88,6 +89,7 @@ def test_web_state_summary_surfaces_source_freshness() -> None:
     assert "sourceFreshness" in source
     assert "scheduleProvenance" in source
     assert "last checked" in source
+    assert "timeZone: 'Asia/Kolkata'" in source
 
 
 def test_web_state_summary_derives_current_schedule_phase() -> None:

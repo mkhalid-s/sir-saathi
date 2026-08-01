@@ -17,6 +17,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - State-by-state search availability status that stays privacy-safe and explains official schedule-provenance requirements.
 - Official portal link.
 - Source labels, source freshness, and launch-readiness warning.
+- Shared, source-governed Phase III dates for all 19 jurisdictions named in the official ECI schedule; remaining schedules fail closed as unverified until reviewed evidence is added.
 - UI language selector that shows English as available and non-English translations as planned until human review.
 - Canonical locale governance in `config/locales.json`; every language tracked by the nationwide catalogue must have an explicit availability and review state.
 - Canonical English message keys in `config/translations/en.json` and a fail-closed readiness report. A non-English locale can be marked available only when it has the exact key set, preserves named placeholders, and records a fluent human reviewer and review date.

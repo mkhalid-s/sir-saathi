@@ -38,10 +38,10 @@ def test_list_states_payload_exposes_registry_without_private_data() -> None:
 
     ap = next(state for state in states if state["state_id"] == "IN-AP")
     assert ap["data_capability"] == "official_link_search"
-    assert ap["current_phase"] == "schedule_unverified"
-    assert ap["schedule_provenance"]["confidence"] == "unverified"
-    assert ap["sir_schedule"]["final_roll_date"] is None
-    assert ap["source_freshness_policy_days"] == 90
+    assert ap["current_phase"] == "claims_and_objections_open"
+    assert ap["schedule_provenance"]["confidence"] == "official"
+    assert ap["sir_schedule"]["final_roll_date"] == "2026-09-22"
+    assert ap["source_freshness_policy_days"] == 7
 
 
 def test_forms_payload_exposes_canonical_forms_without_user_data() -> None:

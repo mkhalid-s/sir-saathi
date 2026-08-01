@@ -2,6 +2,7 @@ import maharashtraConfig from '../../../../config/states/IN-MH.json';
 import westBengalConfig from '../../../../config/states/IN-WB.json';
 import jurisdictionCatalogue from '../../../../config/jurisdictions.json';
 import localeCatalogue from '../../../../config/locales.json';
+import scheduleCatalogue from '../../../../config/sir-schedules.json';
 
 export type StateCapability = 'guidance_only' | 'official_link_search' | 'pilot_indexed_search' | 'validated_indexed_search';
 export type UiLanguageStatus = 'available' | 'planned';
@@ -47,6 +48,12 @@ interface JurisdictionConfig {
   default_language: string;
   ceo_portal: string;
 }
+
+type ScheduleGroupConfig = StateConfig['sir_schedule'] & {
+  state_ids: string[];
+  phase: string;
+  qualifying_date: string;
+};
 
 export interface StateSummary {
   stateId: string;
@@ -128,7 +135,8 @@ export function statePath(state: Pick<StateSummary, 'stateId'>): string {
 
 function displayDate(value: string | null): string | undefined {
   if (!value) return undefined;
-  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00+05:30`));
+  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeZone: 'Asia/Kolkata' })
+    .format(new Date(`${value}T00:00:00+05:30`));
 }
 
 function officialLinkFor(config: StateConfig): string {
@@ -171,7 +179,7 @@ function stateFromConfig(config: StateConfig): StateSummary {
 
 function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
   const source = jurisdictionCatalogue.source;
-  return {
+  const baseline: StateSummary = {
     stateId: config.state_id,
     name: config.name,
     languageCodes: config.languages,
@@ -191,7 +199,37 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
       notes: `ECI's directory lists this official CEO link, but ${config.name}'s current SIR schedule has not yet been independently confirmed.`
     }
   };
+  const schedule = scheduleByState[config.state_id];
+  if (!schedule) return baseline;
+  const currentPhase = currentPhaseForSchedule(schedule);
+  return {
+    ...baseline,
+    currentPhase,
+    status: statusLabels[currentPhase] ?? currentPhase.replaceAll('_', ' '),
+    enumerationEnd: displayDate(schedule.enumeration_end),
+    claimsEnd: displayDate(schedule.claims_end),
+    finalRollDate: displayDate(schedule.final_roll_date),
+    sourceLabels: [scheduleCatalogue.source.label, ...baseline.sourceLabels],
+    sourceFreshness: [
+      `${scheduleCatalogue.source.label}: last checked ${displayDate(scheduleCatalogue.source.last_verified)}`,
+      ...baseline.sourceFreshness
+    ],
+    scheduleProvenance: {
+      label: scheduleCatalogue.source.label,
+      confidence: 'official',
+      notes: scheduleCatalogue.source.notes
+    }
+  };
 }
+
+const scheduleByState = (scheduleCatalogue.schedule_groups as ScheduleGroupConfig[])
+  .reduce<Record<string, ScheduleGroupConfig>>((byId, group) => {
+    for (const stateId of group.state_ids) {
+      if (byId[stateId]) throw new Error(`Duplicate reviewed schedule state: ${stateId}`);
+      byId[stateId] = group;
+    }
+    return byId;
+  }, {});
 
 const stateOverrides = [maharashtraConfig, westBengalConfig]
   .map((config) => stateFromConfig(config as StateConfig))

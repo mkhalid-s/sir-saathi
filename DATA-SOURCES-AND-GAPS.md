@@ -3,6 +3,23 @@
 > Compiled: 2026-04-09
 > Focus: Maharashtra (then expand)
 
+## Nationwide schedule update (reviewed 2026-08-01)
+
+The official ECI Phase III press note dated 14 May 2026 supplies grouped SIR
+dates for 16 states and 3 union territories. Those 19 exact jurisdictions and
+their grouped enumeration, draft, claims, and final-roll dates are now governed
+in `config/sir-schedules.json` and consumed by both the API and PWA. This
+schedule evidence does not imply parser readiness or enable indexed search.
+
+Phase II official evidence has been identified for 9 states and 3 union
+territories, and Bihar was Phase I. Final-publication dates changed in several
+later notices, so the remaining unconfigured Phase II jurisdictions are a
+separate verification task rather than copying the original common schedule as
+current truth. Assam followed a special
+revision path. Himachal Pradesh, Jammu and Kashmir, and Ladakh also remain
+schedule-unverified in this repository pending a jurisdiction-specific official
+order or status notice.
+
 ## 1. ECI API — Fully Mapped (No Auth, No CAPTCHA)
 
 Base: https://gateway-voters.eci.gov.in/api/v1/

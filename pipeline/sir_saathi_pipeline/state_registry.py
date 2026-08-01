@@ -18,6 +18,7 @@ Capability = Literal[
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_STATE_DIR = ROOT / "config" / "states"
 DEFAULT_JURISDICTION_PATH = ROOT / "config" / "jurisdictions.json"
+DEFAULT_SCHEDULE_PATH = ROOT / "config" / "sir-schedules.json"
 VALID_CAPABILITIES = {
     "guidance_only",
     "official_link_search",
@@ -275,6 +276,69 @@ def load_all_states(state_dir: str | Path = DEFAULT_STATE_DIR) -> dict[str, Stat
     configured_ids = [state.state_id for state in configured]
     if len(configured_ids) != len(set(configured_ids)):
         raise ValueError("duplicate state_id in state configuration overrides")
-    states = load_jurisdiction_catalogue() if directory.resolve() == DEFAULT_STATE_DIR.resolve() else {}
+    if directory.resolve() == DEFAULT_STATE_DIR.resolve():
+        states = apply_schedule_overrides(load_jurisdiction_catalogue())
+    else:
+        states = {}
     states.update({state.state_id: state for state in configured})
     return dict(sorted(states.items()))
+
+
+def apply_schedule_overrides(
+    states: dict[str, StateConfig],
+    path: str | Path = DEFAULT_SCHEDULE_PATH,
+) -> dict[str, StateConfig]:
+    """Apply reviewed, shared official schedules without duplicating state metadata."""
+
+    from dataclasses import replace
+
+    schedule_path = Path(path)
+    with schedule_path.open(encoding="utf-8") as handle:
+        catalogue = json.load(handle)
+    source_raw = _require(catalogue, "source")
+    source = DataSource(
+        label=_require(source_raw, "label"),
+        url=_require(source_raw, "url"),
+        source_type=_require(source_raw, "source_type"),
+        last_verified=_require_date(source_raw, "last_verified"),
+        notes=_require(source_raw, "notes"),
+    )
+    if source.source_type != "official_portal":
+        raise ValueError("reviewed nationwide schedule source must be an official portal")
+
+    updated = dict(states)
+    seen: set[str] = set()
+    for group in _require(catalogue, "schedule_groups"):
+        schedule = SirSchedule(
+            phase=_require(group, "phase"),
+            qualifying_date=_parse_date(group.get("qualifying_date")),
+            enumeration_start=_parse_date(group.get("enumeration_start")),
+            enumeration_end=_parse_date(group.get("enumeration_end")),
+            draft_roll_date=_parse_date(group.get("draft_roll_date")),
+            claims_start=_parse_date(group.get("claims_start")),
+            claims_end=_parse_date(group.get("claims_end")),
+            final_roll_date=_parse_date(group.get("final_roll_date")),
+            status=_require(group, "status"),
+        )
+        if not schedule.enumeration_start or not schedule.final_roll_date:
+            raise ValueError("reviewed schedule groups require enumeration and final-roll dates")
+        for state_id in _require(group, "state_ids"):
+            if state_id in seen:
+                raise ValueError(f"duplicate reviewed schedule state_id: {state_id}")
+            if state_id not in updated:
+                raise ValueError(f"unknown reviewed schedule state_id: {state_id}")
+            seen.add(state_id)
+            state = updated[state_id]
+            provenance = ScheduleProvenance(
+                label=source.label,
+                source_type=source.source_type,
+                confidence="official",
+                notes=source.notes,
+            )
+            updated[state_id] = replace(
+                state,
+                schedule=schedule,
+                schedule_provenance=provenance,
+                official_sources=(source, *state.official_sources),
+            )
+    return updated

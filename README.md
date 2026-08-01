@@ -11,6 +11,7 @@ This repository is an MVP/prototype. It includes:
 - A mobile-first Astro + Preact PWA in `apps/web`.
 - A FastAPI service in `services/api`.
 - A nationwide catalogue covering all 36 states and union territories, plus reviewed state and forms configuration in `config`.
+- The official ECI Phase III schedule shared across its 19 named jurisdictions, while unscheduled or not-yet-reviewed jurisdictions remain explicitly unverified.
 - A PostgreSQL schema and migration in `db`.
 - Local-only PDF parsing, ingestion, loading, search validation, readiness reporting, and operator workflow tools in `pipeline`.
 - Safety gates and sensitive-data checks in `scripts`.

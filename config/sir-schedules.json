@@ -1,0 +1,107 @@
+{
+  "source": {
+    "label": "ECI SIR Phase III schedule",
+    "url": "https://www.eci.gov.in/eci/public/api/document?id=17344",
+    "source_type": "official_portal",
+    "last_verified": "2026-08-01",
+    "notes": "Official ECI Press Note ECI/PN/086/2026 dated 14 May 2026. Recheck the official source before acting."
+  },
+  "schedule_groups": [
+    {
+      "state_ids": ["IN-OD", "IN-MZ", "IN-SK", "IN-MN"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-07-01",
+      "enumeration_start": "2026-05-30",
+      "enumeration_end": "2026-06-28",
+      "draft_roll_date": "2026-07-05",
+      "claims_start": "2026-07-05",
+      "claims_end": "2026-08-04",
+      "final_roll_date": "2026-09-06",
+      "status": "claims_and_objections_open"
+    },
+    {
+      "state_ids": ["IN-DH"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-07-01",
+      "enumeration_start": "2026-06-04",
+      "enumeration_end": "2026-07-03",
+      "draft_roll_date": "2026-07-10",
+      "claims_start": "2026-07-10",
+      "claims_end": "2026-08-09",
+      "final_roll_date": "2026-09-11",
+      "status": "claims_and_objections_open"
+    },
+    {
+      "state_ids": ["IN-UK"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-07-01",
+      "enumeration_start": "2026-06-08",
+      "enumeration_end": "2026-07-07",
+      "draft_roll_date": "2026-07-14",
+      "claims_start": "2026-07-14",
+      "claims_end": "2026-08-13",
+      "final_roll_date": "2026-09-15",
+      "status": "claims_and_objections_open"
+    },
+    {
+      "state_ids": ["IN-AP", "IN-AR", "IN-HR", "IN-CH"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-07-01",
+      "enumeration_start": "2026-06-15",
+      "enumeration_end": "2026-07-14",
+      "draft_roll_date": "2026-07-21",
+      "claims_start": "2026-07-21",
+      "claims_end": "2026-08-20",
+      "final_roll_date": "2026-09-22",
+      "status": "claims_and_objections_open"
+    },
+    {
+      "state_ids": ["IN-TG", "IN-PB"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-10-01",
+      "enumeration_start": "2026-06-25",
+      "enumeration_end": "2026-07-24",
+      "draft_roll_date": "2026-07-31",
+      "claims_start": "2026-07-31",
+      "claims_end": "2026-08-30",
+      "final_roll_date": "2026-10-01",
+      "status": "claims_and_objections_open"
+    },
+    {
+      "state_ids": ["IN-KA", "IN-ML", "IN-MH", "IN-JH", "IN-DL"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-10-01",
+      "enumeration_start": "2026-06-30",
+      "enumeration_end": "2026-07-29",
+      "draft_roll_date": "2026-08-05",
+      "claims_start": "2026-08-05",
+      "claims_end": "2026-09-04",
+      "final_roll_date": "2026-10-07",
+      "status": "pre_draft_publication"
+    },
+    {
+      "state_ids": ["IN-NL"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-10-01",
+      "enumeration_start": "2026-08-16",
+      "enumeration_end": "2026-09-14",
+      "draft_roll_date": "2026-09-20",
+      "claims_start": "2026-09-20",
+      "claims_end": "2026-10-20",
+      "final_roll_date": "2026-11-22",
+      "status": "pre_enumeration"
+    },
+    {
+      "state_ids": ["IN-TR"],
+      "phase": "Phase III",
+      "qualifying_date": "2026-10-01",
+      "enumeration_start": "2026-09-15",
+      "enumeration_end": "2026-10-14",
+      "draft_roll_date": "2026-10-21",
+      "claims_start": "2026-10-21",
+      "claims_end": "2026-11-20",
+      "final_roll_date": "2026-12-23",
+      "status": "pre_enumeration"
+    }
+  ]
+}

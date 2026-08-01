@@ -7,7 +7,7 @@ from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 def test_current_nationwide_sources_pass_risk_based_freshness_policy() -> None:
     report = build_freshness_report(today=date(2026, 8, 1))
     assert report["jurisdiction_count"] == 36
-    assert report["source_count"] == 106
+    assert report["source_count"] == 124
     assert report["stale_count"] == 0
     assert report["ready"] is True
 
@@ -16,7 +16,10 @@ def test_active_schedule_sources_expire_after_seven_days() -> None:
     report = build_freshness_report(today=date(2026, 8, 9))
     stale = report["stale"]
     assert report["ready"] is False
-    assert {finding["state_id"] for finding in stale} == {"IN-MH"}
+    assert {finding["state_id"] for finding in stale} == {
+        "IN-AP", "IN-AR", "IN-CH", "IN-DH", "IN-DL", "IN-HR", "IN-JH", "IN-KA", "IN-MH",
+        "IN-ML", "IN-MN", "IN-MZ", "IN-NL", "IN-OD", "IN-PB", "IN-SK", "IN-TG", "IN-TR", "IN-UK",
+    }
     assert all(finding["age_days"] == 8 for finding in stale)
     assert all(finding["max_age_days"] == 7 for finding in stale)
 
