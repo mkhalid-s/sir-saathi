@@ -51,6 +51,7 @@ REQUIRED_FILES = [
     "scripts/check_visual_accessibility.py",
     "scripts/check_discoverability.py",
     "scripts/check_postgres_integration.py",
+    "scripts/check_redis_integration.py",
     ".github/workflows/release-artifact.yml",
 ]
 
@@ -204,6 +205,17 @@ def verify_deploy_templates() -> None:
     ]:
         if contract not in postgres_integration:
             raise RuntimeError(f"PostgreSQL integration is missing safety contract: {contract}")
+    redis_integration = (ROOT / "scripts/check_redis_integration.py").read_text(encoding="utf-8")
+    if "image: redis:8-alpine" not in ci_workflow or "check_redis_integration.py" not in ci_workflow:
+        raise RuntimeError("CI must exercise the shared limiter against disposable Redis 8")
+    for contract in [
+        "integration.redis_atomic_window",
+        "integration.redis_cleanup",
+        '"test_keys_remaining": 0',
+        "values_redacted",
+    ]:
+        if contract not in redis_integration:
+            raise RuntimeError(f"Redis integration is missing safety contract: {contract}")
     accessibility_evidence = (ROOT / "pipeline/sir_saathi_pipeline/accessibility_evidence.py").read_text(encoding="utf-8")
     for contract in [
         "ready_for_accessibility_signoff",

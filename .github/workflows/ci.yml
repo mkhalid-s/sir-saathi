@@ -44,7 +44,7 @@ jobs:
       - name: Slice gate
         run: python scripts/slice_gate.py
 
-  postgres-integration:
+  dependency-integration:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -61,6 +61,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -72,3 +81,7 @@ jobs:
         env:
           SIR_SAATHI_DATABASE_URL: postgresql://postgres:sir-saathi-ci-only@127.0.0.1:5432/sir_saathi_ci
         run: python scripts/check_postgres_integration.py
+      - name: Exercise the shared rate limiter with synthetic keys
+        env:
+          SIR_SAATHI_REDIS_URL: redis://127.0.0.1:6379/0
+        run: python scripts/check_redis_integration.py

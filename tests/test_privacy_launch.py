@@ -1,4 +1,5 @@
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -18,6 +19,7 @@ from services.api.privacy import (
     search_rate_limit_key,
     verification_rate_limit_key,
 )
+from scripts import check_redis_integration
 
 
 def test_default_public_search_policy_is_safe() -> None:
@@ -154,6 +156,27 @@ def test_redis_readiness_uses_ping_without_consuming_a_rate_limit_slot() -> None
     assert RedisRateLimiter(client=client).ready() is True
     assert client.pings == 1
     assert RedisRateLimiter(client=Client(False)).ready() is False
+
+
+def test_redis_integration_check_requires_an_environment_owned_url(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("SIR_SAATHI_REDIS_URL", raising=False)
+
+    assert check_redis_integration.main() == 1
+    output = capsys.readouterr().out
+    assert "integration.redis_url_missing" in output
+    assert "redis://" not in output
+
+
+def test_ci_exercises_the_atomic_limiter_on_disposable_redis_8() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    integration = (root / "scripts/check_redis_integration.py").read_text(encoding="utf-8")
+
+    assert "image: redis:8-alpine" in workflow
+    assert "python scripts/check_redis_integration.py" in workflow
+    assert "integration.redis_atomic_window" in integration
+    assert '"test_keys_remaining": 0' in integration
+    assert "values_redacted" in integration
 
 
 def test_client_ip_resolution_trusts_only_configured_proxy_hops() -> None:
