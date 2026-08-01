@@ -18,6 +18,9 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Source labels, source freshness, and launch-readiness warning.
 - UI language selector that shows English as available and non-English translations as planned until human review.
 - Canonical locale governance in `config/locales.json`; every language tracked by the nationwide catalogue must have an explicit availability and review state.
+- Canonical English message keys in `config/translations/en.json` and a fail-closed readiness report. A non-English locale can be marked available only when it has the exact key set, preserves named placeholders, and records a fluent human reviewer and review date.
+
+Run `python -m pipeline.sir_saathi_pipeline.translation_catalog --fail-on-invalid-available` in review and deployment workflows. Missing planned catalogues are reported as pending, while any locale marked available without a complete reviewed catalogue fails the command.
 - WhatsApp-shareable checklist with official-confirmation and no-private-details reminder.
 - Installable PWA manifest with app icon.
 - Service worker for offline app-shell fallback; API calls are not cached.

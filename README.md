@@ -34,6 +34,7 @@ The web app is a mobile-first Progressive Web App. It currently provides:
 - Forms and common document reference backed by `config/forms/sir-actions.json`.
 - Search availability status that explains when indexed search is off and why.
 - UI language readiness messaging. English is available; non-English UI translations are marked planned until human review.
+- A translation-catalogue readiness command that enforces exact keys, placeholders, and fluent human-review attestations before a locale can be enabled.
 - Installable PWA manifest, app icon, and offline app-shell service worker. API requests are not cached offline.
 
 More detail: `docs/PWA_MVP.md`.
@@ -157,6 +158,7 @@ Common local checks:
 ```sh
 python scripts/check_sensitive.py
 python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale
+python -m pipeline.sir_saathi_pipeline.translation_catalog --fail-on-invalid-available
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest
 npm audit --workspace apps/web
 npm run web:build

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "locale": "en",
+  "review": {"status": "source", "reviewed_by": null, "reviewed_at": null},
+  "messages": {
+    "app.title": "SIR Saathi",
+    "app.tagline": "Know what to do next during SIR.",
+    "find.title": "Start with a safe official check.",
+    "find.privacy_notice": "These details stay in your browser until you choose an official portal.",
+    "find.official_first": "Use official search first for {state}.",
+    "find.open_official": "Open official portal",
+    "find.not_found": "If not found, show missing-name steps",
+    "guidance.title": "What should I do next?",
+    "guidance.deadline": "Deadline: {deadline}",
+    "guidance.deadline_unknown": "Check the official portal",
+    "guidance.sources": "Sources: {sources}",
+    "guidance.language_status": "UI language status: {status}",
+    "guidance.next_actions": "Do this next",
+    "guidance.documents": "Keep ready",
+    "guidance.share": "Share checklist",
+    "safety.guidance_boundary": "Guidance only: SIR Saathi does not decide voter eligibility or replace official ECI, CEO, BLO, or ERO channels.",
+    "safety.confirm_official": "Confirm deadlines and eligibility on the official portal before acting.",
+    "safety.no_private_share": "Do not include EPIC, address, phone, document, or other private details when forwarding.",
+    "safety.search_unavailable": "Indexed public search is not launch-ready for this state yet. Use official channels for final verification.",
+    "status.schedule_unverified": "Schedule not yet verified",
+    "status.pre_enumeration": "Preparing for enumeration",
+    "status.enumeration_open": "Enumeration is open",
+    "status.pre_draft_publication": "Draft roll publication is next",
+    "status.claims_and_objections_open": "Claims and objections are open",
+    "status.claims_disposal": "Claims and objections are being decided",
+    "status.final_roll_published": "Final roll published"
+  }
+}

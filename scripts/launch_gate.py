@@ -137,6 +137,8 @@ def verify_pwa_installability() -> None:
 
 
 def verify_ui_language_readiness() -> None:
+    from pipeline.sir_saathi_pipeline.translation_catalog import translation_readiness
+
     states_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     if "uiLanguageReadiness" not in states_source or "English UI is available now" not in states_source:
@@ -145,6 +147,14 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("planned non-English UI translations must require human review")
     if "UI language" not in wizard or "(planned)" not in wizard:
         raise RuntimeError("wizard must show available and planned UI language status")
+    report = translation_readiness()
+    invalid_available = [
+        item["locale"]
+        for item in report["locales"]
+        if item["registry_status"] == "available" and not item["publishable"]
+    ]
+    if invalid_available:
+        raise RuntimeError(f"available locales have incomplete or unreviewed catalogues: {', '.join(invalid_available)}")
 
 
 def verify_safe_share_copy() -> None:
