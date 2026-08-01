@@ -21,6 +21,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Official final-publication evidence for completed Phase II jurisdictions is recorded independently, so later extensions do not get overwritten by the original common target date.
 - UI language selector that shows English as available and non-English translations as planned until human review.
 - Canonical locale governance in `config/locales.json`; every language tracked by the nationwide catalogue must have an explicit availability and review state.
+- Every reviewed UI language is selectable in every jurisdiction, independent of that jurisdiction's official-language list. Planned state-relevant languages remain visible but disabled. Reviewed choices persist locally and can be shared with the fail-closed `?lang=` URL parameter; unknown, missing, and planned catalogues resolve to English.
 - Canonical English message keys in `config/translations/en.json` and a fail-closed readiness report. A non-English locale can be marked available only when it has the exact key set, preserves named placeholders, and records a fluent human reviewer and review date.
 - Locale direction is governed alongside availability. The hydrated wizard updates the document `lang` and `dir` attributes for reviewed selections, including right-to-left rendering for Urdu.
 

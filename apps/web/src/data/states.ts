@@ -154,7 +154,13 @@ function officialLinkFor(config: StateConfig): string {
 }
 
 export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLanguageOption[] {
-  return ['en', ...stateLanguageCodes.filter((language) => language !== 'en')]
+  const globallyAvailable = localeCatalogue.locales
+    .filter((locale) => locale.status === 'available')
+    .map((locale) => locale.code);
+  const relevantPlanned = stateLanguageCodes.filter(
+    (code) => localeByCode[code]?.status === 'planned'
+  );
+  return [...new Set([...globallyAvailable, ...relevantPlanned])]
     .map((code) => localeByCode[code])
     .filter((locale): locale is UiLanguageOption => Boolean(locale));
 }

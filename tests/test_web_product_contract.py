@@ -151,7 +151,8 @@ def test_web_builds_a_shareable_page_for_every_jurisdiction() -> None:
     assert "No current SIR schedule has been independently confirmed" in page
     assert "Get my action checklist" in page
     assert "statePath(state)" in directory
-    assert "new URLSearchParams(window.location.search).get('state')" in wizard
+    assert "const params = new URLSearchParams(window.location.search)" in wizard
+    assert "params.get('state')" in wizard
 
 
 def test_wizard_deadlines_advance_with_the_current_phase() -> None:
@@ -175,6 +176,19 @@ def test_web_surfaces_reviewed_ui_language_readiness() -> None:
     i18n_source = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
     assert "import.meta.glob" in i18n_source
     assert "locale.status === 'available'" in i18n_source
+    assert "globallyAvailable" in state_source
+    assert "relevantPlanned" in state_source
+
+
+def test_reviewed_ui_language_is_restored_and_shareable_without_enabling_drafts() -> None:
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    assert "sir-saathi-ui-language" in wizard
+    assert "params.get('lang') ?? storedLanguage" in wizard
+    assert "hasEnabledCatalogue(preferredLanguage)" in wizard
+    assert "window.localStorage.setItem" in wizard
+    assert "url.searchParams.set('lang', uiLanguage)" in wizard
+    assert "url.searchParams.delete('lang')" in wizard
+    assert "window.history.replaceState" in wizard
 
 
 def test_reviewed_locale_selection_updates_document_language_and_direction() -> None:

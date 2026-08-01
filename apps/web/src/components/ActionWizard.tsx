@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { states, uiLanguageDirection, uiLanguageOptionsForState } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
-import { translate, type MessageKey, type MessageValues } from '../lib/i18n';
+import { hasEnabledCatalogue, translate, type MessageKey, type MessageValues } from '../lib/i18n';
 import IndexedSearch from './IndexedSearch';
 
 const situations: { value: Situation; key: MessageKey }[] = [
@@ -20,6 +20,8 @@ const statusOptions: { value: StatusAnswer; key: MessageKey }[] = [
   { value: 'yes', key: 'wizard.answer.yes' },
   { value: 'no', key: 'wizard.answer.no' }
 ];
+
+const UI_LANGUAGE_STORAGE_KEY = 'sir-saathi-ui-language';
 
 function statusSelect(
   label: string,
@@ -73,9 +75,20 @@ export default function ActionWizard() {
     setFindSubmitted(false);
   };
   useEffect(() => {
-    const requestedState = new URLSearchParams(window.location.search).get('state');
+    const params = new URLSearchParams(window.location.search);
+    const requestedState = params.get('state');
     if (requestedState && states.some((item) => item.stateId === requestedState)) {
       updateState(requestedState);
+    }
+    let storedLanguage: string | null = null;
+    try {
+      storedLanguage = window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY);
+    } catch {
+      // Storage can be unavailable in hardened/private browser modes.
+    }
+    const preferredLanguage = params.get('lang') ?? storedLanguage;
+    if (preferredLanguage && hasEnabledCatalogue(preferredLanguage)) {
+      setUiLanguage(preferredLanguage);
     }
   }, []);
   useEffect(() => {
@@ -86,6 +99,15 @@ export default function ActionWizard() {
   useEffect(() => {
     document.documentElement.lang = uiLanguage;
     document.documentElement.dir = uiLanguageDirection(uiLanguage);
+    try {
+      window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, uiLanguage);
+    } catch {
+      // Language selection still works for the current page without storage.
+    }
+    const url = new URL(window.location.href);
+    if (uiLanguage === 'en') url.searchParams.delete('lang');
+    else url.searchParams.set('lang', uiLanguage);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
     return () => {
       document.documentElement.lang = 'en';
       document.documentElement.dir = 'ltr';
