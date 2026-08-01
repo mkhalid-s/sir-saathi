@@ -22,7 +22,7 @@ The deployed `/api/search` handler also applies a fixed-window rate limit keyed 
 
 API responses use redacted public records and do not expose full EPIC values, raw addresses, raw PDFs, or generated voter exports.
 
-The PostgreSQL schema is in `db/schema.sql`; `db/migrations/0001_initial.sql` creates a fresh database, `0002_geography_provenance.sql` adds geographic source fields, `0003_transliterated_name_search.sql` indexes the derived Roman search form, and `0004_cross_year_match_candidates.sql` adds reviewable cross-year proposals.
+The PostgreSQL schema is in `db/schema.sql`; ordered files in `db/migrations` are applied only through `python -m pipeline.sir_saathi_pipeline.migrations`. The command is dry-run-first, pins applied checksums in `schema_migrations`, rejects rewritten or unknown history, serializes concurrent operators with an advisory lock, and applies each pending file transactionally. `--apply` is explicit and `--check` is suitable for a deployment gate.
 
 Before loading rolls, seed canonical state rows from `config/states` into local Postgres:
 

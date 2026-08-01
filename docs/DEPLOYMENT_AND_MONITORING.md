@@ -32,6 +32,16 @@ curl -fsS http://127.0.0.1:8000/api/health
 
 Deploy the reviewed `requirements.lock`, not a freshly resolved `requirements.txt`, so CI and the VM run the same Python dependency graph.
 
+Before restarting a release, inspect the schema plan and then apply it explicitly:
+
+```sh
+SIR_SAATHI_DATABASE_URL="<operator-owned connection>" python -m pipeline.sir_saathi_pipeline.migrations
+SIR_SAATHI_DATABASE_URL="<operator-owned connection>" python -m pipeline.sir_saathi_pipeline.migrations --apply
+SIR_SAATHI_DATABASE_URL="<operator-owned connection>" python -m pipeline.sir_saathi_pipeline.migrations --check
+```
+
+The runner expands the reviewed initial schema, records a SHA-256 checksum for every migration, rejects changed or unknown history, holds a PostgreSQL advisory lock across the operation, and applies each pending file in its own transaction. It never prints the database URL. Take and verify a recoverable backup before `--apply`; schema rollback remains restore/release-specific and is not inferred automatically.
+
 Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all five. `PUBLIC_TURNSTILE_SITE_KEY` is intentionally public and belongs in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
 
 ## Local Database

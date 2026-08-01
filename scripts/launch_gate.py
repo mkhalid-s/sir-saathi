@@ -32,6 +32,7 @@ REQUIRED_FILES = [
     "infra/docker-compose.yml",
     ".github/workflows/source-freshness.yml",
     "requirements.lock",
+    "pipeline/sir_saathi_pipeline/migrations.py",
     "scripts/check_accessibility.py",
     "scripts/check_discoverability.py",
 ]
@@ -102,6 +103,11 @@ def verify_deploy_templates() -> None:
     ]
     if not lock_lines or any("==" not in line for line in lock_lines):
         raise RuntimeError("production Python dependencies must use exact versions in requirements.lock")
+    migrations = (ROOT / "pipeline/sir_saathi_pipeline/migrations.py").read_text(encoding="utf-8")
+    if "schema_migrations" not in migrations or "pg_advisory_lock" not in migrations:
+        raise RuntimeError("database migrations must be checksummed and serialized")
+    if "connection.transaction()" not in migrations or "--apply" not in migrations or "--check" not in migrations:
+        raise RuntimeError("database migrations must be atomic, dry-run-first, and deploy-checkable")
 
 
 def verify_abuse_protection() -> None:
