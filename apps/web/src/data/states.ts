@@ -50,7 +50,9 @@ interface JurisdictionConfig {
 export interface StateSummary {
   stateId: string;
   name: string;
+  languageCodes: string[];
   languages: string[];
+  defaultLanguageCode: string;
   defaultLanguage: string;
   capability: StateCapability;
   publicLaunchReady: boolean;
@@ -139,13 +141,13 @@ function officialLinkFor(config: StateConfig): string {
   return officialSource?.url ?? config.ceo_portal;
 }
 
-export function uiLanguageOptionsForState(stateLanguages: string[]): UiLanguageOption[] {
-  const plannedLanguages = stateLanguages.filter((language) => language !== ENGLISH_LABEL);
+export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLanguageOption[] {
+  const plannedLanguages = stateLanguageCodes.filter((language) => language !== 'en');
   return [
     { code: 'en', label: ENGLISH_LABEL, status: 'available' },
     ...plannedLanguages.map((language) => ({
-      code: language.toLowerCase(),
-      label: language,
+      code: language,
+      label: languageNames[language] ?? language,
       status: 'planned' as const
     }))
   ];
@@ -164,7 +166,9 @@ function stateFromConfig(config: StateConfig): StateSummary {
   return {
     stateId: config.state_id,
     name: config.name,
+    languageCodes: config.languages,
     languages: config.languages.map((language) => languageNames[language] ?? language),
+    defaultLanguageCode: config.default_language,
     defaultLanguage: languageNames[config.default_language] ?? config.default_language,
     capability: config.data_capability,
     publicLaunchReady: config.public_launch_ready,
@@ -189,7 +193,9 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
   return {
     stateId: config.state_id,
     name: config.name,
+    languageCodes: config.languages,
     languages: config.languages.map((language) => languageNames[language] ?? language),
+    defaultLanguageCode: config.default_language,
     defaultLanguage: languageNames[config.default_language] ?? config.default_language,
     capability: 'official_link_search',
     publicLaunchReady: false,

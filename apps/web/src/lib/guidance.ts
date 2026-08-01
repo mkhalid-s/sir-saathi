@@ -155,8 +155,15 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
     };
   }
 
+  const scheduleUnverified = state?.currentPhase === 'schedule_unverified';
   const enumerationClosed = state && state.currentPhase !== 'pre_enumeration' && state.currentPhase !== 'enumeration_open';
-  const actions = enumerationClosed
+  const actions = scheduleUnverified
+    ? [
+        'Check your name in the current electoral roll through the official ECI or CEO portal.',
+        'Check the official CEO notices to learn which revision process and dates currently apply.',
+        'If your entry is missing or incorrect, contact your BLO or ERO and use the form they confirm is appropriate.'
+      ]
+    : enumerationClosed
     ? [
         'Check your entry in the draft or current roll through official sources.',
         'If it is missing or incorrect, file the appropriate claim during the claims and objections window.',
@@ -184,7 +191,9 @@ export function guidanceFor(input: Situation | WizardAnswers, state?: StateSumma
   return {
     title: priority === 'urgent' ? 'Resolve your missing current-roll entry' : 'Verify and submit your SIR details',
     priority,
-    summary: 'Confirm your roll entry and complete the SIR enumeration form if you receive one.',
+    summary: scheduleUnverified
+      ? 'Confirm your current roll entry and check the official jurisdiction notice before relying on any SIR dates or steps.'
+      : 'Confirm your roll entry and complete the SIR enumeration form if you receive one.',
     actions,
     documents: ['Existing voter reference', 'Proof for any changed detail'],
     notices

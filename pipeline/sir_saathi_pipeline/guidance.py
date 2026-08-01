@@ -101,12 +101,19 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
     warnings = list(_schedule_warning(state, request.today, deadline))
 
     if request.situation == "existing_voter":
+        schedule_unverified = state.schedule.status == "schedule_unverified"
         enumeration_closed = bool(
             request.today
             and state.schedule.enumeration_end
             and request.today > state.schedule.enumeration_end
         )
-        if enumeration_closed:
+        if schedule_unverified:
+            actions = [
+                "Check your name in the current electoral roll through the official ECI or CEO portal.",
+                "Check official CEO notices to learn which revision process and dates currently apply.",
+                "If your entry is missing or incorrect, contact your BLO or ERO and use the form they confirm is appropriate.",
+            ]
+        elif enumeration_closed:
             actions = [
                 "Check your entry in the draft/current electoral roll through the official portal or local BLO support.",
                 "If your entry is missing or incorrect, file the appropriate claim during the claims and objections window.",
@@ -126,7 +133,11 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
         return GuidanceResult(
             priority=priority,
             title="Verify and submit your SIR details",
-            summary="You appear to be an existing voter. The safest next step is to verify your roll entry and complete the SIR enumeration process.",
+            summary=(
+                "Confirm your current roll entry and check the official jurisdiction notice before relying on any SIR dates or steps."
+                if schedule_unverified
+                else "You appear to be an existing voter. The safest next step is to verify your roll entry and complete the SIR enumeration process."
+            ),
             actions=tuple(actions),
             documents=("Existing voter ID or EPIC reference", "Any document needed to correct changed details"),
             official_links=links,

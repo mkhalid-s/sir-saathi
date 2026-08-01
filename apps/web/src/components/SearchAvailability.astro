@@ -17,6 +17,9 @@ function searchMessage(state: typeof states[number]): string {
   }
   return 'Guidance and official links are available; indexed search remains disabled.';
 }
+
+const publicSearchCount = states.filter((state) => state.publicLaunchReady).length;
+const reviewedScheduleCount = states.filter((state) => state.scheduleProvenance.confidence === 'official').length;
 ---
 <section class="search-availability" aria-labelledby="search-availability-title">
   <div>
@@ -25,16 +28,28 @@ function searchMessage(state: typeof states[number]): string {
     <p class="reference-copy">SIR Saathi shows search capability transparently, but does not expose public indexed search until validation, privacy review, rate limits, and abuse checks pass.</p>
   </div>
 
-  <div class="search-status-list">
-    {states.map((state) => (
-      <article class="search-status-card">
-        <div>
-          <h3>{state.name}</h3>
-          <p class="source-note">Capability: {capabilityLabel(state.capability)}</p>
-          <p class="source-note">Schedule provenance: {state.scheduleProvenance.confidence}</p>
-        </div>
-        <p>{searchMessage(state)}</p>
-      </article>
-    ))}
+  <div class="coverage-summary" aria-label="Nationwide coverage summary">
+    <div><strong>{states.length}</strong><span>states and UTs covered</span></div>
+    <div><strong>{reviewedScheduleCount}</strong><span>reviewed official schedules</span></div>
+    <div><strong>{publicSearchCount}</strong><span>public indexed searches enabled</span></div>
   </div>
+
+  <details class="jurisdiction-directory">
+    <summary>View status for all {states.length} states and union territories</summary>
+    <div class="jurisdiction-list">
+      {states.map((state) => (
+        <article class="jurisdiction-row">
+          <div>
+            <h3>{state.name}</h3>
+            <p class="source-note">{state.status} · Capability: {capabilityLabel(state.capability)}</p>
+            <p class="source-note">Schedule provenance: {state.scheduleProvenance.confidence}</p>
+          </div>
+          <div>
+            <p>{searchMessage(state)}</p>
+            <a href={state.officialLink} target="_blank" rel="noreferrer">Open official CEO portal</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </details>
 </section>

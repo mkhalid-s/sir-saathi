@@ -52,6 +52,20 @@ def test_west_bengal_guidance_uses_official_sources() -> None:
     assert any("CEO West Bengal" in label for label in result.source_labels)
 
 
+def test_unverified_schedule_guidance_does_not_invent_sir_steps_or_deadlines() -> None:
+    result = get_guidance(
+        GuidanceInput(
+            state_id="IN-AP",
+            situation="existing_voter",
+            today=date(2026, 8, 1),
+        )
+    )
+    assert result.deadline is None
+    assert "official jurisdiction notice" in result.summary
+    assert any("official CEO notices" in action for action in result.actions)
+    assert all("enumeration deadline" not in action for action in result.actions)
+
+
 def test_deadline_warning_when_close() -> None:
     result = get_guidance(
         GuidanceInput(

@@ -102,6 +102,22 @@ def test_web_state_registry_uses_all_nationwide_jurisdictions() -> None:
     assert len({item["state_id"] for item in catalogue["jurisdictions"]}) == 36
 
 
+def test_web_preserves_canonical_language_codes() -> None:
+    source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    assert "languageCodes: string[]" in source
+    assert "code: language" in source
+    assert "state.languageCodes" in wizard
+
+
+def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> None:
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    guidance = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
+    assert "state.currentPhase !== 'schedule_unverified'" in wizard
+    assert "scheduleUnverified" in guidance
+    assert "official jurisdiction notice" in guidance
+
+
 def test_wizard_deadlines_advance_with_the_current_phase() -> None:
     source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     assert "state.currentPhase === 'pre_enumeration'" in source
@@ -204,6 +220,8 @@ def test_homepage_surfaces_privacy_safe_search_availability() -> None:
     assert "state.scheduleProvenance.confidence !== 'official'" in component_source
     assert "rate limits" in component_source
     assert "publicLaunchReady" in component_source
+    assert "coverage-summary" in component_source
+    assert "View status for all" in component_source
 
 
 def test_pwa_manifest_is_installable() -> None:

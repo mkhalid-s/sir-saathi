@@ -46,8 +46,9 @@ export default function ActionWizard() {
   const state = states.find((item) => item.stateId === stateId) ?? states[0];
   const guidance = useMemo(() => guidanceFor(answers, state), [answers, state]);
   const deadline = deadlineFor(state, answers.situation);
-  const languageOptions = uiLanguageOptionsForState(state.languages);
+  const languageOptions = uiLanguageOptionsForState(state.languageCodes);
   const languageReadiness = uiLanguageReadiness(state.languages);
+  const scheduleKnown = state.currentPhase !== 'schedule_unverified';
   const guidanceBoundaryText = 'Guidance only: SIR Saathi does not decide voter eligibility or replace official ECI, CEO, BLO, or ERO channels.';
   const shareSafetyText = 'Confirm deadlines and eligibility on the official portal. Do not include EPIC, address, or other private details when forwarding.';
   const shareText = [
@@ -159,11 +160,11 @@ export default function ActionWizard() {
       </div>
 
       <div class="question-grid" aria-label="SIR follow-up questions">
-        {statusSelect('Did a BLO visit your home?', answers.bloVisited, (value) => updateAnswer('bloVisited', value))}
-        {statusSelect('Did you receive an enumeration form?', answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value))}
-        {statusSelect('Did you submit the enumeration form?', answers.enumerationFormSubmitted, (value) => updateAnswer('enumerationFormSubmitted', value))}
+        {scheduleKnown && statusSelect('Did a BLO visit your home?', answers.bloVisited, (value) => updateAnswer('bloVisited', value))}
+        {scheduleKnown && statusSelect('Did you receive an enumeration form?', answers.enumerationFormReceived, (value) => updateAnswer('enumerationFormReceived', value))}
+        {scheduleKnown && statusSelect('Did you submit the enumeration form?', answers.enumerationFormSubmitted, (value) => updateAnswer('enumerationFormSubmitted', value))}
         {statusSelect('Is your name found in the current/draft roll?', answers.currentRollFound, (value) => updateAnswer('currentRollFound', value))}
-        {statusSelect('Is your name found in the old/base roll?', answers.baseRollFound, (value) => updateAnswer('baseRollFound', value))}
+        {scheduleKnown && statusSelect('Is your name found in the old/base roll?', answers.baseRollFound, (value) => updateAnswer('baseRollFound', value))}
       </div>
 
       <div class="result-card priority-${guidance.priority}">

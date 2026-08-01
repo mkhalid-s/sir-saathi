@@ -182,7 +182,8 @@ a {
 .action-grid,
 .info-grid,
 .forms-list,
-.search-status-list {
+.search-status-list,
+.coverage-summary {
   display: grid;
   gap: 1.25rem;
   margin-top: 1.25rem;
@@ -229,6 +230,70 @@ a {
 
 .search-availability {
   margin-top: 1.5rem;
+}
+
+.coverage-summary {
+  grid-template-columns: 1fr;
+}
+
+.coverage-summary div {
+  display: grid;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.coverage-summary strong {
+  font-size: 1.75rem;
+}
+
+.coverage-summary span {
+  color: #475569;
+  line-height: 1.4;
+}
+
+.jurisdiction-directory {
+  margin-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+.jurisdiction-directory summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.jurisdiction-list {
+  display: grid;
+  gap: 0;
+  margin-top: 1rem;
+}
+
+.jurisdiction-row {
+  display: grid;
+  gap: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem 0;
+}
+
+.jurisdiction-row:first-child {
+  border-top: 0;
+}
+
+.jurisdiction-row h3,
+.jurisdiction-row p {
+  margin: 0;
+}
+
+.jurisdiction-row > div:last-child {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.jurisdiction-row a {
+  color: #075985;
+  font-weight: 700;
 }
 
 .document-list {
@@ -314,6 +379,14 @@ a {
   .forms-list,
   .search-status-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .coverage-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .jurisdiction-row {
+    grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1.2fr);
   }
 }
 
