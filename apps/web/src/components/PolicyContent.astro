@@ -61,6 +61,13 @@ const accessibilityLimitations: MessageKey[] = [
       <p>{message('accessibility.intro')}</p>
       <p>{message('accessibility.target')}</p>
       <p class="notice">{message('accessibility.not_conformance')}</p>
+      <h2>{message('help.using_title')}</h2>
+      <ol>
+        <li>{message('help.use_find')}</li>
+        <li>{message('help.use_guidance')}</li>
+        <li>{message('help.use_official')}</li>
+        <li>{message('help.use_offline')}</li>
+      </ol>
       <h2>{message('accessibility.features_title')}</h2>
       <ul>{accessibilityFeatures.map((key) => <li>{message(key)}</li>)}</ul>
       <h2>{message('accessibility.limitations_title')}</h2>
@@ -75,6 +82,17 @@ const accessibilityLimitations: MessageKey[] = [
         <li><a href="https://guidelines.india.gov.in/help/" target="_blank" rel="noreferrer">{message('accessibility.gigw')}</a></li>
         <li><a href="https://www.w3.org/TR/WCAG22/" target="_blank" rel="noreferrer">{message('accessibility.wcag')}</a></li>
       </ul>
+      <h2>{message('help.map_title')}</h2>
+      <nav aria-label={message('help.map_title')}>
+        <ul>
+          <li><a href={localizedPath('/', locale)}>{message('help.map_home')}</a></li>
+          <li><a href={`${localizedPath('/', locale)}#search-availability-title`}>{message('help.map_states')}</a></li>
+          <li><a href={localizedPath('/languages/', locale)}>{message('nav.language_status')}</a></li>
+          <li><a href={localizedPath('/privacy/', locale)}>{message('nav.privacy')}</a></li>
+          <li><a href={localizedPath('/methodology/', locale)}>{message('nav.methodology')}</a></li>
+          <li><a href={localizedPath('/data-use/', locale)}>{message('nav.data_use')}</a></li>
+        </ul>
+      </nav>
     </>
   )}
   <p><a href={localizedPath('/', locale)}>{message('nav.back_home')}</a></p>

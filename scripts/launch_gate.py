@@ -54,6 +54,9 @@ REQUIRED_FILES = [
     "scripts/check_postgres_integration.py",
     "scripts/check_redis_integration.py",
     ".github/workflows/release-artifact.yml",
+    ".github/ISSUE_TEMPLATE/accessibility.yml",
+    ".github/ISSUE_TEMPLATE/config.yml",
+    "docs/ACCESSIBILITY_FEEDBACK.md",
 ]
 
 

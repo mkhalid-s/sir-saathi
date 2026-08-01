@@ -4,6 +4,8 @@ SIR Saathi targets WCAG 2.2 Level AA for its public PWA. This target applies to 
 
 The public `/accessibility/` help page is linked from the shared layout so it remains reachable from every route. It describes supported features and known limitations, makes no certification claim, links to the [GIGW help and accessibility guidance](https://guidelines.india.gov.in/help/), and separates accessibility feedback from official ECI voter assistance. No public feedback inbox is currently authorized: GitHub issue creation is restricted and the repository exposes only a non-deliverable noreply address. The page discloses that launch limitation instead of sending users to a broken or unofficial channel. Before public launch, an accountable owner must provide and rehearse a privacy-safe response channel. Reports must never contain voter names, EPICs, addresses, phone numbers, documents, private screenshots, voter records, or challenge tokens.
 
+The dormant structured issue form and its activation/triage requirements are governed in `docs/ACCESSIBILITY_FEEDBACK.md`. Their presence in the repository is preparation only; the public page must remain unlinked while issue creation, accountable ownership, and response rehearsal are incomplete.
+
 Passing automated checks is not a conformance claim. A public release needs both the repository gate and a recorded manual review of the deployed build.
 
 ## Automated Baseline

@@ -71,6 +71,41 @@ def test_accessibility_help_is_available_from_every_page_without_collecting_priv
     assert "www.w3.org/TR/WCAG22/" in content
 
 
+def test_accessibility_feedback_form_is_structured_private_data_averse_and_inactive() -> None:
+    form = (ROOT / ".github/ISSUE_TEMPLATE/accessibility.yml").read_text(encoding="utf-8")
+    chooser = (ROOT / ".github/ISSUE_TEMPLATE/config.yml").read_text(encoding="utf-8")
+    runbook = (ROOT / "docs/ACCESSIBILITY_FEEDBACK.md").read_text(encoding="utf-8")
+    content = (ROOT / "apps/web/src/components/PolicyContent.astro").read_text(encoding="utf-8")
+
+    for field in ["id: privacy", "id: page", "id: barrier-type", "id: task", "id: barrier", "id: environment"]:
+        assert field in form
+    assert form.count("required: true") >= 6
+    assert "id: contact" not in form
+    assert "type: upload" not in form
+    assert "voter name, EPIC, address, phone number" in form
+    assert "publicly visible" in form
+    assert "blank_issues_enabled: false" in chooser
+    assert "https://voters.eci.gov.in/" in chooser
+    assert "issue creation is currently restricted" in runbook
+    assert "Name one accountable response owner and one backup" in runbook
+    assert "Only after the rehearsal passes" in runbook
+    assert "ISSUE_TEMPLATE" not in content
+    assert "issues/new" not in content
+
+
+def test_accessibility_help_includes_practical_use_guidance_and_a_human_site_map() -> None:
+    content = (ROOT / "apps/web/src/components/PolicyContent.astro").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+
+    assert "help.using_title" in content
+    assert "help.map_title" in content
+    assert "#search-availability-title" in content
+    for path in ["/languages/", "/privacy/", "/methodology/", "/data-use/"]:
+        assert f"localizedPath('{path}', locale)" in content
+    assert "privacy-safe official name-check route" in messages["help.use_find"]
+    assert "cached guidance available offline" in messages["help.use_offline"]
+
+
 def test_web_wizard_collects_sir_followup_questions() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
