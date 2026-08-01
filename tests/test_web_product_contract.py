@@ -118,6 +118,21 @@ def test_state_pages_link_directly_to_schedule_evidence() -> None:
     assert 'rel="noreferrer"' in page
 
 
+def test_state_actions_keep_ceo_portals_separate_from_schedule_evidence() -> None:
+    source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    for state_id in ["IN-MH", "IN-WB"]:
+        config = json.loads((ROOT / f"config/states/{state_id}.json").read_text(encoding="utf-8"))
+        schedule_source = next(
+            item for item in config["official_sources"]
+            if item["label"] == config["schedule_provenance"]["label"]
+        )
+        assert config["ceo_portal"] != schedule_source["url"]
+
+    assert "officialLink: config.ceo_portal" in source
+    assert "officialSource?.url ?? config.ceo_portal" not in source
+    assert "url: scheduleSource.url" in source
+
+
 def test_web_state_summary_derives_current_schedule_phase() -> None:
     source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     assert "currentPhaseForSchedule" in source

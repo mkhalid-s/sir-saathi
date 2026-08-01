@@ -204,6 +204,9 @@ def verify_source_freshness() -> None:
             raise RuntimeError("every reviewed schedule group must have fresh official provenance")
     if "sir-schedules.json" not in (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8"):
         raise RuntimeError("web state catalogue must consume shared reviewed schedules")
+    states_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
+    if "officialLink: config.ceo_portal" not in states_source or "url: scheduleSource.url" not in states_source:
+        raise RuntimeError("state actions must keep CEO portals separate from schedule evidence")
     for path in sorted((ROOT / "config/states").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         provenance = data.get("schedule_provenance", {})

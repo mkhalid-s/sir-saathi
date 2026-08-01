@@ -155,11 +155,6 @@ export function formatIndiaDate(value: string, locale = 'en-IN'): string {
     .format(new Date(`${value}T00:00:00+05:30`));
 }
 
-function officialLinkFor(config: StateConfig): string {
-  const officialSource = config.official_sources.find((source) => source.source_type === 'official_portal');
-  return officialSource?.url ?? config.ceo_portal;
-}
-
 export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLanguageOption[] {
   const globallyAvailable = localeCatalogue.locales
     .filter((locale) => locale.status === 'available')
@@ -199,7 +194,7 @@ function stateFromConfig(config: StateConfig): StateSummary {
     enumerationEndIso: config.sir_schedule.enumeration_end ?? undefined,
     claimsEndIso: config.sir_schedule.claims_end ?? undefined,
     finalRollDateIso: config.sir_schedule.final_roll_date ?? undefined,
-    officialLink: officialLinkFor(config),
+    officialLink: config.ceo_portal,
     sourceLabels: config.official_sources.map((source) => source.label),
     sourceFreshness: config.official_sources.map((source) => `${source.label}: last checked ${displayDate(source.last_verified)}`),
     sourceChecks: config.official_sources.map((source) => ({ label: source.label, date: source.last_verified })),
