@@ -90,6 +90,30 @@ def test_search_requires_typed_query() -> None:
         search_payload({"state_id": "IN-MH", "query": 123, "ac_number": 172, "use_sanitized_pilot": True})
 
 
+def test_search_rejects_client_claimed_verification_boolean() -> None:
+    with pytest.raises(ValidationError, match="unknown fields: turnstile_verified"):
+        search_payload(
+            {
+                "state_id": "IN-MH",
+                "query": "sample",
+                "ac_number": 172,
+                "turnstile_verified": True,
+            }
+        )
+
+
+def test_search_accepts_only_bounded_opaque_verification_response() -> None:
+    with pytest.raises(ValidationError, match="turnstile_response must be a string"):
+        search_payload(
+            {
+                "state_id": "IN-MH",
+                "query": "sample",
+                "ac_number": 172,
+                "turnstile_response": True,
+            }
+        )
+
+
 def test_search_returns_redacted_records_with_explicit_pilot_flag() -> None:
     records = [
         InternalVoterRecord(

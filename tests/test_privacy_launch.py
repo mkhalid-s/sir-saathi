@@ -33,12 +33,12 @@ def test_policy_blocks_unscoped_public_search() -> None:
 def test_search_launch_policy_fails_closed_for_non_ready_state() -> None:
     mh = load_all_states()["IN-MH"]
     with pytest.raises(ValueError, match="not enabled for public launch"):
-        assert_search_launch_allowed(mh, turnstile_verified=False, use_sanitized_pilot=False)
+        assert_search_launch_allowed(mh, abuse_verification_passed=False, use_sanitized_pilot=False)
 
 
 def test_search_launch_policy_allows_sanitized_pilot() -> None:
     mh = load_all_states()["IN-MH"]
-    assert_search_launch_allowed(mh, turnstile_verified=False, use_sanitized_pilot=True)
+    assert_search_launch_allowed(mh, abuse_verification_passed=False, use_sanitized_pilot=True)
 
 
 def test_public_search_requires_official_schedule_provenance() -> None:
@@ -51,13 +51,13 @@ def test_public_search_requires_official_schedule_provenance() -> None:
         schedule_provenance=reported_provenance,
     )
     with pytest.raises(ValueError, match="official schedule provenance"):
-        assert_search_launch_allowed(launch_ready, turnstile_verified=True, use_sanitized_pilot=False)
+        assert_search_launch_allowed(launch_ready, abuse_verification_passed=True, use_sanitized_pilot=False)
 
 
-def test_public_search_allows_official_schedule_provenance_with_turnstile() -> None:
+def test_public_search_allows_official_schedule_provenance_with_server_verification() -> None:
     wb = load_all_states()["IN-WB"]
     launch_ready = replace(wb, public_launch_ready=True, data_capability="validated_indexed_search")
-    assert_search_launch_allowed(launch_ready, turnstile_verified=True, use_sanitized_pilot=False)
+    assert_search_launch_allowed(launch_ready, abuse_verification_passed=True, use_sanitized_pilot=False)
 
 
 def test_safe_log_query_does_not_store_full_query() -> None:

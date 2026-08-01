@@ -88,7 +88,7 @@ def assert_public_search_policy(policy: PublicSearchPolicy = DEFAULT_PUBLIC_SEAR
 def assert_search_launch_allowed(
     state: StateConfig,
     *,
-    turnstile_verified: bool,
+    abuse_verification_passed: bool,
     use_sanitized_pilot: bool,
     policy: PublicSearchPolicy = DEFAULT_PUBLIC_SEARCH_POLICY,
 ) -> None:
@@ -102,7 +102,7 @@ def assert_search_launch_allowed(
         raise ValueError("indexed search is not available for this state")
     if state.schedule_provenance.confidence != "official":
         raise ValueError("public search requires official schedule provenance")
-    if policy.require_turnstile_for_public_search and not turnstile_verified:
+    if policy.require_turnstile_for_public_search and not abuse_verification_passed:
         raise ValueError("public search requires abuse-prevention verification")
 
 

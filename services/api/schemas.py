@@ -54,6 +54,18 @@ def _optional_int(data: dict[str, Any], key: str, *, minimum: int, maximum: int)
     return value
 
 
+def _optional_string(data: dict[str, Any], key: str, *, max_length: int) -> str | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValidationError(f"{key} must be a string")
+    normalized = value.strip()
+    if not normalized or len(normalized) > max_length:
+        raise ValidationError(f"{key} length is invalid")
+    return normalized
+
+
 def _int(data: dict[str, Any], key: str, *, minimum: int, maximum: int, default: int | None = None) -> int:
     value = data.get(key, default)
     if not isinstance(value, int) or isinstance(value, bool):
@@ -115,7 +127,7 @@ class SearchRequestPayload:
         "part_number",
         "limit",
         "use_sanitized_pilot",
-        "turnstile_verified",
+        "turnstile_response",
     }
 
     state_id: str
@@ -124,7 +136,7 @@ class SearchRequestPayload:
     part_number: int | None = None
     limit: int = 10
     use_sanitized_pilot: bool = False
-    turnstile_verified: bool = False
+    turnstile_response: str | None = None
 
     @classmethod
     def model_validate(cls, payload: dict[str, Any]) -> "SearchRequestPayload":
@@ -135,11 +147,9 @@ class SearchRequestPayload:
         part_number = _optional_int(payload, "part_number", minimum=1, maximum=9999)
         limit = _int(payload, "limit", minimum=1, maximum=20, default=10)
         use_sanitized_pilot = payload.get("use_sanitized_pilot", False)
-        turnstile_verified = payload.get("turnstile_verified", False)
+        turnstile_response = _optional_string(payload, "turnstile_response", max_length=2048)
         if not isinstance(use_sanitized_pilot, bool):
             raise ValidationError("use_sanitized_pilot must be a boolean")
-        if not isinstance(turnstile_verified, bool):
-            raise ValidationError("turnstile_verified must be a boolean")
         return cls(
             state_id=state_id,
             query=query,
@@ -147,7 +157,7 @@ class SearchRequestPayload:
             part_number=part_number,
             limit=limit,
             use_sanitized_pilot=use_sanitized_pilot,
-            turnstile_verified=turnstile_verified,
+            turnstile_response=turnstile_response,
         )
 
 

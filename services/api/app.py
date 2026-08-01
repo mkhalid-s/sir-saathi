@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
+import os
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -15,6 +16,12 @@ from pipeline.sir_saathi_pipeline.guidance import GuidanceInput, get_guidance
 from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 from pipeline.sir_saathi_pipeline.source_freshness import assess_source, freshness_window_days
 
+from .abuse_verification import (
+    AbuseVerifier,
+    CloudflareTurnstileVerifier,
+    TURNSTILE_HOSTNAME_ENV,
+    TURNSTILE_SECRET_ENV,
+)
 from .models import InternalVoterRecord
 from .pilot_data import load_sanitized_pilot_records
 from .privacy import (
@@ -159,6 +166,7 @@ def search_payload(
     *,
     rate_limiter: InMemoryRateLimiter | None = None,
     client_identity: str | None = None,
+    abuse_verification_passed: bool = False,
 ) -> dict[str, Any]:
     validated = _search_request(payload)
     states = load_all_states()
@@ -166,7 +174,7 @@ def search_payload(
         raise ValueError(f"unknown state_id: {validated.state_id}")
     assert_search_launch_allowed(
         states[validated.state_id],
-        turnstile_verified=validated.turnstile_verified,
+        abuse_verification_passed=abuse_verification_passed,
         use_sanitized_pilot=validated.use_sanitized_pilot,
     )
     request = SearchRequest(
@@ -198,7 +206,17 @@ def api_route_paths() -> set[str]:
     return set(API_ROUTES)
 
 
-def create_app():
+def configured_abuse_verifier() -> AbuseVerifier | None:
+    secret = os.environ.get(TURNSTILE_SECRET_ENV)
+    if not secret:
+        return None
+    return CloudflareTurnstileVerifier(
+        secret=secret,
+        expected_hostname=os.environ.get(TURNSTILE_HOSTNAME_ENV),
+    )
+
+
+def create_app(*, abuse_verifier: AbuseVerifier | None = None):
     if FastAPI is None:
         raise RuntimeError("FastAPI is required to create the API app")
 
@@ -227,7 +245,19 @@ def create_app():
     def search(payload: dict[str, Any], request: Request) -> dict[str, Any]:
         try:
             client_host = request.client.host if request.client else None
-            return search_payload(payload, rate_limiter=DEFAULT_SEARCH_RATE_LIMITER, client_identity=client_host)
+            validated = _search_request(payload)
+            verification_passed = False
+            if not validated.use_sanitized_pilot and abuse_verifier is not None:
+                verification_passed = abuse_verifier.verify(
+                    validated.turnstile_response,
+                    remote_ip=client_host,
+                )
+            return search_payload(
+                validated,
+                rate_limiter=DEFAULT_SEARCH_RATE_LIMITER,
+                client_identity=client_host,
+                abuse_verification_passed=verification_passed,
+            )
         except RateLimitExceeded as exc:
             raise HTTPException(status_code=429, detail=str(exc)) from exc
         except (KeyError, ValueError, ValidationError) as exc:
@@ -236,4 +266,4 @@ def create_app():
     return app
 
 
-app = create_app() if FastAPI is not None else None
+app = create_app(abuse_verifier=configured_abuse_verifier()) if FastAPI is not None else None

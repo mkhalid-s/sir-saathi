@@ -59,10 +59,18 @@ def verify_deploy_templates() -> None:
 def verify_abuse_protection() -> None:
     privacy = (ROOT / "services/api/privacy.py").read_text(encoding="utf-8")
     app = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
+    schemas = (ROOT / "services/api/schemas.py").read_text(encoding="utf-8")
+    verifier = (ROOT / "services/api/abuse_verification.py").read_text(encoding="utf-8")
     if "InMemoryRateLimiter" not in privacy or "search_rate_limit_key" not in privacy:
         raise RuntimeError("public search must define rate limiting helpers")
     if "DEFAULT_SEARCH_RATE_LIMITER" not in app or "request.client.host" not in app:
         raise RuntimeError("public search route must apply client-scoped rate limiting")
+    if "turnstile_verified" in schemas or "turnstile_response" not in schemas:
+        raise RuntimeError("public API must accept an opaque token, never a client verification claim")
+    if "siteverify" not in verifier or "expected_hostname" not in verifier or "expected_action" not in verifier:
+        raise RuntimeError("Turnstile must be verified server-side with hostname and action checks")
+    if "configured_abuse_verifier" not in app or "abuse_verification_passed=verification_passed" not in app:
+        raise RuntimeError("public search route must use only server-owned abuse verification")
 
 
 def verify_source_freshness() -> None:

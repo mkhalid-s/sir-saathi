@@ -19,6 +19,8 @@ SIR Saathi treats electoral roll data as public but sensitive.
 
 The first implementation uses an in-process fixed-window limiter. Bucket keys hash the client identity before combining it with state and Assembly Constituency scope, so raw client identifiers are not stored in limiter keys. A production deployment should replace this with a shared store such as Redis before running multiple API processes.
 
+Real indexed search also requires server-side Cloudflare Turnstile verification. Clients submit only an opaque `turnstile_response`; the API posts it to Cloudflare using `SIR_SAATHI_TURNSTILE_SECRET`, checks the expected `voter_search` action and optional `SIR_SAATHI_TURNSTILE_HOSTNAME`, and fails closed on missing configuration, timeout, malformed response, hostname mismatch, or action mismatch. A client-supplied “verified” boolean is rejected. The sanitized synthetic pilot does not expose voter data and remains available without Turnstile for development demonstrations.
+
 ## User Data Rules
 
 The MVP does not require accounts, document uploads, or phone numbers. If future reminder features are added, they must be opt-in, purpose-limited, and deletable.

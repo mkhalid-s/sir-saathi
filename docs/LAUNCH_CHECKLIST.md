@@ -15,6 +15,7 @@ Before any public launch:
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public indexed search requires official schedule provenance, not reported-only dates.
 - Public search has rate limiting and abuse protection; production multi-process deployments use a shared limiter store.
+- Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
 - Official links and source freshness are visible.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.
