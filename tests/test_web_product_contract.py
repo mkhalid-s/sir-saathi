@@ -326,3 +326,13 @@ def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
     for page in (ROOT / "apps/web/src/pages").rglob("*.astro"):
         if page.name == "[stateId].astro" or page.parent == ROOT / "apps/web/src/pages":
             assert 'id="main-content"' in page.read_text(encoding="utf-8")
+
+
+def test_accessibility_release_policy_covers_manual_and_automated_evidence() -> None:
+    policy = (ROOT / "docs/ACCESSIBILITY.md").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert "WCAG 2.2 Level AA" in policy
+    assert "Passing automated checks is not a conformance claim" in policy
+    for requirement in ["NVDA", "VoiceOver", "TalkBack", "400%", "forced-colours", "reduced motion", "Urdu"]:
+        assert requirement in policy
+    assert "python scripts/check_accessibility.py" in workflow

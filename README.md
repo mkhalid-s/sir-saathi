@@ -42,6 +42,8 @@ The web app is a mobile-first Progressive Web App. It currently provides:
 
 More detail: `docs/PWA_MVP.md`.
 
+Accessibility targets, automated checks, and the required manual assistive-technology release matrix are documented in `docs/ACCESSIBILITY.md`.
+
 ### API
 
 The initial API is intentionally small and served under `/api`:

@@ -112,7 +112,7 @@ export default function ActionWizard() {
         <div>
           <p class="eyebrow dark">{message('find.eyebrow')}</p>
           <h2 id="find-name-title">{message('find.title')}</h2>
-          <p class="reference-copy">{message('find.intro_prefix')} {message('find.privacy_notice')}</p>
+          <p class="reference-copy" id="find-privacy-notice">{message('find.intro_prefix')} {message('find.privacy_notice')}</p>
         </div>
         <form class="find-form" onSubmit={(event) => {
           event.preventDefault();
@@ -120,25 +120,25 @@ export default function ActionWizard() {
         }}>
           <label class="field">
             {message('find.state_label')}
-            <select class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
+            <select id="find-state" class="select" value={stateId} onChange={(event) => updateState((event.currentTarget as HTMLSelectElement).value)}>
               {states.map((item) => <option value={item.stateId}>{item.name}</option>)}
             </select>
           </label>
           <label class="field">
             {message('find.name_label')}
-            <input class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.name_placeholder')} />
+            <input id="find-voter-name" class="input" value={nameQuery} onInput={(event) => setNameQuery((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.name_placeholder')} aria-describedby="find-privacy-notice" autoComplete="off" dir="auto" />
           </label>
           <label class="field">
             {message('find.district_label')}
-            <input class="input" value={districtHint} onInput={(event) => setDistrictHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} />
+            <input id="find-district" class="input" value={districtHint} onInput={(event) => setDistrictHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} autoComplete="off" dir="auto" />
           </label>
           <label class="field">
             {message('find.ac_label')}
-            <input class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} />
+            <input id="find-ac" class="input" value={acHint} onInput={(event) => setAcHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} inputMode="numeric" autoComplete="off" />
           </label>
           <label class="field">
             {message('find.part_label')}
-            <input class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} />
+            <input id="find-part" class="input" value={partHint} onInput={(event) => setPartHint((event.currentTarget as HTMLInputElement).value)} placeholder={message('find.optional')} inputMode="numeric" autoComplete="off" />
           </label>
           {state.publicLaunchReady && (
             <IndexedSearch stateId={state.stateId} query={nameQuery} acHint={acHint} partHint={partHint} locale={uiLanguage} />
@@ -182,11 +182,16 @@ export default function ActionWizard() {
 
         <label class="field">
           {message('wizard.ui_language')}
-          <select class="select" value={uiLanguage} onChange={(event) => setUiLanguage((event.currentTarget as HTMLSelectElement).value)}>
+          <select id="ui-language" class="select" value={uiLanguage} aria-describedby="ui-language-readiness" onChange={(event) => setUiLanguage((event.currentTarget as HTMLSelectElement).value)}>
             {languageOptions.map((item) => <option value={item.code} disabled={item.status === 'planned'}>{item.label}{item.status === 'planned' ? message('wizard.planned_suffix') : ''}</option>)}
           </select>
+          <span id="ui-language-readiness" class="field-help">{languageReadiness}</span>
         </label>
       </div>
+
+      <p class="sr-only" aria-live="polite" aria-atomic="true">
+        {message('wizard.guidance_updated', { title: guidance.title })}
+      </p>
 
       <div class="question-grid" aria-label={message('wizard.questions_label')}>
         {scheduleKnown && statusSelect(message('wizard.question.blo'), answers.bloVisited, (value) => updateAnswer('bloVisited', value), message)}
@@ -196,9 +201,9 @@ export default function ActionWizard() {
         {scheduleKnown && statusSelect(message('wizard.question.base_roll'), answers.baseRollFound, (value) => updateAnswer('baseRollFound', value), message)}
       </div>
 
-      <div class="result-card priority-${guidance.priority}">
+      <div class="result-card priority-${guidance.priority}" aria-labelledby="guidance-result-title">
         <p class="result-status">{message(`status.${state.currentPhase}` as MessageKey)}</p>
-        <h2 class="result-title">{guidance.title}</h2>
+        <h2 class="result-title" id="guidance-result-title">{guidance.title}</h2>
         <p class="result-summary">{guidance.summary}</p>
         <p class="source-note">{guidanceBoundaryText}</p>
         <p class="deadline">{message('guidance.deadline', { deadline: deadline ?? message('guidance.deadline_unknown') })}</p>

@@ -56,6 +56,7 @@
     "wizard.planned_suffix": " (planned)",
     "wizard.language_available": "English UI is available now.",
     "wizard.language_planned": "English UI is available now. {languages} translations are planned and will be added after human review.",
+    "wizard.guidance_updated": "Guidance updated: {title}",
     "wizard.situation.existing_voter": "I am already a voter and want to verify",
     "wizard.situation.missing_name": "My name is missing or not found",
     "wizard.situation.new_voter": "I need to register as a new voter",

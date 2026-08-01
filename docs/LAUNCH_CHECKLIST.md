@@ -12,6 +12,7 @@ Before any public launch:
 - API routes are served under `/api/*` and match reverse-proxy configuration.
 - The systemd service reads `/etc/sir-saathi/api.env`, the file is `root:sir-saathi` mode `0640`, and the default monitor successfully probes `/api/health` with a bounded timeout.
 - Privacy, methodology, and data-use pages are published.
+- The generated 40-page accessibility audit passes, and the deployed build has a recorded manual review using the browser, assistive-technology, zoom, reflow, contrast, forced-colour, reduced-motion, and RTL matrix in `docs/ACCESSIBILITY.md`.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public indexed search requires official schedule provenance, not reported-only dates.

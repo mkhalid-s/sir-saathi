@@ -154,22 +154,22 @@ export default function IndexedSearch({ stateId, query, acHint, partHint, locale
   return (
     <div class="indexed-search" aria-labelledby="indexed-search-title">
       <h3 id="indexed-search-title">{message('search.indexed_title')}</h3>
-      <p class="reference-copy">{message('search.indexed_notice')}</p>
+      <p class="reference-copy" id="indexed-search-notice">{message('search.indexed_notice')}</p>
       {!siteKey ? <p class="warning-note" role="status">{message('search.site_key_missing')}</p> : (
         <>
           <p>{message('search.verify')}</p>
           <div ref={widgetContainer} aria-label={message('search.verify')} />
-          <button class="primary-button" type="button" disabled={searching || !challengeResponse} onClick={search}>
+          <button class="primary-button" type="button" aria-describedby="indexed-search-notice" disabled={searching || !challengeResponse} onClick={search}>
             {message(searching ? 'search.searching' : 'search.submit')}
           </button>
         </>
       )}
-      <div aria-live="polite" aria-atomic="true">
+      <div aria-live="polite" aria-atomic="true" aria-busy={searching}>
         {messageKey && <p class="warning-note">{message(messageKey)}</p>}
         {results.length > 0 && <div class="find-result">
           <h3>{message('search.results')}</h3>
           <ul>{results.map((result) => <li key={`${result.roll_year}-${result.ac_number}-${result.part_number}-${result.serial_number}`}>
-            <strong>{result.display_name}</strong><br />
+            <strong dir="auto">{result.display_name}</strong><br />
             {message('search.result_roll', { year: result.roll_year, kind: result.roll_kind.replaceAll('_', ' ') })}<br />
             {message('search.result_location', { ac: result.ac_number ?? '—', part: result.part_number ?? '—', serial: result.serial_number ?? '—' })}<br />
             {result.epic_hint && message('search.result_epic_hint', { hint: result.epic_hint })}<br />

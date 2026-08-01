@@ -22,10 +22,12 @@ REQUIRED_FILES = [
     "config/forms/sir-actions.json",
     "docs/PRIVACY_AND_ABUSE.md",
     "docs/LAUNCH_CHECKLIST.md",
+    "docs/ACCESSIBILITY.md",
     "services/api/privacy.py",
     "infra/caddy/Caddyfile.example",
     "infra/docker-compose.yml",
     "requirements.lock",
+    "scripts/check_accessibility.py",
 ]
 
 
@@ -492,6 +494,7 @@ def main() -> int:
     run([sys.executable, "-m", "pytest"])
     run(["npm", "audit", "--workspace", "apps/web"])
     run(["npm", "run", "web:build"])
+    run([sys.executable, "scripts/check_accessibility.py"])
     print("Launch gate passed.")
     return 0
 

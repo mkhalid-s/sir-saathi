@@ -31,6 +31,8 @@ jobs:
         run: npm ci
       - name: Build web PWA
         run: ASTRO_TELEMETRY_DISABLED=1 npm run web:build
+      - name: Audit generated accessibility structure
+        run: python scripts/check_accessibility.py
       - name: Launch gate
         run: python scripts/launch_gate.py
       - name: Slice gate
