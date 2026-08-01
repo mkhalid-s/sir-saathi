@@ -20,6 +20,7 @@ If sensitive data is exposed:
 ## Routine Checks
 
 - Run `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` before deployment and at least daily while an SIR schedule is active. Active schedule sources expire after 7 days; completed or unverified baseline sources expire after 90 days.
+- Confirm the daily `Official source freshness` workflow is enabled on the default branch and its failure notifications reach an active operator. Its retained JSON report contains source metadata only and is safe to use for triage.
 - Review sources marked `expiring` before they become launch blockers. The report contains public source labels and dates only—never voter queries or records.
 - Weekly dependency audit.
 - Daily API/PWA health checks after launch.

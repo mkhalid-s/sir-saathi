@@ -26,5 +26,6 @@ Before any public launch:
 - Exercise `--disable --apply` in the deployment runbook and confirm revocation immediately removes the scope from public search.
 - Official links and source freshness are visible.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.
+- The daily `Official source freshness` workflow is enabled on the default branch, has a tested failure-notification owner, and retains its safe report when stale evidence fails the check.
 - Raw PDFs, parsed exports, local data, credentials, and generated reports are not committed.
 - Commit message has no co-author trailer.

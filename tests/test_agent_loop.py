@@ -14,3 +14,15 @@ def test_slice_gate_checks_expected_commands() -> None:
     assert "pytest" in gate
     assert "npm" in gate
     assert "scripts/launch_gate.py" in gate
+
+
+def test_official_source_freshness_has_an_unattended_fail_closed_monitor() -> None:
+    workflow = (ROOT / ".github/workflows/source-freshness.yml").read_text(encoding="utf-8")
+
+    assert "schedule:" in workflow
+    assert "cron: '17 3 * * *'" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "--fail-on-stale" in workflow
+    assert "if: always()" in workflow
+    assert "actions/upload-artifact@v4" in workflow
+    assert "retention-days: 30" in workflow

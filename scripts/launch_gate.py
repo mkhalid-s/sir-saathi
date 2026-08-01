@@ -26,6 +26,7 @@ REQUIRED_FILES = [
     "services/api/privacy.py",
     "infra/caddy/Caddyfile.example",
     "infra/docker-compose.yml",
+    ".github/workflows/source-freshness.yml",
     "requirements.lock",
     "scripts/check_accessibility.py",
 ]
@@ -113,6 +114,15 @@ def verify_source_freshness() -> None:
     search_availability = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
     api = (ROOT / "services/api/app.py").read_text(encoding="utf-8")
     schedule_catalogue = json.loads((ROOT / "config/sir-schedules.json").read_text(encoding="utf-8"))
+    freshness_workflow = (ROOT / ".github/workflows/source-freshness.yml").read_text(encoding="utf-8")
+    if "schedule:" not in freshness_workflow or "cron:" not in freshness_workflow:
+        raise RuntimeError("official source freshness must run on an unattended schedule")
+    if "workflow_dispatch:" not in freshness_workflow:
+        raise RuntimeError("official source freshness must support an operator-triggered run")
+    if "source_freshness" not in freshness_workflow or "--fail-on-stale" not in freshness_workflow:
+        raise RuntimeError("scheduled source freshness must fail closed on stale evidence")
+    if "upload-artifact@v4" not in freshness_workflow or "if: always()" not in freshness_workflow:
+        raise RuntimeError("scheduled source freshness must retain its safe report on failure")
     if "guidance.sources_checked" not in web or "Sources last checked:" not in messages["guidance.sources_checked"] or "last_verified" not in api:
         raise RuntimeError("official source freshness must be visible in web and API surfaces")
     if "guidance.schedule_source" not in web or "guidance.schedule_note" not in web or "schedule_provenance" not in api:
