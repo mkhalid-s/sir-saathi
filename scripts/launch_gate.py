@@ -224,6 +224,7 @@ def verify_pwa_installability() -> None:
     manifest = json.loads((ROOT / "apps/web/public/manifest.webmanifest").read_text(encoding="utf-8"))
     layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
     service_worker = (ROOT / "apps/web/public/sw.js").read_text(encoding="utf-8")
+    connectivity = (ROOT / "apps/web/src/components/ConnectivityStatus.tsx").read_text(encoding="utf-8")
     if manifest.get("display") != "standalone" or manifest.get("scope") != "/":
         raise RuntimeError("PWA manifest must be standalone and scoped to the app root")
     icons = manifest.get("icons", [])
@@ -262,6 +263,10 @@ def verify_pwa_installability() -> None:
         raise RuntimeError("offline navigation must preserve a previously cached reviewed locale")
     if 'class="skip-link" href="#main-content"' not in layout:
         raise RuntimeError("web layout must provide keyboard skip navigation")
+    if "ConnectivityStatus" not in layout or "navigator.onLine" not in connectivity:
+        raise RuntimeError("every route must distinguish cached guidance from live online services")
+    if 'role="status"' not in connectivity or "connectivity.offline" not in connectivity:
+        raise RuntimeError("offline status must be localized and announced accessibly")
 
 
 def verify_ui_language_readiness() -> None:

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import ConnectivityStatus from '../components/ConnectivityStatus';
 import { availableLocales, localizedPath } from '../lib/i18n';
 const {
   title = 'SIR Saathi',
@@ -36,6 +37,7 @@ const alternates = availableLocales.map((locale) => ({
   </head>
   <body>
     <a class="skip-link" href="#main-content">{skipLabel}</a>
+    <ConnectivityStatus locale={lang} client:load />
     <slot />
     <script>
       if ('serviceWorker' in navigator) {

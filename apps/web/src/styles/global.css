@@ -15,6 +15,15 @@ body {
   color: #0f172a;
 }
 
+.connectivity-notice {
+  background: #fef3c7;
+  border-bottom: 2px solid #d97706;
+  color: #78350f;
+  font-weight: 700;
+  padding: 0.75rem max(1rem, calc((100% - 72rem) / 2));
+  text-align: center;
+}
+
 button,
 input,
 select {

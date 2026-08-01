@@ -22,6 +22,7 @@
     "nav.skip": "Skip to main content",
     "nav.back_home": "Back to SIR Saathi",
     "nav.languages": "Choose interface language",
+    "connectivity.offline": "You are offline. Cached guidance remains available, but official links and indexed search need an internet connection.",
     "jurisdiction.IN-AN": "Andaman and Nicobar Islands",
     "jurisdiction.IN-AP": "Andhra Pradesh",
     "jurisdiction.IN-AR": "Arunachal Pradesh",

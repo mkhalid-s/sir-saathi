@@ -432,6 +432,19 @@ def test_web_build_finalizes_the_complete_offline_asset_list() -> None:
     assert "--check" in finalizer
 
 
+def test_every_route_announces_when_live_services_are_offline() -> None:
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    status = (ROOT / "apps/web/src/components/ConnectivityStatus.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+
+    assert "ConnectivityStatus" in layout
+    assert "client:load" in layout
+    assert "navigator.onLine" in status
+    assert "addEventListener('offline'" in status
+    assert 'role="status"' in status
+    assert "official links and indexed search" in messages["connectivity.offline"]
+
+
 def test_pages_have_keyboard_navigation_and_main_landmarks() -> None:
     layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
     styles = (ROOT / "apps/web/src/styles/global.css").read_text(encoding="utf-8")
