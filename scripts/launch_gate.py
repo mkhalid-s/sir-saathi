@@ -402,6 +402,14 @@ def verify_ui_language_readiness() -> None:
         raise RuntimeError("reviewed locales must identify both translator and reviewer")
     if "different people" not in catalogue_governance or "safety_critical" not in catalogue_governance:
         raise RuntimeError("translation packets must enforce independent safety-critical review")
+    for contract in [
+        "--render-review-preview",
+        "LOCAL DRAFT — NOT REVIEWED, NOT PUBLISHABLE",
+        "Content-Security-Policy",
+        "translation review previews cannot be written to runtime or public web directories",
+    ]:
+        if contract not in catalogue_governance:
+            raise RuntimeError(f"translation workflow is missing safe in-context review contract: {contract}")
     if not all(path.is_file() for path in (localized_home, localized_state, localized_policy)):
         raise RuntimeError("reviewed locales must generate home, state, and policy routes")
     if "localizedPath" not in i18n or "navigateToLocale" not in wizard:

@@ -55,6 +55,16 @@ python -m pipeline.sir_saathi_pipeline.translation_catalog \
 
 Compilation rejects incomplete strings, changed keys or source copy, tampered risk/section/placeholder metadata, lost placeholders, missing identities, the same person acting as translator and reviewer, direction drift, changed review requirements, and stale source digests. The compiled runtime catalogue retains both accountable identities. Compilation does not activate the locale: `config/locales.json` must still be changed from `planned` to `available` in a reviewed code change. This keeps draft, singly reviewed, or stale translations fail-closed.
 
+After every translation is filled—but before marking the packet reviewed—generate a local in-context review sheet:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.translation_catalog \
+  --render-review-preview data/translation-review/mr.json \
+  --output data/translation-preview/mr.html
+```
+
+The self-contained HTML groups strings by UI section, highlights safety-critical entries, shows the current English source beside translated copy, and applies the locale's governed text direction. It has no network dependencies, escapes translated markup, carries a restrictive CSP and `noindex`, and prominently says it is not reviewed or publishable. In-repository preview output is allowed only under ignored `data/`, `reports/`, or `samples/` paths and is rejected from runtime catalogue, public asset, and build-output directories. Preview generation validates completeness, the current source digest, exact keys, risk metadata, and placeholders, but cannot satisfy or bypass independent human review.
+
 The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalogue discovery is automatic at build time, but only locales marked `available` in the governed registry can render. Safety text, all form controls, official and indexed-search instructions, every situation-specific guidance title/summary/action/document, status, deadline, provenance, and checklist sharing use keyed messages with checked placeholders. Draft or missing catalogues cannot be selected and fall back to the reviewed English source copy.
 
 - WhatsApp-shareable checklist with official-confirmation and no-private-details reminder.

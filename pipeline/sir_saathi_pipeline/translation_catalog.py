@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import date
 import hashlib
+from html import escape
 import json
 from pathlib import Path
 import re
@@ -109,13 +110,13 @@ def create_review_packet(
     }
 
 
-def compile_reviewed_packet(
+def _validated_packet_content(
     packet_path: Path,
     *,
     locales_path: Path = DEFAULT_LOCALES_PATH,
     catalog_dir: Path = DEFAULT_CATALOG_DIR,
-) -> dict[str, Any]:
-    """Validate a completed human-review packet and return a runtime catalogue."""
+) -> tuple[dict[str, Any], str, dict[str, Any], dict[str, str]]:
+    """Validate source pinning, metadata, translations, and placeholders without approving publication."""
 
     packet = _load_json(packet_path)
     if packet.get("schema_version") != REVIEW_PACKET_SCHEMA_VERSION:
@@ -140,22 +141,6 @@ def compile_reviewed_packet(
     }:
         raise ValueError("review packet requirements do not match the current review policy")
 
-    review = packet.get("review")
-    if not isinstance(review, dict) or review.get("status") != "reviewed":
-        raise ValueError("fluent human review status is required")
-    translator = review.get("translated_by")
-    reviewer = review.get("reviewed_by")
-    if not isinstance(translator, str) or not translator.strip():
-        raise ValueError("translated_by is required")
-    if not isinstance(reviewer, str) or not reviewer.strip():
-        raise ValueError("reviewed_by is required")
-    if translator.strip().casefold() == reviewer.strip().casefold():
-        raise ValueError("translated_by and reviewed_by must identify different people")
-    try:
-        date.fromisoformat(review.get("reviewed_at"))
-    except (TypeError, ValueError):
-        raise ValueError("reviewed_at must be an ISO date") from None
-
     entries = packet.get("entries")
     if not isinstance(entries, dict) or set(entries) != set(reference_messages):
         raise ValueError("review packet keys do not match the current English catalogue")
@@ -179,6 +164,37 @@ def compile_reviewed_packet(
         if expected != actual:
             raise ValueError(f"placeholder mismatch for {key}")
         translated[key] = translation
+    return packet, locale, locale_entry, translated
+
+
+def compile_reviewed_packet(
+    packet_path: Path,
+    *,
+    locales_path: Path = DEFAULT_LOCALES_PATH,
+    catalog_dir: Path = DEFAULT_CATALOG_DIR,
+) -> dict[str, Any]:
+    """Validate a completed human-review packet and return a runtime catalogue."""
+
+    packet, locale, _locale, translated = _validated_packet_content(
+        packet_path,
+        locales_path=locales_path,
+        catalog_dir=catalog_dir,
+    )
+    review = packet.get("review")
+    if not isinstance(review, dict) or review.get("status") != "reviewed":
+        raise ValueError("fluent human review status is required")
+    translator = review.get("translated_by")
+    reviewer = review.get("reviewed_by")
+    if not isinstance(translator, str) or not translator.strip():
+        raise ValueError("translated_by is required")
+    if not isinstance(reviewer, str) or not reviewer.strip():
+        raise ValueError("reviewed_by is required")
+    if translator.strip().casefold() == reviewer.strip().casefold():
+        raise ValueError("translated_by and reviewed_by must identify different people")
+    try:
+        date.fromisoformat(review.get("reviewed_at"))
+    except (TypeError, ValueError):
+        raise ValueError("reviewed_at must be an ISO date") from None
 
     catalogue = {
         "schema_version": 1,
@@ -192,6 +208,81 @@ def compile_reviewed_packet(
         "messages": translated,
     }
     return catalogue
+
+
+def render_review_preview(
+    packet_path: Path,
+    *,
+    locales_path: Path = DEFAULT_LOCALES_PATH,
+    catalog_dir: Path = DEFAULT_CATALOG_DIR,
+) -> str:
+    """Render a complete draft packet as a local-only, non-publishable review sheet."""
+
+    packet, locale, locale_entry, translated = _validated_packet_content(
+        packet_path,
+        locales_path=locales_path,
+        catalog_dir=catalog_dir,
+    )
+    direction = str(locale_entry.get("direction"))
+    label = str(locale_entry.get("label") or locale)
+    entries = packet["entries"]
+    sections = sorted({str(entry["section"]) for entry in entries.values()})
+    critical_count = sum(entry["risk"] == "safety_critical" for entry in entries.values())
+    section_links = "".join(
+        f'<li><a href="#{escape(section, quote=True)}">{escape(section)}</a></li>' for section in sections
+    )
+    cards: list[str] = []
+    for section in sections:
+        cards.append(f'<section aria-labelledby="section-{escape(section, quote=True)}">')
+        cards.append(f'<h2 id="section-{escape(section, quote=True)}">{escape(section)}</h2>')
+        for key in sorted(key for key, entry in entries.items() if entry["section"] == section):
+            entry = entries[key]
+            risk = str(entry["risk"])
+            cards.extend((
+                f'<article class="entry {escape(risk, quote=True)}">',
+                f'<div class="entry-heading"><h3><code>{escape(key)}</code></h3><span>{escape(risk.replace("_", " "))}</span></div>',
+                '<h4>English source</h4>',
+                f'<p lang="en" dir="ltr">{escape(str(entry["source"]))}</p>',
+                f'<h4>{escape(label)} translation</h4>',
+                f'<p class="translation" lang="{escape(locale, quote=True)}" dir="{escape(direction, quote=True)}">{escape(translated[key])}</p>',
+                '</article>',
+            ))
+        cards.append('</section>')
+    return f"""<!doctype html>
+<html lang="{escape(locale, quote=True)}" dir="{escape(direction, quote=True)}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <title>{escape(label)} translation review — local draft</title>
+  <style>
+    :root {{ color-scheme: light; font-family: system-ui, sans-serif; background: #f8fafc; color: #172033; }}
+    body {{ margin: 0; }} main {{ max-width: 72rem; margin: auto; padding: 1.5rem; }}
+    .warning {{ border: 3px solid #9a3412; background: #fff7ed; padding: 1rem; font-weight: 700; }}
+    .summary {{ display: flex; flex-wrap: wrap; gap: 1rem; padding: 0; list-style: none; }}
+    nav ul {{ display: flex; flex-wrap: wrap; gap: .75rem; padding: 0; list-style: none; }}
+    a {{ color: #075985; }} section {{ margin-block: 2rem; }}
+    .entry {{ background: white; border: 1px solid #cbd5e1; border-inline-start: .4rem solid #64748b; border-radius: .4rem; margin-block: 1rem; padding: 1rem; }}
+    .entry.safety_critical {{ border-inline-start-color: #b91c1c; }}
+    .entry-heading {{ display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; }}
+    h3, h4 {{ margin-block: .25rem; }} p {{ line-height: 1.55; overflow-wrap: anywhere; }}
+    .translation {{ font-size: 1.2rem; }} code {{ direction: ltr; unicode-bidi: isolate; }}
+    @media (forced-colors: active) {{ .entry {{ border: 2px solid CanvasText; }} }}
+  </style>
+</head>
+<body>
+<main>
+  <p class="warning" role="alert">LOCAL DRAFT — NOT REVIEWED, NOT PUBLISHABLE, AND NOT PART OF THE SIR SAATHI RUNTIME.</p>
+  <h1>{escape(label)} translation review sheet</h1>
+  <p>Compare every translated string with its current English source. Safety-critical entries need extra civic and workflow review. This sheet contains no voter data and makes no approval claim.</p>
+  <ul class="summary"><li><strong>{len(translated)}</strong> total entries</li><li><strong>{critical_count}</strong> safety-critical entries</li><li>Direction: <strong>{escape(direction.upper())}</strong></li></ul>
+  <nav aria-label="Translation sections"><h2>Sections</h2><ul>{section_links}</ul></nav>
+  {''.join(cards)}
+</main>
+</body>
+</html>
+"""
 
 
 def validate_catalog(path: Path, *, locale: str, reference_messages: dict[str, str]) -> list[str]:
@@ -298,6 +389,24 @@ def translation_readiness(
     }
 
 
+def _safe_review_preview_output(output: Path, catalog_dir: Path) -> Path:
+    resolved = output.resolve()
+    if resolved.suffix.casefold() != ".html":
+        raise ValueError("translation review preview output must end in .html")
+    forbidden_roots = (
+        catalog_dir.resolve(),
+        (ROOT / "apps" / "web" / "public").resolve(),
+        (ROOT / "apps" / "web" / "dist").resolve(),
+    )
+    if any(resolved == root or resolved.is_relative_to(root) for root in forbidden_roots):
+        raise ValueError("translation review previews cannot be written to runtime or public web directories")
+    if resolved == ROOT or ROOT in resolved.parents:
+        ignored_roots = tuple((ROOT / directory).resolve() for directory in ("data", "reports", "samples"))
+        if not any(resolved.is_relative_to(root) for root in ignored_roots):
+            raise ValueError("repository translation previews must stay under ignored data/, reports/, or samples/ paths")
+    return resolved
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Report safe UI translation catalogue readiness.")
     parser.add_argument("--locales", type=Path, default=DEFAULT_LOCALES_PATH)
@@ -306,17 +415,34 @@ def main(argv: list[str] | None = None) -> int:
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--create-review-packet", metavar="LOCALE")
     actions.add_argument("--compile-reviewed-packet", type=Path, metavar="PACKET")
+    actions.add_argument("--render-review-preview", type=Path, metavar="PACKET")
     parser.add_argument("--output", type=Path, help="Destination for a review packet or compiled catalogue.")
     parser.add_argument("--replace", action="store_true", help="Explicitly replace an existing output file.")
     args = parser.parse_args(argv)
 
-    if args.create_review_packet or args.compile_reviewed_packet:
+    if args.create_review_packet or args.compile_reviewed_packet or args.render_review_preview:
         if args.output is None:
             parser.error("--output is required for review packet actions")
         try:
             output = args.output.resolve()
             if output.exists() and not args.replace:
                 raise ValueError("output already exists; use --replace only after preserving prior review work")
+            if args.render_review_preview:
+                output = _safe_review_preview_output(output, args.catalog_dir)
+                rendered = render_review_preview(
+                    args.render_review_preview,
+                    locales_path=args.locales,
+                    catalog_dir=args.catalog_dir,
+                )
+                locale = _load_json(args.render_review_preview).get("locale")
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(rendered, encoding="utf-8")
+                print(json.dumps({
+                    "locale": locale,
+                    "publishable": False,
+                    "review_preview_written": str(args.output),
+                }, sort_keys=True))
+                return 0
             if args.create_review_packet:
                 if output.is_relative_to(args.catalog_dir.resolve()):
                     raise ValueError("draft review packets cannot be written to the runtime catalogue directory")

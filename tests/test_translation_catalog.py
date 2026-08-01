@@ -7,6 +7,7 @@ from pipeline.sir_saathi_pipeline.translation_catalog import (
     compile_reviewed_packet,
     create_review_packet,
     main,
+    render_review_preview,
     translation_readiness,
 )
 
@@ -173,6 +174,102 @@ def test_review_packet_rejects_stale_source_and_placeholder_loss(tmp_path: Path)
     _write(catalog_dir / "en.json", source)
     with pytest.raises(ValueError, match="stale"):
         compile_reviewed_packet(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+
+
+def test_complete_draft_packet_renders_escaped_rtl_local_review_sheet(tmp_path: Path) -> None:
+    locales = tmp_path / "locales.json"
+    catalog_dir = tmp_path / "translations"
+    _write(locales, {"locales": [
+        {"code": "en", "label": "English", "direction": "ltr", "status": "available"},
+        {"code": "ur", "label": "Urdu", "direction": "rtl", "status": "planned"},
+    ]})
+    _write(catalog_dir / "en.json", {
+        "schema_version": 1,
+        "locale": "en",
+        "review": {"status": "source"},
+        "messages": {
+            "home.title": "Hello {name}",
+            "safety.notice": "Use official sources",
+        },
+    })
+    packet = create_review_packet("ur", locales_path=locales, catalog_dir=catalog_dir)
+    packet["entries"]["home.title"]["translation"] = "سلام {name}"
+    packet["entries"]["safety.notice"]["translation"] = "<script>صرف سرکاری ذرائع</script>"
+    packet_path = tmp_path / "ur-review.json"
+    _write(packet_path, packet)
+
+    rendered = render_review_preview(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+    assert '<html lang="ur" dir="rtl">' in rendered
+    assert "LOCAL DRAFT — NOT REVIEWED, NOT PUBLISHABLE" in rendered
+    assert 'meta name="robots" content="noindex, nofollow"' in rendered
+    assert "Content-Security-Policy" in rendered
+    assert "safety critical" in rendered
+    assert "سلام {name}" in rendered
+    assert "&lt;script&gt;صرف سرکاری ذرائع&lt;/script&gt;" in rendered
+    assert "<script>صرف" not in rendered
+    with pytest.raises(ValueError, match="human review status"):
+        compile_reviewed_packet(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+
+
+def test_review_preview_rejects_incomplete_or_placeholder_drift(tmp_path: Path) -> None:
+    locales = tmp_path / "locales.json"
+    catalog_dir = tmp_path / "translations"
+    _write(locales, {"locales": [
+        {"code": "en", "label": "English", "direction": "ltr", "status": "available"},
+        {"code": "hi", "label": "Hindi", "direction": "ltr", "status": "planned"},
+    ]})
+    _write(catalog_dir / "en.json", {
+        "schema_version": 1,
+        "locale": "en",
+        "review": {"status": "source"},
+        "messages": {"hello": "Hello {name}"},
+    })
+    packet = create_review_packet("hi", locales_path=locales, catalog_dir=catalog_dir)
+    packet_path = tmp_path / "hi-review.json"
+    _write(packet_path, packet)
+    with pytest.raises(ValueError, match="translation is required"):
+        render_review_preview(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+
+    packet["entries"]["hello"]["translation"] = "नमस्ते"
+    _write(packet_path, packet)
+    with pytest.raises(ValueError, match="placeholder mismatch"):
+        render_review_preview(packet_path, locales_path=locales, catalog_dir=catalog_dir)
+
+
+def test_preview_cli_keeps_review_html_out_of_runtime_directories(tmp_path: Path) -> None:
+    locales = tmp_path / "locales.json"
+    catalog_dir = tmp_path / "translations"
+    _write(locales, {"locales": [
+        {"code": "en", "label": "English", "direction": "ltr", "status": "available"},
+        {"code": "hi", "label": "Hindi", "direction": "ltr", "status": "planned"},
+    ]})
+    _write(catalog_dir / "en.json", {
+        "schema_version": 1,
+        "locale": "en",
+        "review": {"status": "source"},
+        "messages": {"hello": "Hello"},
+    })
+    packet = create_review_packet("hi", locales_path=locales, catalog_dir=catalog_dir)
+    packet["entries"]["hello"]["translation"] = "नमस्ते"
+    packet_path = tmp_path / "hi-review.json"
+    _write(packet_path, packet)
+
+    with pytest.raises(SystemExit):
+        main([
+            "--locales", str(locales),
+            "--catalog-dir", str(catalog_dir),
+            "--render-review-preview", str(packet_path),
+            "--output", str(catalog_dir / "hi.html"),
+        ])
+    output = tmp_path / "private-preview" / "hi.html"
+    assert main([
+        "--locales", str(locales),
+        "--catalog-dir", str(catalog_dir),
+        "--render-review-preview", str(packet_path),
+        "--output", str(output),
+    ]) == 0
+    assert output.is_file()
+    assert "NOT PUBLISHABLE" in output.read_text(encoding="utf-8")
 
 
 def test_review_packet_requires_distinct_people_and_untampered_risk_metadata(tmp_path: Path) -> None:
