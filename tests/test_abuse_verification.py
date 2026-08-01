@@ -206,11 +206,13 @@ def test_deployment_factory_applies_all_server_owned_configuration(monkeypatch) 
         "rate_limiter": object(),
         "trusted_proxy_hops": 1,
         "deployment_mode": "indexed-search",
+        "release_commit": "a" * 40,
     }
     monkeypatch.setattr(app_module, "configured_abuse_verifier", lambda: sentinels["abuse_verifier"])
     monkeypatch.setattr(app_module, "configured_search_backend", lambda: sentinels["search_backend"])
     monkeypatch.setattr(app_module, "configured_rate_limiter", lambda: sentinels["rate_limiter"])
     monkeypatch.setattr(app_module, "configured_trusted_proxy_hops", lambda: sentinels["trusted_proxy_hops"])
     monkeypatch.setattr(app_module, "configured_deployment_mode", lambda: sentinels["deployment_mode"])
+    monkeypatch.setattr(app_module, "configured_release_commit", lambda: sentinels["release_commit"])
     monkeypatch.setattr(app_module, "create_app", lambda **kwargs: kwargs)
     assert app_module.create_configured_app() == sentinels

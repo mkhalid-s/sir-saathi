@@ -44,7 +44,7 @@ from .privacy import (
 from .schemas import GuidanceRequest, SearchRequestPayload, SearchResponsePayload, ValidationError
 from .search import SearchRequest, redact_backend_results, search_records
 from .search_backend import SearchBackend, configured_search_backend
-from .readiness import GUIDANCE_MODE, configured_deployment_mode, runtime_readiness
+from .readiness import GUIDANCE_MODE, configured_deployment_mode, configured_release_commit, runtime_readiness
 
 try:  # FastAPI is installed in deployment/CI environments.
     from fastapi import FastAPI, HTTPException, Request, Response
@@ -59,6 +59,7 @@ INDIA_TIME_ZONE = ZoneInfo("Asia/Kolkata")
 API_ROUTES = {
     f"{API_PREFIX}/health",
     f"{API_PREFIX}/ready",
+    f"{API_PREFIX}/version",
     f"{API_PREFIX}/states",
     f"{API_PREFIX}/forms",
     f"{API_PREFIX}/locales",
@@ -317,6 +318,7 @@ def create_app(
     rate_limiter: RateLimiter = DEFAULT_SEARCH_RATE_LIMITER,
     trusted_proxy_hops: int = 0,
     deployment_mode: str = GUIDANCE_MODE,
+    release_commit: str = "development",
 ):
     if FastAPI is None:
         raise RuntimeError("FastAPI is required to create the API app")
@@ -340,6 +342,10 @@ def create_app(
         if not report["ready"]:
             response.status_code = 503
         return report
+
+    @app.get(f"{API_PREFIX}/version")
+    def version() -> dict[str, str]:
+        return {"release_commit": release_commit}
 
     @app.get(f"{API_PREFIX}/states")
     def states(locale: str = "en") -> list[dict[str, Any]]:
@@ -434,6 +440,7 @@ def create_configured_app():
         rate_limiter=configured_rate_limiter(),
         trusted_proxy_hops=configured_trusted_proxy_hops(),
         deployment_mode=configured_deployment_mode(),
+        release_commit=configured_release_commit(),
     )
 
 

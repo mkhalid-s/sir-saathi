@@ -2,7 +2,7 @@ import pytest
 from starlette.responses import Response
 
 from services.api.app import create_app
-from services.api.readiness import configured_deployment_mode, runtime_readiness
+from services.api.readiness import configured_deployment_mode, configured_release_commit, runtime_readiness
 
 
 class Dependency:
@@ -28,6 +28,16 @@ def test_deployment_mode_defaults_to_safe_guidance_and_rejects_unknown_values() 
     assert configured_deployment_mode({"SIR_SAATHI_DEPLOYMENT_MODE": "indexed-search"}) == "indexed-search"
     with pytest.raises(ValueError, match="SIR_SAATHI_DEPLOYMENT_MODE"):
         configured_deployment_mode({"SIR_SAATHI_DEPLOYMENT_MODE": "automatic"})
+    assert configured_release_commit({}) == "development"
+    assert configured_release_commit({"SIR_SAATHI_RELEASE_COMMIT": "a" * 40}) == "a" * 40
+    with pytest.raises(ValueError, match="SIR_SAATHI_RELEASE_COMMIT"):
+        configured_release_commit({"SIR_SAATHI_RELEASE_COMMIT": "main"})
+
+
+def test_api_version_exposes_only_configured_non_secret_release_commit() -> None:
+    app = create_app(release_commit="c" * 40)
+    route = next(route for route in app.routes if getattr(route, "path", None) == "/api/version")
+    assert route.endpoint() == {"release_commit": "c" * 40}
 
 
 def test_guidance_readiness_does_not_depend_on_indexed_search_services() -> None:

@@ -63,7 +63,7 @@ def verify_api_routes() -> None:
     from services.api.app import api_route_paths
 
     paths = api_route_paths()
-    required = {"/api/health", "/api/ready", "/api/states", "/api/forms", "/api/locales", "/api/assistance", "/api/guidance", "/api/search"}
+    required = {"/api/health", "/api/ready", "/api/version", "/api/states", "/api/forms", "/api/locales", "/api/assistance", "/api/guidance", "/api/search"}
     missing = sorted(required - paths)
     if missing:
         raise RuntimeError(f"missing API routes: {missing}")
@@ -140,6 +140,8 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("indexed-search preflight must validate abuse and proxy boundaries")
     if "DEPLOYMENT_MODE_ENV" not in preflight or "must match the selected deployment mode" not in preflight:
         raise RuntimeError("deployment preflight must match the selected runtime mode")
+    if "PUBLIC_RELEASE_COMMIT_ENV" not in preflight or "API_RELEASE_COMMIT_ENV" not in preflight:
+        raise RuntimeError("deployment preflight must bind PWA and API to one release commit")
     readiness = (ROOT / "services/api/readiness.py").read_text(encoding="utf-8")
     for contract in [
         "indexed_search.turnstile_unavailable",
@@ -156,6 +158,10 @@ def verify_deploy_templates() -> None:
         "api_readiness.no_store",
         "csp.default_deny",
         "csp.hash_bound_meta",
+        "home.release_commit",
+        "api_version.payload",
+        "release.pwa_api_match",
+        "release.expected_commit",
         "not_found.noindex",
         "values_redacted",
     ]:
@@ -176,6 +182,7 @@ def verify_deploy_templates() -> None:
         "ready_for_guidance_rehearsal_signoff",
         "no_voter_data_attestation",
         "public_search_disabled_attestation",
+        "deployment_probe_release_binding",
         "independent_reviewer",
         "isolated_restore_drill",
         "rollback_rehearsal",

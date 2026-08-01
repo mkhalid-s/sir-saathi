@@ -12,6 +12,7 @@ def test_api_routes_are_prefixed_for_proxy() -> None:
     paths = api_route_paths()
     assert "/api/health" in paths
     assert "/api/ready" in paths
+    assert "/api/version" in paths
     assert "/api/states" in paths
     assert "/api/forms" in paths
     assert "/api/locales" in paths

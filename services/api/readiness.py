@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import os
+import re
 from typing import Any, Mapping
 
 DEPLOYMENT_MODE_ENV = "SIR_SAATHI_DEPLOYMENT_MODE"
+RELEASE_COMMIT_ENV = "SIR_SAATHI_RELEASE_COMMIT"
 GUIDANCE_MODE = "guidance"
 INDEXED_SEARCH_MODE = "indexed-search"
 DEPLOYMENT_MODES = {GUIDANCE_MODE, INDEXED_SEARCH_MODE}
+RELEASE_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
 def configured_deployment_mode(environment: Mapping[str, str] | None = None) -> str:
@@ -17,6 +20,14 @@ def configured_deployment_mode(environment: Mapping[str, str] | None = None) -> 
     if mode not in DEPLOYMENT_MODES:
         raise ValueError(f"{DEPLOYMENT_MODE_ENV} must be guidance or indexed-search")
     return mode
+
+
+def configured_release_commit(environment: Mapping[str, str] | None = None) -> str:
+    source = os.environ if environment is None else environment
+    value = source.get(RELEASE_COMMIT_ENV, "development").strip()
+    if value != "development" and not RELEASE_COMMIT_PATTERN.fullmatch(value):
+        raise ValueError(f"{RELEASE_COMMIT_ENV} must be development or a full lowercase Git commit")
+    return value
 
 
 def _dependency_ready(dependency: Any) -> bool:

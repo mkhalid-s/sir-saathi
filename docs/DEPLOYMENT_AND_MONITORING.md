@@ -20,11 +20,11 @@ npm ci
 ASTRO_TELEMETRY_DISABLED=1 npm run web:build
 ```
 
-Build with Node 22 and set `PUBLIC_TURNSTILE_SITE_KEY` to the public site key paired with the API's server-side secret and allowed production hostname. Publish the contents of `apps/web/dist` into a versioned, root-owned directory under `/srv/sir-saathi/web/releases`, then atomically point `/srv/sir-saathi/web/current` at that release. The Caddy service needs read and directory-traversal permission, but it must not own the release files. Validate the adapted Caddyfile before reloading Caddy.
+Build with Node 22. Set `PUBLIC_RELEASE_COMMIT` to the full lowercase 40-character Git commit and set `PUBLIC_TURNSTILE_SITE_KEY` to the public site key paired with the API's server-side secret and allowed production hostname. Configure the API with the identical commit in `SIR_SAATHI_RELEASE_COMMIT`. Publish the contents of `apps/web/dist` into a versioned, root-owned directory under `/srv/sir-saathi/web/releases`, then atomically point `/srv/sir-saathi/web/current` at that release. The Caddy service needs read and directory-traversal permission, but it must not own the release files. Validate the adapted Caddyfile before reloading Caddy.
 
 Set `PUBLIC_SITE_URL` to the exact public HTTPS origin during every production build. It drives canonical links, reviewed-locale alternates, `sitemap.xml`, and `robots.txt`; the checked-in `.example` origin is only a deterministic local/CI default. Run `python scripts/check_discoverability.py --require-production-origin` after the production build so reserved example output cannot be deployed.
 
-Run the read-only, value-redacting production preflight in the same environment used for the release. Guidance-only deployment requires the final build and monitor origins to match. Indexed-search mode additionally requires `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search` and validates the PostgreSQL/Redis URLs, distinct Turnstile public/server values, exact Turnstile hostname, trusted proxy hops, and private encrypted-backup destination/recipient:
+Run the read-only, value-redacting production preflight in the same environment used for the release. Both modes require the final build and monitor origins plus the public/API release commits to match. Guidance-only deployment checks five fields. Indexed-search mode additionally requires `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search` and validates the PostgreSQL/Redis URLs, distinct Turnstile public/server values, exact Turnstile hostname, trusted proxy hops, and private encrypted-backup destination/recipient:
 
 ```sh
 python -m pipeline.sir_saathi_pipeline.deployment_preflight --mode guidance
@@ -36,10 +36,12 @@ Passing indexed-search preflight proves configuration shape only. It does not en
 After the candidate release is deployed, audit the real public surface:
 
 ```sh
-python -m pipeline.sir_saathi_pipeline.deployment_probe --origin "$PUBLIC_SITE_URL"
+python -m pipeline.sir_saathi_pipeline.deployment_probe \
+  --origin "$PUBLIC_SITE_URL" \
+  --expected-commit "$PUBLIC_RELEASE_COMMIT"
 ```
 
-The value-redacting probe follows normal redirects and checks 33 transport-level contracts: the final URL stays on the requested HTTPS origin, the homepage identifies the PWA, required browser-security headers and deny-by-default/Turnstile CSP directives are present, the generated inner policy contains SHA-256 script/style hashes without `unsafe-inline`, `/api/health` and `/api/ready` are same-origin JSON with `Cache-Control: no-store`, readiness is green for the selected runtime mode, and an unknown route returns the no-index HTML recovery page with HTTP 404. It reports stable check IDs rather than response bodies, redirect destinations, or network exception details. Passing the probe is deployed-release evidence, but is not a substitute for the browser, accessibility, backup/restore, or indexed-search rehearsal.
+The value-redacting probe follows normal redirects and checks 42 transport-level contracts: the final URL stays on the requested HTTPS origin, the homepage identifies the PWA, required browser-security headers and deny-by-default/Turnstile CSP directives are present, the generated inner policy contains SHA-256 script/style hashes without `unsafe-inline`, `/api/health`, `/api/ready`, and `/api/version` are same-origin no-store JSON, readiness is green for the selected runtime mode, the PWA and API expose the same expected release commit, and an unknown route returns the no-index HTML recovery page with HTTP 404. It reports stable check IDs rather than response bodies, redirect destinations, or network exception details; the verified Git commit is deliberately included as non-secret release evidence. Passing the probe is deployed-release evidence, but is not a substitute for the browser, accessibility, backup/restore, or indexed-search rehearsal.
 
 ## Guidance-Only Production Rehearsal
 
@@ -53,7 +55,7 @@ python -m pipeline.sir_saathi_pipeline.deployment_rehearsal \
   --validate reports/deployment-rehearsal.json --require-full-pass
 ```
 
-The template starts unapproved and requires a real HTTPS origin, the exact deployed commit, distinct operator and reviewer identities, explicit attestations that no voter data was used and public indexed search remained disabled, and evidence for all 11 build, database, edge, offline, backup/restore, monitoring, accessibility, and rollback checks. A failed check needs a remediation reference and passing retest. Validator output contains only stable blocker IDs and counts; it does not echo the origin, people, infrastructure details, or private evidence notes. This record proves rehearsal completeness, not public-search authorization or accessibility conformance.
+The schema-v2 template starts unapproved and requires a real HTTPS origin, the exact full deployed commit, the successful 42-check deployment-probe report bound to that commit, distinct operator and reviewer identities, explicit attestations that no voter data was used and public indexed search remained disabled, and evidence for all 11 build, database, edge, offline, backup/restore, monitoring, accessibility, and rollback checks. A failed check needs a remediation reference and passing retest. Validator output contains only stable blocker IDs and counts; it does not echo the origin, people, infrastructure details, or private evidence notes. This record proves rehearsal completeness, not public-search authorization or accessibility conformance.
 
 ## API Smoke Check
 
@@ -95,7 +97,7 @@ Creation streams `pg_dump` custom-format output directly into `age`; no plaintex
 
 Archive verification is not a restore drill. Before public indexed search, restore a reviewed backup into a newly created isolated PostgreSQL 16 database with no public network route, run migrations with `--check`, compare aggregate row/readiness counts, record the operator/date/result outside the repository, and securely destroy the drill database. PostgreSQL archives can execute source-controlled database definitions during restore, so use only backups produced by the trusted deployment and a least-privileged isolated target.
 
-Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search`, `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all six. Guidance is the safe default and deliberately stays ready without search dependencies. `PUBLIC_TURNSTILE_SITE_KEY` is intentionally public and belongs in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
+Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_RELEASE_COMMIT`, `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search`, `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all seven. Guidance is the safe default and deliberately stays ready without search dependencies. `PUBLIC_RELEASE_COMMIT` and `PUBLIC_TURNSTILE_SITE_KEY` are intentionally public and belong in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
 
 ## Local Database
 
@@ -107,7 +109,7 @@ Real indexed search additionally requires runtime secrets/configuration outside 
 - Use `infra/caddy/Caddyfile.example` as the reverse proxy template.
 - Replace the example hostname, keep the PWA root at `/srv/sir-saathi/web/current`, and keep `/api/*` on that exact origin. Caddy serves Astro's generated directory indexes and retains the API prefix when proxying.
 - Preserve the template's HSTS, anti-framing, content-type, referrer, permissions, cross-origin-resource, and Content Security Policy header. The header is deny-by-default, retains header-only `frame-ancestors`, and allows network script/frame access only to Turnstile. Astro also emits an earlier per-page meta policy whose SHA-256 hashes bind every inline hydration script and generated style. Browsers enforce both policies, so the outer header's compatibility allowance cannot authorize un-hashed inline content. The generated CSP audit recomputes every inline hash, rejects inline event/style attributes and unapproved origins, and must pass after each production build.
-- Create `/etc/sir-saathi/api.env` as `root:sir-saathi` with mode `0640`. Put the six server-owned `SIR_SAATHI_*` values listed above in that file; never add `PUBLIC_TURNSTILE_SITE_KEY` or shell `export` syntax. The systemd unit loads this exact file before starting the API.
+- Create `/etc/sir-saathi/api.env` as `root:sir-saathi` with mode `0640`. Put the seven server-owned `SIR_SAATHI_*` values listed above in that file; never add `PUBLIC_RELEASE_COMMIT`, `PUBLIC_TURNSTILE_SITE_KEY`, or shell `export` syntax. The systemd unit loads this exact file before starting the API.
 - Keep runtime configuration outside Git. After changing it, run `systemctl daemon-reload` when the unit changed and restart `sir-saathi-api`.
 
 ## Monitoring

@@ -15,6 +15,14 @@ def completed_evidence() -> dict:
         "rehearsal_date": "2026-08-01",
         "no_voter_data_attestation": True,
         "public_search_disabled_attestation": True,
+        "deployment_probe": {
+            "ready": True,
+            "checks_passed": 42,
+            "checks_total": 42,
+            "blockers": [],
+            "release_commit": "b" * 40,
+            "values_redacted": True,
+        },
     })
     for check in evidence["checks"]:
         check.update({"result": "pass", "evidence": "Private rehearsal record reference."})
@@ -26,6 +34,7 @@ def test_template_starts_unreviewed_and_fails_closed() -> None:
     assert template["deployment_mode"] == "guidance"
     assert template["no_voter_data_attestation"] is False
     assert template["public_search_disabled_attestation"] is False
+    assert template["deployment_probe"] is None
     assert all(item["result"] == "not_tested" for item in template["checks"])
 
     report = validate_evidence(template, today=date(2026, 8, 1))
@@ -63,6 +72,18 @@ def test_rehearsal_requires_independent_review_and_safe_scope() -> None:
         "evidence.independent_reviewer",
         "evidence.public_search_disabled_attestation",
     ]
+
+
+def test_rehearsal_binds_deployed_pwa_and_api_probe_to_commit() -> None:
+    evidence = completed_evidence()
+    evidence["deployment_probe"]["release_commit"] = "a" * 40
+    report = validate_evidence(evidence, today=date(2026, 8, 1))
+    assert "evidence.deployment_probe_release_binding" in report["blockers"]
+    evidence["deployment_probe"]["release_commit"] = "b" * 40
+    evidence["deployment_probe"]["checks_passed"] = 41
+    assert "evidence.deployment_probe_release_binding" in validate_evidence(
+        evidence, today=date(2026, 8, 1)
+    )["blockers"]
 
 
 def test_failed_check_requires_remediation_and_passing_retest() -> None:

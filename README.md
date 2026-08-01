@@ -53,6 +53,7 @@ The initial API is intentionally small and served under `/api`:
 
 - `GET /api/health`
 - `GET /api/ready`
+- `GET /api/version`
 - `GET /api/states`
 - `GET /api/forms`
 - `GET /api/locales`

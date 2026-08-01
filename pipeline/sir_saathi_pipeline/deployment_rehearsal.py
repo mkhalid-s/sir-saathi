@@ -13,8 +13,8 @@ from .deployment_preflight import _public_origin
 from .translation_catalog import _load_json
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA_VERSION = 1
-COMMIT_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
+SCHEMA_VERSION = 2
+COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 RESULTS = {"pass", "fail", "not_tested"}
 CHECKS = (
     ("release_build", "Production-origin build, launch gate, and immutable release artifact"),
@@ -43,6 +43,7 @@ def create_template() -> dict[str, Any]:
         "rehearsal_date": None,
         "no_voter_data_attestation": False,
         "public_search_disabled_attestation": False,
+        "deployment_probe": None,
         "checks": [
             {
                 "id": identifier,
@@ -94,6 +95,18 @@ def validate_evidence(evidence: dict[str, Any], *, today: date | None = None) ->
         blockers.append("evidence.no_voter_data_attestation")
     if evidence.get("public_search_disabled_attestation") is not True:
         blockers.append("evidence.public_search_disabled_attestation")
+    probe = evidence.get("deployment_probe")
+    if not (
+        isinstance(probe, dict)
+        and probe.get("ready") is True
+        and probe.get("blockers") == []
+        and probe.get("release_commit") == commit
+        and isinstance(probe.get("checks_passed"), int)
+        and probe.get("checks_passed") == probe.get("checks_total")
+        and probe.get("checks_total", 0) >= 42
+        and probe.get("values_redacted") is True
+    ):
+        blockers.append("evidence.deployment_probe_release_binding")
 
     checks = evidence.get("checks")
     check_by_id = {

@@ -4,6 +4,7 @@ The first API surface is intentionally small and served under the `/api` prefix:
 
 - `GET /api/health`
 - `GET /api/ready`
+- `GET /api/version`
 - `GET /api/states`
 - `GET /api/forms`
 - `GET /api/locales`
@@ -28,6 +29,8 @@ The public adapter uses a dedicated connection configuration with a three-second
 `GET /api/assistance` exposes the canonical nationwide official-help catalogue from `config/official-assistance.json`: ECI web, phone, email, and CEO-directory destinations plus per-channel source bindings and source dates. The Citizen Service Portal, ECI Contact Us page, and ECI CEO Contact Directory support the reviewed claims. The endpoint accepts no complaint or voter data and does not proxy submissions.
 
 `GET /api/health` is process liveness. `GET /api/ready` is deployment-mode-aware readiness: guidance mode does not depend on indexed-search infrastructure, while indexed-search mode returns HTTP 503 unless server-side Turnstile is configured, PostgreSQL answers a data-free `SELECT 1`, the shared Redis limiter answers a non-mutating `PING`, and the trusted proxy boundary is configured. Readiness reports stable blocker IDs and never returns connection strings or exception details.
+
+`GET /api/version` returns only the configured non-secret 40-character release commit. Production preflight requires it to match the PWA's `PUBLIC_RELEASE_COMMIT`; the deployed-origin probe compares both surfaces to the operator-supplied expected commit so stale or mixed releases fail.
 
 The deployed `/api/search` handler checks launch policy and a hashed, client-global verification-attempt limit before calling the external challenge verifier. A separate fixed-window search limit uses the same client-global scope across all states and Assembly Constituencies, preventing invalid-token floods and scope rotation from resetting their respective allowances. Production indexed search requires the atomic shared Redis implementation; missing or unavailable Redis fails closed.
 

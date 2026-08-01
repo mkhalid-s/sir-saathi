@@ -21,6 +21,10 @@ CSP_META = re.compile(
     r'<meta\s+http-equiv="content-security-policy"\s+content="([^"]+)"',
     re.IGNORECASE,
 )
+RELEASE_META = re.compile(
+    r'<meta\s+name="sir-saathi-release"\s+content="([0-9a-f]{40})"', re.IGNORECASE
+)
+RELEASE_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
 @dataclass(frozen=True)
@@ -73,7 +77,13 @@ def _csp_directives(value: str) -> dict[str, set[str]]:
     return directives
 
 
-def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch) -> dict[str, object]:
+def probe(
+    origin: str,
+    *,
+    expected_commit: str,
+    timeout_seconds: float = 10,
+    fetcher: Fetcher = fetch,
+) -> dict[str, object]:
     normalized_origin, _hostname = _public_origin(origin)
     if not normalized_origin:
         return {
@@ -81,6 +91,16 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
             "checks_passed": 0,
             "checks_total": 1,
             "blockers": ["origin.invalid_https_origin"],
+            "release_commit": None,
+            "values_redacted": True,
+        }
+    if not RELEASE_COMMIT_PATTERN.fullmatch(expected_commit):
+        return {
+            "ready": False,
+            "checks_passed": 0,
+            "checks_total": 1,
+            "blockers": ["release.invalid_expected_commit"],
+            "release_commit": None,
             "values_redacted": True,
         }
     if timeout_seconds <= 0 or timeout_seconds > 60:
@@ -101,6 +121,8 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
         check(f"{name}.same_https_origin", _same_origin(normalized_origin, response.final_url))
         return response
 
+    pwa_release_commit = None
+    api_release_commit = None
     home = request_surface("home", "/")
     if home:
         headers = {name.casefold(): value for name, value in home.headers.items()}
@@ -138,6 +160,9 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
             and any(source.startswith("'sha256-") for source in meta_styles)
             and "'unsafe-inline'" not in meta_styles,
         )
+        release_match = RELEASE_META.search(raw_body)
+        pwa_release_commit = release_match.group(1).casefold() if release_match else None
+        check("home.release_commit", pwa_release_commit is not None)
 
     health = request_surface("api_health", "/api/health")
     if health:
@@ -169,6 +194,29 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
             and payload.get("blockers") == [],
         )
 
+    version = request_surface("api_version", "/api/version")
+    if version:
+        headers = {name.casefold(): value for name, value in version.headers.items()}
+        check("api_version.status_200", version.status == 200)
+        check("api_version.json_content_type", "application/json" in headers.get("content-type", "").casefold())
+        check("api_version.no_store", "no-store" in headers.get("cache-control", "").casefold())
+        try:
+            payload = json.loads(version.body)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            payload = None
+        candidate = payload.get("release_commit") if isinstance(payload, dict) else None
+        api_release_commit = candidate if isinstance(candidate, str) and RELEASE_COMMIT_PATTERN.fullmatch(candidate) else None
+        check("api_version.payload", api_release_commit is not None and payload == {"release_commit": api_release_commit})
+
+    verified_release_commit = None
+    if home and version:
+        commits_match = pwa_release_commit is not None and pwa_release_commit == api_release_commit
+        check("release.pwa_api_match", commits_match)
+        expected_matches = commits_match and pwa_release_commit == expected_commit
+        check("release.expected_commit", expected_matches)
+        if expected_matches:
+            verified_release_commit = expected_commit
+
     not_found = request_surface("not_found", NOT_FOUND_PATH)
     if not_found:
         headers = {name.casefold(): value for name, value in not_found.headers.items()}
@@ -183,6 +231,7 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
         "checks_passed": len(checks) - len(blockers),
         "checks_total": len(checks),
         "blockers": blockers,
+        "release_commit": verified_release_commit,
         "values_redacted": True,
     }
 
@@ -190,9 +239,10 @@ def probe(origin: str, *, timeout_seconds: float = 10, fetcher: Fetcher = fetch)
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit a deployed origin without printing response data.")
     parser.add_argument("--origin", default=os.environ.get(PUBLIC_SITE_URL_ENV, ""))
+    parser.add_argument("--expected-commit", required=True)
     parser.add_argument("--timeout-seconds", type=float, default=10)
     args = parser.parse_args(argv)
-    report = probe(args.origin, timeout_seconds=args.timeout_seconds)
+    report = probe(args.origin, expected_commit=args.expected_commit, timeout_seconds=args.timeout_seconds)
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0 if report["ready"] else 1
 

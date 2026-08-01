@@ -7,6 +7,7 @@ import ipaddress
 import json
 import os
 from pathlib import Path
+import re
 from typing import Mapping
 from urllib.parse import urlparse
 
@@ -14,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PUBLIC_SITE_URL_ENV = "PUBLIC_SITE_URL"
 WEB_URL_ENV = "WEB_URL"
 PUBLIC_TURNSTILE_SITE_KEY_ENV = "PUBLIC_TURNSTILE_SITE_KEY"
+PUBLIC_RELEASE_COMMIT_ENV = "PUBLIC_RELEASE_COMMIT"
+API_RELEASE_COMMIT_ENV = "SIR_SAATHI_RELEASE_COMMIT"
 DATABASE_URL_ENV = "SIR_SAATHI_DATABASE_URL"
 REDIS_URL_ENV = "SIR_SAATHI_REDIS_URL"
 TURNSTILE_SECRET_ENV = "SIR_SAATHI_TURNSTILE_SECRET"
@@ -23,6 +26,7 @@ BACKUP_DIR_ENV = "SIR_SAATHI_BACKUP_DIR"
 AGE_RECIPIENT_ENV = "SIR_SAATHI_AGE_RECIPIENT"
 DEPLOYMENT_MODE_ENV = "SIR_SAATHI_DEPLOYMENT_MODE"
 RESERVED_PUBLIC_SUFFIXES = (".example", ".invalid", ".localhost", ".test")
+RELEASE_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _public_origin(value: str) -> tuple[str | None, str | None]:
@@ -82,6 +86,14 @@ def preflight(mode: str, environment: Mapping[str, str]) -> dict[str, object]:
     runtime_mode = environment.get(DEPLOYMENT_MODE_ENV, "guidance").strip()
     if runtime_mode != mode:
         blockers.append(f"{DEPLOYMENT_MODE_ENV} must match the selected deployment mode")
+    public_commit = environment.get(PUBLIC_RELEASE_COMMIT_ENV, "").strip()
+    api_commit = environment.get(API_RELEASE_COMMIT_ENV, "").strip()
+    if not RELEASE_COMMIT_PATTERN.fullmatch(public_commit):
+        blockers.append(f"{PUBLIC_RELEASE_COMMIT_ENV} must be the full lowercase Git commit")
+    if not RELEASE_COMMIT_PATTERN.fullmatch(api_commit):
+        blockers.append(f"{API_RELEASE_COMMIT_ENV} must be the full lowercase Git commit")
+    if public_commit and api_commit and public_commit != api_commit:
+        blockers.append("PWA and API release commits must match")
 
     if mode == "indexed-search":
         required = [
@@ -142,7 +154,7 @@ def preflight(mode: str, environment: Mapping[str, str]) -> dict[str, object]:
         "mode": mode,
         "ready": not blockers,
         "blockers": blockers,
-        "checked_fields": 3 if mode == "guidance" else 11,
+        "checked_fields": 5 if mode == "guidance" else 13,
         "values_redacted": True,
     }
 

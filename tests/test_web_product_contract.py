@@ -30,6 +30,9 @@ def test_public_routes_generate_canonical_locale_alternates_and_sitemap() -> Non
     assert "Sitemap:" in robots
     assert "PUBLIC_SITE_URL" in config
     assert "must be an HTTPS origin" in config
+    assert "PUBLIC_RELEASE_COMMIT" in config
+    assert "full lowercase Git commit" in config
+    assert 'name="sir-saathi-release"' in layout
 
 
 def test_unknown_routes_have_an_accessible_noindex_recovery_page() -> None:

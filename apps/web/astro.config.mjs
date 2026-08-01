@@ -3,6 +3,7 @@ import preact from '@astrojs/preact';
 
 const site = process.env.PUBLIC_SITE_URL ?? 'https://sir-saathi.example';
 const siteUrl = new URL(site);
+const releaseCommit = process.env.PUBLIC_RELEASE_COMMIT ?? 'development';
 if (
   siteUrl.protocol !== 'https:'
   || siteUrl.username
@@ -12,6 +13,9 @@ if (
   || siteUrl.hash
 ) {
   throw new Error('PUBLIC_SITE_URL must be an HTTPS origin without credentials, path, query, or fragment');
+}
+if (!siteUrl.hostname.endsWith('.example') && !/^[0-9a-f]{40}$/.test(releaseCommit)) {
+  throw new Error('PUBLIC_RELEASE_COMMIT must be the full lowercase Git commit for a production build');
 }
 
 export default defineConfig({
