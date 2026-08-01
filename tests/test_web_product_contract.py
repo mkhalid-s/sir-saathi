@@ -106,8 +106,10 @@ def test_web_preserves_canonical_language_codes() -> None:
     source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     assert "languageCodes: string[]" in source
-    assert "code: language" in source
+    assert "code: locale.code" in source
     assert "state.languageCodes" in wizard
+    assert "config/locales.json" in source
+    assert "localeByCode" in source
 
 
 def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> None:

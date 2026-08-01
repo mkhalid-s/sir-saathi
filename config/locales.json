@@ -1,0 +1,22 @@
+{
+  "policy": "Safety-critical voter guidance is enabled only after fluent human review of the complete locale catalogue.",
+  "locales": [
+    {"code":"en","label":"English","status":"available","review":"reviewed"},
+    {"code":"as","label":"Assamese","status":"planned","review":"required"},
+    {"code":"bn","label":"Bengali","status":"planned","review":"required"},
+    {"code":"gu","label":"Gujarati","status":"planned","review":"required"},
+    {"code":"hi","label":"Hindi","status":"planned","review":"required"},
+    {"code":"kn","label":"Kannada","status":"planned","review":"required"},
+    {"code":"kok","label":"Konkani","status":"planned","review":"required"},
+    {"code":"lus","label":"Mizo","status":"planned","review":"required"},
+    {"code":"ml","label":"Malayalam","status":"planned","review":"required"},
+    {"code":"mni","label":"Meitei","status":"planned","review":"required"},
+    {"code":"mr","label":"Marathi","status":"planned","review":"required"},
+    {"code":"ne","label":"Nepali","status":"planned","review":"required"},
+    {"code":"or","label":"Odia","status":"planned","review":"required"},
+    {"code":"pa","label":"Punjabi","status":"planned","review":"required"},
+    {"code":"ta","label":"Tamil","status":"planned","review":"required"},
+    {"code":"te","label":"Telugu","status":"planned","review":"required"},
+    {"code":"ur","label":"Urdu","status":"planned","review":"required"}
+  ]
+}

@@ -1,6 +1,7 @@
 import maharashtraConfig from '../../../../config/states/IN-MH.json';
 import westBengalConfig from '../../../../config/states/IN-WB.json';
 import jurisdictionCatalogue from '../../../../config/jurisdictions.json';
+import localeCatalogue from '../../../../config/locales.json';
 
 export type StateCapability = 'guidance_only' | 'official_link_search' | 'pilot_indexed_search' | 'validated_indexed_search';
 export type UiLanguageStatus = 'available' | 'planned';
@@ -79,25 +80,17 @@ export interface UiLanguageOption {
 
 const ENGLISH_LABEL = 'English';
 
-const languageNames: Record<string, string> = {
-  as: 'Assamese',
-  bn: 'Bengali',
-  en: 'English',
-  gu: 'Gujarati',
-  hi: 'Hindi',
-  kn: 'Kannada',
-  kok: 'Konkani',
-  lus: 'Mizo',
-  ml: 'Malayalam',
-  mni: 'Meitei',
-  mr: 'Marathi',
-  ne: 'Nepali',
-  or: 'Odia',
-  pa: 'Punjabi',
-  ta: 'Tamil',
-  te: 'Telugu',
-  ur: 'Urdu'
-};
+const localeByCode = localeCatalogue.locales.reduce<Record<string, UiLanguageOption>>(
+  (locales, locale) => ({
+    ...locales,
+    [locale.code]: { code: locale.code, label: locale.label, status: locale.status as UiLanguageStatus }
+  }),
+  {}
+);
+
+const languageNames: Record<string, string> = Object.fromEntries(
+  localeCatalogue.locales.map((locale) => [locale.code, locale.label])
+);
 
 const statusLabels: Record<string, string> = {
   pre_enumeration: 'Preparing for enumeration',
@@ -146,15 +139,9 @@ function officialLinkFor(config: StateConfig): string {
 }
 
 export function uiLanguageOptionsForState(stateLanguageCodes: string[]): UiLanguageOption[] {
-  const plannedLanguages = stateLanguageCodes.filter((language) => language !== 'en');
-  return [
-    { code: 'en', label: ENGLISH_LABEL, status: 'available' },
-    ...plannedLanguages.map((language) => ({
-      code: language,
-      label: languageNames[language] ?? language,
-      status: 'planned' as const
-    }))
-  ];
+  return ['en', ...stateLanguageCodes.filter((language) => language !== 'en')]
+    .map((code) => localeByCode[code])
+    .filter((locale): locale is UiLanguageOption => Boolean(locale));
 }
 
 export function uiLanguageReadiness(stateLanguages: string[]): string {

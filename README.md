@@ -190,6 +190,7 @@ More detail: `docs/PRIVACY_AND_ABUSE.md`, `docs/GUIDANCE_RULES.md`, and `docs/LA
 apps/web/                 Mobile-first Astro + Preact PWA
 config/forms/             SIR forms and document catalogue
 config/jurisdictions.json Nationwide state/UT metadata and official CEO links
+config/locales.json       Locale availability and human-review policy
 config/states/            Reviewed schedule and capability overrides
 db/                       PostgreSQL schema and migrations
 docs/                     Product, privacy, API, launch, and operating docs

@@ -1,9 +1,13 @@
 from datetime import date
+import json
+from pathlib import Path
 
 import pytest
 
 from pipeline.sir_saathi_pipeline import load_all_states
 from pipeline.sir_saathi_pipeline.state_registry import parse_state_config
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_loads_initial_state_registry() -> None:
@@ -36,6 +40,19 @@ def test_nationwide_registry_has_unique_eci_codes_and_valid_language_defaults() 
         assert state.default_language in state.languages
         assert state.languages
         assert state.scripts
+
+
+def test_every_nationwide_language_has_a_governed_locale() -> None:
+    locale_data = json.loads((ROOT / "config/locales.json").read_text(encoding="utf-8"))
+    locales = {locale["code"]: locale for locale in locale_data["locales"]}
+    state_languages = {language for state in load_all_states().values() for language in state.languages}
+    assert state_languages <= set(locales)
+    assert locales["en"] == {"code": "en", "label": "English", "status": "available", "review": "reviewed"}
+    assert all(
+        locale["status"] == "planned" and locale["review"] == "required"
+        for code, locale in locales.items()
+        if code != "en"
+    )
 
 
 def test_maharashtra_registry_dates_and_capability() -> None:
