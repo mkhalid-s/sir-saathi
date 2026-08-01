@@ -250,6 +250,4 @@ def verification_rate_limit_key(*, client_identity: str | None) -> str:
 
 def safe_log_query(query: str) -> str:
     normalized = " ".join(query.strip().split())
-    if len(normalized) <= 2:
-        return "short-query"
-    return f"len:{len(normalized)} prefix:{normalized[:2].casefold()}"
+    return f"len:{len(normalized)}"

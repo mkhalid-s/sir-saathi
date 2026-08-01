@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import date, datetime
+import logging
 import os
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -61,6 +62,24 @@ API_ROUTES = {
     f"{API_PREFIX}/guidance",
     f"{API_PREFIX}/search",
 }
+SEARCH_AUDIT_LOGGER = logging.getLogger("sir_saathi.public_search")
+SEARCH_AUDIT_EVENTS = frozenset({
+    "backend_unavailable",
+    "completed",
+    "limiter_unavailable",
+    "pilot_rejected",
+    "rate_limited",
+    "request_rejected",
+    "verification_rejected",
+})
+
+
+def _log_search_event(event: str, *, level: int = logging.INFO) -> None:
+    """Log only a stable event ID—never payloads, identities, tokens, or results."""
+
+    if event not in SEARCH_AUDIT_EVENTS:
+        raise ValueError("unknown public-search audit event")
+    SEARCH_AUDIT_LOGGER.log(level, "public_search_event=%s", event)
 
 
 def _date_payload(value: date | None) -> str | None:
@@ -294,6 +313,7 @@ def create_app(
 
     @app.post(f"{API_PREFIX}/search")
     def search(payload: dict[str, Any], request: Request) -> dict[str, Any]:
+        rejection_event = "request_rejected"
         try:
             client_host = resolve_client_ip(
                 peer_ip=request.client.host if request.client else None,
@@ -301,41 +321,53 @@ def create_app(
                 trusted_proxy_hops=trusted_proxy_hops,
             )
             validated = _search_request(payload)
+            if validated.use_sanitized_pilot:
+                rejection_event = "pilot_rejected"
+                raise ValueError("sanitized pilot search is not available through the public API")
             verification_passed = False
-            if not validated.use_sanitized_pilot:
-                states_by_id = load_all_states()
-                if validated.state_id not in states_by_id:
-                    raise ValueError(f"unknown state_id: {validated.state_id}")
-                # Check every launch prerequisite except the token itself before
-                # spending an external verification call.
-                assert_search_launch_allowed(
-                    states_by_id[validated.state_id],
-                    abuse_verification_passed=True,
-                    use_sanitized_pilot=False,
+            states_by_id = load_all_states()
+            if validated.state_id not in states_by_id:
+                raise ValueError(f"unknown state_id: {validated.state_id}")
+            # Check every launch prerequisite except the token itself before
+            # spending an external verification call.
+            assert_search_launch_allowed(
+                states_by_id[validated.state_id],
+                abuse_verification_passed=True,
+                use_sanitized_pilot=False,
+            )
+            if rate_limiter is None or not rate_limiter.shared:
+                raise RateLimiterUnavailable("public search requires a shared rate limiter")
+            assert_rate_limit_allowed(
+                rate_limiter.check(verification_rate_limit_key(client_identity=client_host))
+            )
+            if abuse_verifier is not None:
+                verification_passed = abuse_verifier.verify(
+                    validated.turnstile_response,
+                    remote_ip=client_host,
                 )
-                if rate_limiter is None or not rate_limiter.shared:
-                    raise RateLimiterUnavailable("public search requires a shared rate limiter")
-                assert_rate_limit_allowed(
-                    rate_limiter.check(verification_rate_limit_key(client_identity=client_host))
-                )
-                if abuse_verifier is not None:
-                    verification_passed = abuse_verifier.verify(
-                        validated.turnstile_response,
-                        remote_ip=client_host,
-                    )
-            return search_payload(
+            if not verification_passed:
+                rejection_event = "verification_rejected"
+            response_payload = search_payload(
                 validated,
                 rate_limiter=rate_limiter,
                 client_identity=client_host,
                 abuse_verification_passed=verification_passed,
                 search_backend=search_backend,
             )
+            _log_search_event("completed")
+            return response_payload
         except RateLimitExceeded as exc:
+            _log_search_event("rate_limited", level=logging.WARNING)
             raise HTTPException(status_code=429, detail=str(exc)) from exc
         except RateLimiterUnavailable as exc:
+            _log_search_event("limiter_unavailable", level=logging.ERROR)
             raise HTTPException(status_code=503, detail="Search is temporarily unavailable") from exc
         except (KeyError, ValueError, ValidationError) as exc:
+            _log_search_event(rejection_event, level=logging.WARNING)
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            _log_search_event("backend_unavailable", level=logging.ERROR)
+            raise HTTPException(status_code=503, detail="Search is temporarily unavailable") from exc
 
     return app
 

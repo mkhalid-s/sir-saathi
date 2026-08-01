@@ -112,7 +112,22 @@ def test_disabled_scope_is_rejected_before_external_verification() -> None:
     assert limiter.keys == []
 
 
-def test_verification_is_rate_limited_before_external_call(monkeypatch) -> None:
+def test_public_route_rejects_client_controlled_sanitized_pilot() -> None:
+    limiter = SharedRecordingLimiter()
+    endpoint = search_endpoint(create_app(rate_limiter=limiter))
+    with pytest.raises(app_module.HTTPException) as exc_info:
+        endpoint({
+            "state_id": "IN-MH",
+            "query": "sample",
+            "ac_number": 172,
+            "use_sanitized_pilot": True,
+        }, synthetic_request())
+    assert exc_info.value.status_code == 400
+    assert "not available through the public API" in exc_info.value.detail
+    assert limiter.keys == []
+
+
+def test_verification_is_rate_limited_before_external_call(monkeypatch, caplog) -> None:
     state = load_all_states()["IN-WB"]
     launch_ready = replace(state, public_launch_ready=True, data_capability="validated_indexed_search")
     monkeypatch.setattr(app_module, "load_all_states", lambda: {"IN-WB": launch_ready})
@@ -129,14 +144,49 @@ def test_verification_is_rate_limited_before_external_call(monkeypatch) -> None:
             return []
 
     endpoint = search_endpoint(create_app(abuse_verifier=Verifier(), search_backend=Backend(), rate_limiter=limiter))
-    response = endpoint({
-        "state_id": "IN-WB",
-        "query": "sample",
-        "ac_number": 1,
-        "turnstile_response": "opaque-response",
-    }, synthetic_request())
+    with caplog.at_level("INFO", logger="sir_saathi.public_search"):
+        response = endpoint({
+            "state_id": "IN-WB",
+            "query": "sample",
+            "ac_number": 1,
+            "turnstile_response": "opaque-response",
+        }, synthetic_request())
     assert response == {"results": [], "count": 0}
     assert [key.split(":", 1)[0] for key in limiter.keys] == ["verification", "search"]
+    assert "public_search_event=completed" in caplog.text
+
+
+def test_backend_failure_is_generic_and_does_not_log_exception_detail(monkeypatch, caplog) -> None:
+    state = load_all_states()["IN-WB"]
+    launch_ready = replace(state, public_launch_ready=True, data_capability="validated_indexed_search")
+    monkeypatch.setattr(app_module, "load_all_states", lambda: {"IN-WB": launch_ready})
+
+    class Verifier:
+        def verify(self, *_args, **_kwargs):
+            return True
+
+    class Backend:
+        def search(self, _request):
+            raise RuntimeError("Sample Voter opaque-response must not reach logs")
+
+    endpoint = search_endpoint(create_app(
+        abuse_verifier=Verifier(),
+        search_backend=Backend(),
+        rate_limiter=SharedRecordingLimiter(),
+    ))
+    with caplog.at_level("INFO", logger="sir_saathi.public_search"):
+        with pytest.raises(app_module.HTTPException) as exc_info:
+            endpoint({
+                "state_id": "IN-WB",
+                "query": "Sample Voter",
+                "ac_number": 1,
+                "turnstile_response": "opaque-response",
+            }, synthetic_request())
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.detail == "Search is temporarily unavailable"
+    assert "public_search_event=backend_unavailable" in caplog.text
+    assert "Sample Voter" not in caplog.text
+    assert "opaque-response" not in caplog.text
 
 
 def test_abuse_verifier_is_configured_only_from_server_environment(monkeypatch) -> None:

@@ -65,7 +65,9 @@ def test_public_search_allows_official_schedule_provenance_with_server_verificat
 
 
 def test_safe_log_query_does_not_store_full_query() -> None:
-    assert safe_log_query("Sample Voter Name") == "len:17 prefix:sa"
+    summary = safe_log_query("Sample Voter Name")
+    assert summary == "len:17"
+    assert "sample" not in summary.casefold()
 
 
 def test_rate_limiter_blocks_repeated_search_bursts() -> None:
