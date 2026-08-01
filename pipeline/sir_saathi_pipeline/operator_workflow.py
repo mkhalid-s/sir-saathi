@@ -93,6 +93,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
     source_label = source_manifest.source_label if source_manifest else ""
     source_uri = source_manifest.source_uri if source_manifest else ""
     checksum = source_manifest.checksum if source_manifest else ""
+    parser_hint = source_manifest.parser_hint or "" if source_manifest else ""
 
     seed_command = shell_join([
         "python", "-m", "pipeline.sir_saathi_pipeline.seed_states", "--state", request.state_id
@@ -113,6 +114,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
         "--source-label", source_label,
         "--source-url", source_uri,
         "--expected-checksum", checksum,
+        "--parser-hint", parser_hint,
         "--dry-run",
     ])
     load_command = shell_join([
@@ -125,6 +127,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
         "--source-label", source_label,
         "--source-url", source_uri,
         "--expected-checksum", checksum,
+        "--parser-hint", parser_hint,
         "--load",
     ])
     search_command = shell_join([
@@ -213,6 +216,7 @@ def build_workflow(request: WorkflowRequest, *, states: dict[str, StateConfig] |
             "roll_year": source_manifest.roll_year,
             "roll_kind": source_manifest.roll_kind,
             "language": source_manifest.language,
+            "parser_hint": source_manifest.parser_hint,
         },
         "steps": workflow_steps,
         "next_decision": "Run readiness_report and resolve blockers before any public search work.",

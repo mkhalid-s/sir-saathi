@@ -14,6 +14,8 @@ def write_manifest(
     reviewed: bool = True,
     local_path: str = "data/local/pilot.pdf",
     checksum: str = VALID_CHECKSUM,
+    parser_hint: str = "parse_2002",
+    roll_kind: str = "historical_base_roll",
 ) -> Path:
     manifest_path = tmp_path / "sources.json"
     manifest_path.write_text(
@@ -24,11 +26,11 @@ def write_manifest(
                         "source_id": "mh-2002-ac172-part21",
                         "state_id": "IN-MH",
                         "roll_year": 2002,
-                        "roll_kind": "historical_base_roll",
+                        "roll_kind": roll_kind,
                         "source_label": "Synthetic reviewed source",
                         "source_uri": "https://example.test/official.pdf",
                         "local_path": local_path,
-                        "parser_hint": "parse_2002",
+                        "parser_hint": parser_hint,
                         "language": "mr",
                         "checksum": checksum,
                         "reviewed": reviewed,
@@ -82,6 +84,17 @@ def test_source_manifest_blockers_require_reviewed_local_source(tmp_path: Path) 
     assert "source manifest entry must be reviewed before ingestion" in blockers
     assert "local_path must stay under ignored data/ or samples/ directories" in blockers
     assert "checksum must be sha256:<64 lowercase hex>" in blockers
+
+
+def test_source_manifest_blocks_fixture_only_current_parser(tmp_path: Path) -> None:
+    manifest_path = write_manifest(
+        tmp_path,
+        parser_hint="maharashtra_current_unicode_v1",
+        roll_kind="current_roll",
+    )
+    report = sources.validate_source_manifest(manifest_path, "mh-2002-ac172-part21")
+    assert report["valid_for_ingestion"] is False
+    assert any("not ingestion-ready" in blocker for blocker in report["blockers"])
 
 
 def test_validate_source_manifest_can_verify_local_file_checksum(tmp_path: Path) -> None:

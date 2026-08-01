@@ -44,7 +44,7 @@
   "historical_source_shape": "CEO Maharashtra historical PDFs, including legacy VirgoD3 font variants for some 2002 rolls.",
   "current_roll_source_shape": "ECI/CEO PDF roll sources and portal-backed official search.",
   "data_capability": "pilot_indexed_search",
-  "parser_status": "VirgoD3 parser validated for Trombay pilot; statewide parser routing still required.",
+  "parser_status": "VirgoD3 parser validated for the Trombay historical pilot; Unicode current-roll parser is synthetic-fixture-only and not ingestion-ready.",
   "public_launch_ready": false,
   "privacy_notes": "Pilot search must remain scoped and redacted until parser validation, rate limits, and legal/privacy review pass."
 }

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from .parsers.registry import validate_parser_scope
+
 RollKind = Literal[
     "historical_base_roll",
     "base_roll",
@@ -200,8 +202,18 @@ def source_manifest_blockers(manifest: SourceManifest) -> list[str]:
         blockers.append("local_path must be repo-relative")
     elif manifest.local_path.parts and manifest.local_path.parts[0] not in ALLOWED_LOCAL_ROOTS:
         blockers.append("local_path must stay under ignored data/ or samples/ directories")
-    if manifest.parser_hint != "parse_2002":
-        blockers.append("parser_hint must be parse_2002 for the current local pipeline")
+    if not manifest.parser_hint:
+        blockers.append("parser_hint is required")
+    else:
+        try:
+            validate_parser_scope(
+                manifest.parser_hint,
+                state_id=manifest.state_id,
+                roll_kind=manifest.roll_kind,
+                require_ready=True,
+            )
+        except ValueError as exc:
+            blockers.append(str(exc))
     if not manifest.language:
         blockers.append("language is required")
     return blockers
@@ -253,13 +265,23 @@ def validate_source_manifest(
 
 
 def review_checklist(manifest: SourceManifest, *, checksum_verified: bool) -> list[dict[str, Any]]:
+    parser_ready = True
+    try:
+        validate_parser_scope(
+            manifest.parser_hint or "",
+            state_id=manifest.state_id,
+            roll_kind=manifest.roll_kind,
+            require_ready=True,
+        )
+    except ValueError:
+        parser_ready = False
     return [
         {"id": "official_source_uri", "label": "Official source URI is recorded", "passed": bool(manifest.source_uri)},
         {"id": "source_label", "label": "Human-readable source label is recorded", "passed": bool(manifest.source_label)},
         {"id": "local_path", "label": "Local PDF path stays under ignored data/ or samples/", "passed": manifest.local_path is not None and not manifest.local_path.is_absolute() and bool(manifest.local_path.parts) and manifest.local_path.parts[0] in ALLOWED_LOCAL_ROOTS},
         {"id": "checksum", "label": "Manifest checksum uses sha256:<64 lowercase hex>", "passed": is_sha256_checksum(manifest.checksum)},
         {"id": "checksum_verified", "label": "Local PDF checksum matches manifest", "passed": checksum_verified},
-        {"id": "parser_hint", "label": "Current parser hint is parse_2002", "passed": manifest.parser_hint == "parse_2002"},
+        {"id": "parser_hint", "label": "Parser is registered, correctly scoped, and ingestion-ready", "passed": parser_ready},
         {"id": "language", "label": "Roll language is recorded", "passed": bool(manifest.language)},
         {"id": "human_review", "label": "Human source review has marked reviewed true", "passed": manifest.reviewed},
     ]

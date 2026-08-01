@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
-from pipeline.parse_2002 import parse_pdf
 from pipeline.sir_saathi_pipeline.db_loader import LoadSummary, load_batch_to_database
 from pipeline.sir_saathi_pipeline.ingestion import (
     IngestionBatch,
@@ -20,11 +19,12 @@ from pipeline.sir_saathi_pipeline.ingestion import (
     SourceDocumentInput,
     build_ingestion_batch,
 )
+from pipeline.sir_saathi_pipeline.parsers.registry import validate_parser_scope
 
 EPIC_HASH_SALT_ENV = "SIR_SAATHI_EPIC_HASH_SALT"
 DATABASE_URL_ENV = "SIR_SAATHI_DATABASE_URL"
 DEFAULT_LANGUAGE = "mr"
-DEFAULT_PARSER_NAME = "parse_2002"
+DEFAULT_PARSER_HINT = "parse_2002"
 DEFAULT_ROLL_KIND = "historical_base_roll"
 
 ParserFn = Callable[[Path], tuple[dict[str, Any], list[dict[str, Any]], list[str]]]
@@ -61,9 +61,17 @@ def parsed_roll_from_pdf(
     language: str,
     source_label: str,
     source_url: str | None,
-    parser_fn: ParserFn = parse_pdf,
+    parser_hint: str = DEFAULT_PARSER_HINT,
+    parser_fn: ParserFn | None = None,
 ) -> ParsedRollInput:
-    metadata, voters, failures = parser_fn(pdf_path)
+    spec = validate_parser_scope(
+        parser_hint,
+        state_id=state_id,
+        roll_kind=roll_kind,
+        require_ready=True,
+    )
+    effective_parser = parser_fn or spec.parser
+    metadata, voters, failures = effective_parser(pdf_path)
     if failures:
         raise ValueError(f"parser reported {len(failures)} failure(s)")
 
@@ -77,7 +85,7 @@ def parsed_roll_from_pdf(
         roll_kind=roll_kind,
         language=language,
         source_label=source_label,
-        parser_name=DEFAULT_PARSER_NAME,
+        parser_name=spec.parser_name,
         metadata=metadata,
         voters=tuple(voters),
         source_url=source_url,
@@ -86,7 +94,7 @@ def parsed_roll_from_pdf(
             source_uri=local_source_uri(pdf_path),
             local_path=str(pdf_path),
             checksum=compute_sha256(pdf_path),
-            parser_hint=DEFAULT_PARSER_NAME,
+            parser_hint=parser_hint,
         ),
     )
 
@@ -106,6 +114,7 @@ def safe_report(batch: IngestionBatch) -> dict[str, Any]:
         "parsed_records": batch.extraction_run["parsed_records"],
         "quality_summary": batch.extraction_run["quality_summary"],
         "row_counts": {
+            "districts": 1 if batch.district is not None else 0,
             "source_documents": 1,
             "roll_versions": 1,
             "assembly_constituencies": 1,
@@ -127,7 +136,8 @@ def build_batch_from_pdf(
     source_label: str = "Local dry-run PDF",
     source_url: str | None = None,
     expected_checksum: str | None = None,
-    parser_fn: ParserFn = parse_pdf,
+    parser_hint: str = DEFAULT_PARSER_HINT,
+    parser_fn: ParserFn | None = None,
 ) -> IngestionBatch:
     if not hash_salt:
         raise ValueError(f"{EPIC_HASH_SALT_ENV} is required for dry-run ingestion")
@@ -140,6 +150,7 @@ def build_batch_from_pdf(
         language=language,
         source_label=source_label,
         source_url=source_url,
+        parser_hint=parser_hint,
         parser_fn=parser_fn,
     )
     return build_ingestion_batch(parsed_roll, hash_salt=hash_salt)
@@ -156,7 +167,8 @@ def run_dry_run(
     source_label: str = "Local dry-run PDF",
     source_url: str | None = None,
     expected_checksum: str | None = None,
-    parser_fn: ParserFn = parse_pdf,
+    parser_hint: str = DEFAULT_PARSER_HINT,
+    parser_fn: ParserFn | None = None,
 ) -> dict[str, Any]:
     batch = build_batch_from_pdf(
         pdf_path,
@@ -168,6 +180,7 @@ def run_dry_run(
         source_label=source_label,
         source_url=source_url,
         expected_checksum=expected_checksum,
+        parser_hint=parser_hint,
         parser_fn=parser_fn,
     )
     return safe_report(batch)
@@ -204,7 +217,8 @@ def run_load(
     source_label: str = "Local dry-run PDF",
     source_url: str | None = None,
     expected_checksum: str | None = None,
-    parser_fn: ParserFn = parse_pdf,
+    parser_hint: str = DEFAULT_PARSER_HINT,
+    parser_fn: ParserFn | None = None,
     loader_fn: LoaderFn = load_batch_to_database,
 ) -> dict[str, Any]:
     if not database_url:
@@ -219,6 +233,7 @@ def run_load(
         source_label=source_label,
         source_url=source_url,
         expected_checksum=expected_checksum,
+        parser_hint=parser_hint,
         parser_fn=parser_fn,
     )
     summary = loader_fn(database_url, batch)
@@ -247,13 +262,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-label", default="Local dry-run PDF")
     parser.add_argument("--source-url")
     parser.add_argument("--expected-checksum", help="Expected sha256 checksum from a reviewed source manifest.")
+    parser.add_argument("--parser-hint", default=DEFAULT_PARSER_HINT, help="Registered parser hint pinned by the reviewed source manifest.")
     return parser
 
 
 def main(
     argv: list[str] | None = None,
     *,
-    parser_fn: ParserFn = parse_pdf,
+    parser_fn: ParserFn | None = None,
     loader_fn: LoaderFn = load_batch_to_database,
 ) -> int:
     args = build_parser().parse_args(argv)
@@ -271,6 +287,7 @@ def main(
             "source_label": args.source_label,
             "source_url": args.source_url,
             "expected_checksum": args.expected_checksum,
+            "parser_hint": args.parser_hint,
             "parser_fn": parser_fn,
         }
         if args.load:

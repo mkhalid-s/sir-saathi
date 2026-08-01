@@ -34,7 +34,7 @@ Before parsing a local PDF, validate a reviewed source manifest entry:
 python -m pipeline.sir_saathi_pipeline.sources --manifest data/local/sources.json --source-id <source-id> --verify-file
 ```
 
-The source manifest records reviewed metadata such as state, roll year, roll kind, source label, official source URI, local ignored PDF path, `sha256:<64 lowercase hex>` checksum, parser hint, and language. The validator requires `reviewed: true`, a repo-relative `local_path` under ignored `data/` or `samples/`, a checksum match when `--verify-file` is used, and the current `parse_2002` parser hint before the operator workflow should parse or load the file.
+The source manifest records reviewed metadata such as state, roll year, roll kind, source label, official source URI, local ignored PDF path, `sha256:<64 lowercase hex>` checksum, parser hint, and language. The validator requires `reviewed: true`, a repo-relative `local_path` under ignored `data/` or `samples/`, a checksum match when `--verify-file` is used, and a registered parser whose state/roll-kind scope and ingestion-readiness status pass. `parse_2002` is currently ready only for reviewed Maharashtra historical/base-roll inputs. `maharashtra_current_unicode_v1` is synthetic-fixture-only and remains blocked until an authorized official current-roll sample passes record-accounting and layout validation.
 
 Operators can draft a manifest entry from a local ignored PDF without marking it reviewed:
 
@@ -57,7 +57,7 @@ Parsed roll ingestion starts as a local-only staging mapper in `pipeline/sir_saa
 Local PDF ingestion can be validated with a dry run:
 
 ```bash
-SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" python -m pipeline.sir_saathi_pipeline.ingest_roll --pdf data/local/<file>.pdf --state IN-MH --dry-run
+SIR_SAATHI_EPIC_HASH_SALT="local-only-secret" python -m pipeline.sir_saathi_pipeline.ingest_roll --pdf data/local/<file>.pdf --state IN-MH --parser-hint parse_2002 --dry-run
 ```
 
 The dry-run command computes the PDF checksum, optionally compares it with `--expected-checksum` from the reviewed source manifest before parsing, calls the 2002 parser, builds an ingestion batch, and prints a safe JSON report with AC/part metadata, expected and parsed record counts, quality summary, and DB row counts. It requires `--dry-run` and `SIR_SAATHI_EPIC_HASH_SALT`, and its report does not include raw EPIC values, voter names, local file paths, CSV exports, JSON voter exports, or database writes.

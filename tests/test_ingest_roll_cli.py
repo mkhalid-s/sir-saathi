@@ -230,6 +230,32 @@ def test_main_returns_failed_report_on_parser_failures(
     assert "parser reported 1 failure" in output["error"]
 
 
+def test_current_roll_parser_hint_fails_before_experimental_parser_runs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pdf_path = write_pdf_placeholder(tmp_path)
+    monkeypatch.setenv(ingest_roll.EPIC_HASH_SALT_ENV, "unit-test-salt")
+    called = False
+
+    def experimental_parser(_path: Path):
+        nonlocal called
+        called = True
+        return synthetic_parser(_path)
+
+    with pytest.raises(ValueError, match="not ingestion-ready"):
+        ingest_roll.build_batch_from_pdf(
+            pdf_path,
+            state_id="IN-MH",
+            hash_salt="unit-test-salt",
+            roll_year=2026,
+            roll_kind="current_roll",
+            parser_hint="maharashtra_current_unicode_v1",
+            parser_fn=experimental_parser,
+        )
+    assert called is False
+
+
 def test_main_dry_run_does_not_call_loader(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

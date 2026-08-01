@@ -243,6 +243,7 @@ def verify_ingestion_pipeline_contract() -> None:
     local_search = (ROOT / "pipeline/sir_saathi_pipeline/local_search.py").read_text(encoding="utf-8")
     readiness = (ROOT / "pipeline/sir_saathi_pipeline/readiness_report.py").read_text(encoding="utf-8")
     workflow = (ROOT / "pipeline/sir_saathi_pipeline/operator_workflow.py").read_text(encoding="utf-8")
+    parser_registry = (ROOT / "pipeline/sir_saathi_pipeline/parsers/registry.py").read_text(encoding="utf-8")
     docs = (ROOT / "docs/API_AND_DB.md").read_text(encoding="utf-8")
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "build_ingestion_batch" not in ingestion or "ParsedRollInput" not in ingestion:
@@ -259,8 +260,10 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("database loading must preserve geographic source provenance")
     if "local-only staging mapper" not in docs:
         raise RuntimeError("API/DB docs must document local-only ingestion boundaries")
-    if "parse_pdf" not in ingest_cli or "build_ingestion_batch" not in ingest_cli:
-        raise RuntimeError("ingest CLI must reuse the parser and DB-ready staging mapper")
+    if "parsed_roll_from_pdf" not in ingest_cli or "build_ingestion_batch" not in ingest_cli:
+        raise RuntimeError("ingest CLI must reuse registered parsers and the DB-ready staging mapper")
+    if "validate_parser_scope" not in ingest_cli or "ingestion_ready=False" not in parser_registry:
+        raise RuntimeError("parser routing must reject unvalidated parser families before ingestion")
     if "--dry-run" not in ingest_cli or "SIR_SAATHI_EPIC_HASH_SALT" not in ingest_cli:
         raise RuntimeError("ingest CLI must require explicit dry-run mode and an EPIC hash salt")
     if "save_results" in ingest_cli or "connect(" in ingest_cli or "psycopg" in ingest_cli:
@@ -271,8 +274,8 @@ def verify_ingestion_pipeline_contract() -> None:
         raise RuntimeError("source manifests must require reviewed metadata before ingestion")
     if "local_path must stay under ignored data/ or samples/" not in sources:
         raise RuntimeError("source manifests must keep local PDFs under ignored paths")
-    if "parser_hint must be parse_2002" not in sources:
-        raise RuntimeError("source manifests must pin the current parser hint")
+    if "validate_parser_scope" not in sources or "require_ready=True" not in sources:
+        raise RuntimeError("source manifests must pin an ingestion-ready parser with valid scope")
     if "checksum must be sha256:<64 lowercase hex>" not in sources or "compute_sha256" not in sources:
         raise RuntimeError("source manifests must require sha256 checksums")
     if "--verify-file" not in sources or "local file checksum does not match source manifest" not in sources:
