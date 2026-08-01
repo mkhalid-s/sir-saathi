@@ -61,7 +61,9 @@ const guideUrl = `/?state=${encodeURIComponent(state.stateId)}#guidance`;
           {scheduleItems.map(([label, value]) => <div><dt>{label}</dt><dd>{value}</dd></div>)}
         </dl>
       ) : (
-        <p>No current SIR schedule has been independently confirmed for this jurisdiction. Check the official CEO portal before relying on a date shared elsewhere.</p>
+        <p>{state.currentPhase === 'schedule_pending'
+          ? 'ECI has said this jurisdiction’s schedule will be announced later. No dates are inferred; check the official CEO or ECI portal for a new order.'
+          : 'No current SIR schedule has been independently confirmed for this jurisdiction. Check the official CEO portal before relying on a date shared elsewhere.'}</p>
       )}
       <p class="source-note">Schedule source: {state.scheduleProvenance.label} ({state.scheduleProvenance.confidence}).</p>
       <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>

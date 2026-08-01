@@ -129,8 +129,8 @@ def verify_source_freshness() -> None:
         raise RuntimeError("Phase III schedule catalogue must cover exactly 19 unique jurisdictions")
     if len(scheduled_ids) != len(set(scheduled_ids)):
         raise RuntimeError("reviewed schedule catalogue must not duplicate jurisdictions")
-    if len(scheduled_ids) != 32:
-        raise RuntimeError("reviewed shared schedule catalogue must cover 32 exact jurisdictions")
+    if len(scheduled_ids) != 35:
+        raise RuntimeError("reviewed shared schedule catalogue must cover 35 exact jurisdictions")
     for group in schedule_catalogue.get("schedule_groups", []):
         group_source = group.get("source", schedule_source)
         if group_source.get("source_type") != "official_portal" or not group_source.get("last_verified"):

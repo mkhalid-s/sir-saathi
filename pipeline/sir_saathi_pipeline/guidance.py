@@ -101,7 +101,7 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
     warnings = list(_schedule_warning(state, request.today, deadline))
 
     if request.situation == "existing_voter":
-        schedule_unverified = state.schedule.status == "schedule_unverified"
+        schedule_unverified = state.schedule.status in {"schedule_unverified", "schedule_pending"}
         revision_complete = state.schedule.status_on(request.today) == "final_roll_published" if request.today else (
             state.schedule.status == "final_roll_published"
         )

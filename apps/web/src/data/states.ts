@@ -106,6 +106,7 @@ const statusLabels: Record<string, string> = {
   claims_and_objections_open: 'Claims and objections are open',
   claims_disposal: 'Claims and objections are being decided',
   final_roll_published: 'Final roll published',
+  schedule_pending: 'Schedule to be announced',
   schedule_unverified: 'Schedule not yet verified'
 };
 

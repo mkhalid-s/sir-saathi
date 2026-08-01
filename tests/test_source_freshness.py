@@ -7,7 +7,7 @@ from pipeline.sir_saathi_pipeline.state_registry import load_all_states
 def test_current_nationwide_sources_pass_risk_based_freshness_policy() -> None:
     report = build_freshness_report(today=date(2026, 8, 1))
     assert report["jurisdiction_count"] == 36
-    assert report["source_count"] == 137
+    assert report["source_count"] == 140
     assert report["stale_count"] == 0
     assert report["ready"] is True
 

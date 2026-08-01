@@ -349,6 +349,25 @@
         "last_verified": "2026-08-01",
         "notes": "The official CEO Bihar publication data records the SIR 2025 final roll as published on 30 September 2025."
       }
+    },
+    {
+      "state_ids": ["IN-HP", "IN-JK", "IN-LA"],
+      "phase": "Phase III pending",
+      "qualifying_date": null,
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": null,
+      "status": "schedule_pending",
+      "source": {
+        "label": "ECI SIR Phase III deferral notice",
+        "url": "https://www.eci.gov.in/eci/public/api/document?id=17344",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official ECI Phase III press note says the schedule for Himachal Pradesh, Jammu and Kashmir, and Ladakh will be announced later after considering census completion and weather in snow-bound areas. No dates are inferred."
+      }
     }
   ]
 }

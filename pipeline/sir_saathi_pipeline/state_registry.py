@@ -323,7 +323,7 @@ def apply_schedule_overrides(
             final_roll_date=_parse_date(group.get("final_roll_date")),
             status=_require(group, "status"),
         )
-        if not schedule.final_roll_date:
+        if not schedule.final_roll_date and schedule.status != "schedule_pending":
             raise ValueError("reviewed schedule groups require a final-roll date")
         for state_id in _require(group, "state_ids"):
             if state_id in seen:

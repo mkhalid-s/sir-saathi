@@ -16,9 +16,9 @@ territories, and Bihar was Phase I. Final-publication evidence is now recorded
 for every Phase I and Phase II jurisdiction using later official ECI, CEO,
 government broadcaster, or district-election sources rather than copying the
 original common target. Assam's separately labelled revision final-publication
-date is also recorded. Himachal Pradesh, Jammu and Kashmir, and Ladakh remain
-schedule-unverified in this repository pending a reviewed jurisdiction-specific
-completion/order notice.
+date is also recorded. The official Phase III notice says Himachal Pradesh,
+Jammu and Kashmir, and Ladakh will be scheduled later after census/weather
+considerations; the app records that reviewed pending status but infers no dates.
 
 ## 1. ECI API — Fully Mapped (No Auth, No CAPTCHA)
 

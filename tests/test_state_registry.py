@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from pipeline.sir_saathi_pipeline import load_all_states
-from pipeline.sir_saathi_pipeline.state_registry import parse_state_config
+from pipeline.sir_saathi_pipeline.state_registry import load_jurisdiction_catalogue, parse_state_config
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,15 +21,15 @@ def test_loads_initial_state_registry() -> None:
     }
 
 
-def test_nationwide_baselines_are_official_link_only_and_unverified() -> None:
-    states = load_all_states()
-    baseline = states["IN-HP"]
+def test_jurisdiction_baselines_are_unverified_until_reviewed_schedule_overlay() -> None:
+    states = load_jurisdiction_catalogue()
+    baseline = states["IN-AP"]
     assert baseline.data_capability == "official_link_search"
     assert baseline.public_launch_ready is False
     assert baseline.schedule.status == "schedule_unverified"
     assert baseline.schedule_provenance.confidence == "unverified"
     assert baseline.schedule.final_roll_date is None
-    assert baseline.ceo_portal == "https://ceohimachal.hp.gov.in"
+    assert baseline.ceo_portal == "https://ceoandhra.nic.in"
     assert any(source.label == "ECI CEO contact directory" for source in baseline.official_sources)
 
 
@@ -64,13 +64,15 @@ def test_completed_phase_two_and_assam_dates_use_final_publication_evidence() ->
     )
 
 
-def test_reviewed_schedule_coverage_fails_closed_for_only_three_jurisdictions() -> None:
+def test_reviewed_schedule_evidence_covers_all_states_and_three_remain_pending() -> None:
     states = load_all_states()
     official = {state_id for state_id, state in states.items() if state.schedule_provenance.confidence == "official"}
-    unverified = set(states) - official
+    pending = {state_id for state_id, state in states.items() if state.schedule.status == "schedule_pending"}
 
-    assert len(official) == 33
-    assert unverified == {"IN-HP", "IN-JK", "IN-LA"}
+    assert official == set(states)
+    assert pending == {"IN-HP", "IN-JK", "IN-LA"}
+    assert all(states[state_id].schedule.final_roll_date is None for state_id in pending)
+    assert all(states[state_id].public_launch_ready is False for state_id in pending)
     assert states["IN-BR"].schedule.final_roll_date == date(2025, 9, 30)
     assert states["IN-GJ"].schedule.final_roll_date == date(2026, 2, 17)
     assert states["IN-UP"].schedule.final_roll_date == date(2026, 4, 10)
