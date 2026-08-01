@@ -42,6 +42,26 @@ def test_caddy_serves_the_static_pwa_on_the_api_origin() -> None:
     assert 'Cache-Control "no-cache"' in caddy
 
 
+def test_caddy_enforces_browser_security_headers_with_turnstile_allowlist() -> None:
+    caddy = (ROOT / "infra/caddy/Caddyfile.example").read_text(encoding="utf-8")
+
+    for header in [
+        "Strict-Transport-Security",
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "Referrer-Policy",
+        "Permissions-Policy",
+        "Cross-Origin-Resource-Policy",
+        "Content-Security-Policy",
+    ]:
+        assert header in caddy
+    assert "default-src 'none'" in caddy
+    assert "frame-ancestors 'none'" in caddy
+    assert "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com" in caddy
+    assert "connect-src 'self' https://challenges.cloudflare.com" in caddy
+    assert "frame-src https://challenges.cloudflare.com" in caddy
+
+
 def test_compose_is_local_only_and_not_trust_auth() -> None:
     compose = (ROOT / "infra/docker-compose.yml").read_text(encoding="utf-8")
     assert "Local development only" in compose

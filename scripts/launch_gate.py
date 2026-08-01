@@ -63,6 +63,27 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("Caddy must not return a placeholder instead of the PWA")
     if 'path /sw.js /manifest.webmanifest' not in caddy or 'Cache-Control "no-cache"' not in caddy:
         raise RuntimeError("service-worker control files must remain revalidatable")
+    required_headers = {
+        "Strict-Transport-Security",
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "Referrer-Policy",
+        "Permissions-Policy",
+        "Cross-Origin-Resource-Policy",
+        "Content-Security-Policy",
+    }
+    missing_headers = sorted(header for header in required_headers if header not in caddy)
+    if missing_headers:
+        raise RuntimeError(f"Caddy template is missing browser security headers: {missing_headers}")
+    csp_requirements = {
+        "default-src 'none'",
+        "frame-ancestors 'none'",
+        "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+        "connect-src 'self' https://challenges.cloudflare.com",
+        "frame-src https://challenges.cloudflare.com",
+    }
+    if any(directive not in caddy for directive in csp_requirements):
+        raise RuntimeError("browser CSP must stay deny-by-default and Turnstile-compatible")
     if "POSTGRES_HOST_AUTH_METHOD" in compose or "127.0.0.1:5432:5432" not in compose:
         raise RuntimeError("local compose must not expose unauthenticated Postgres")
     if "redis:8-alpine" not in compose or "127.0.0.1:6379:6379" not in compose:

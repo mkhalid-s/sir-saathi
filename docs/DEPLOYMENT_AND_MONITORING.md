@@ -41,12 +41,15 @@ Real indexed search additionally requires runtime secrets/configuration outside 
 - Use `infra/systemd/sir-saathi-api.service` as the API service template.
 - Use `infra/caddy/Caddyfile.example` as the reverse proxy template.
 - Replace the example hostname, keep the PWA root at `/srv/sir-saathi/web/current`, and keep `/api/*` on that exact origin. Caddy serves Astro's generated directory indexes and retains the API prefix when proxying.
+- Preserve the template's HSTS, anti-framing, content-type, referrer, permissions, cross-origin-resource, and Content Security Policy headers. The CSP is deny-by-default and allows network script/frame access only to the Turnstile challenge origin. Astro's static hydration bootstrap and generated island styles are inline, so the reviewed policy currently contains `unsafe-inline` for scripts and styles; moving to build-generated hashes or runtime nonces is a tracked hardening improvement, not a reason to remove the rest of the allowlist.
 - Create `/etc/sir-saathi/api.env` as `root:sir-saathi` with mode `0640`. Put the five server-owned `SIR_SAATHI_*` values listed above in that file; never add `PUBLIC_TURNSTILE_SITE_KEY` or shell `export` syntax. The systemd unit loads this exact file before starting the API.
 - Keep runtime configuration outside Git. After changing it, run `systemctl daemon-reload` when the unit changed and restart `sir-saathi-api`.
 
 ## Monitoring
 
 Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/health` route and every request has a 10-second timeout. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Alert on API health failure, PWA failure, disk pressure, database backup failure, and elevated error rates.
+
+After every edge-policy change, inspect a deployed state page and exercise the indexed-search challenge in a browser with the console open. Treat CSP violations involving same-origin Astro assets or `https://challenges.cloudflare.com` as release blockers; do not broaden the policy to arbitrary third-party origins.
 
 The `Official source freshness` GitHub Actions workflow runs every day at 08:47 IST and can also be started manually. It fails when any governed source exceeds its risk-based freshness window and retains the non-sensitive JSON report for 30 days even when the check fails. Treat a failed run as an editorial incident: review the linked official source, update `last_verified` only after a human confirms it, run the launch gate, and record the evidence in review. Configure repository Actions-failure notifications or an external alert route so a red scheduled run is not dependent on someone visiting the Actions page. Scheduled workflows run from the default branch, so this monitor becomes active only after the workflow reaches that branch.
 
