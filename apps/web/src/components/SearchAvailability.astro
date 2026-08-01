@@ -1,5 +1,5 @@
 ---
-import { states } from '../data/states';
+import { statePath, states } from '../data/states';
 
 function capabilityLabel(capability: string): string {
   return capability.replaceAll('_', ' ');
@@ -46,7 +46,10 @@ const reviewedScheduleCount = states.filter((state) => state.scheduleProvenance.
           </div>
           <div>
             <p>{searchMessage(state)}</p>
-            <a href={state.officialLink} target="_blank" rel="noreferrer">Open official CEO portal</a>
+            <div class="jurisdiction-links">
+              <a href={statePath(state)}>View {state.name} guide</a>
+              <a href={state.officialLink} target="_blank" rel="noreferrer">Official CEO portal</a>
+            </div>
           </div>
         </article>
       ))}

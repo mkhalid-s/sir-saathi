@@ -131,6 +131,10 @@ export function currentPhaseForSchedule(schedule: StateConfig['sir_schedule'], t
   return schedule.status;
 }
 
+export function statePath(state: Pick<StateSummary, 'stateId'>): string {
+  return `/states/${state.stateId.toLowerCase()}/`;
+}
+
 function displayDate(value: string | null): string | undefined {
   if (!value) return undefined;
   return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00+05:30`));

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { states, uiLanguageOptionsForState, uiLanguageReadiness } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
 
@@ -65,6 +65,12 @@ export default function ActionWizard() {
     setStateId(value);
     setFindSubmitted(false);
   };
+  useEffect(() => {
+    const requestedState = new URLSearchParams(window.location.search).get('state');
+    if (requestedState && states.some((item) => item.stateId === requestedState)) {
+      updateState(requestedState);
+    }
+  }, []);
   const clearFindNameHints = () => {
     setNameQuery('');
     setDistrictHint('');

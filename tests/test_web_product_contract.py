@@ -118,6 +118,18 @@ def test_web_hides_schedule_specific_questions_when_schedule_is_unknown() -> Non
     assert "official jurisdiction notice" in guidance
 
 
+def test_web_builds_a_shareable_page_for_every_jurisdiction() -> None:
+    page = (ROOT / "apps/web/src/pages/states/[stateId].astro").read_text(encoding="utf-8")
+    directory = (ROOT / "apps/web/src/components/SearchAvailability.astro").read_text(encoding="utf-8")
+    wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    assert "getStaticPaths" in page
+    assert "states.map" in page
+    assert "No current SIR schedule has been independently confirmed" in page
+    assert "Get my action checklist" in page
+    assert "statePath(state)" in directory
+    assert "new URLSearchParams(window.location.search).get('state')" in wizard
+
+
 def test_wizard_deadlines_advance_with_the_current_phase() -> None:
     source = (ROOT / "apps/web/src/lib/guidance.ts").read_text(encoding="utf-8")
     assert "state.currentPhase === 'pre_enumeration'" in source
