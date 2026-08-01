@@ -15,6 +15,7 @@ SIR Saathi treats electoral roll data as public but sensitive.
 - Logs must not store full EPICs, addresses, phone numbers, documents, or complete search strings.
 - Public-search application logs contain only stable event IDs for completion, rejection, rate limiting, dependency loss, or backend failure. They omit request bodies, query fragments, client identities, challenge tokens, result counts, exception details, and voter records.
 - Caddy and the API independently cap body-bearing API requests at 16 KiB. The application verifies streamed bytes rather than trusting `Content-Length`, and rejects oversized input before JSON parsing, external verification, logging, or database work.
+- Each public PostgreSQL search runs in an explicitly read-only transaction with a three-second statement timeout. Connections close on success or failure, and database exception details never enter the public response or application event log.
 - Shared checklists must not include EPIC, address, phone, document, or other private voter details.
 - Scope-authorization reasons and readiness snapshots must contain no voter names, EPIC values, addresses, or search strings.
 

@@ -15,6 +15,8 @@ Name search fails closed unless a future state has passed public launch readines
 
 The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with distinct operator/reviewer identities and a timestamp. Every authorization change also appends a `public_search_scope_events` row with both identities, its rationale, and aggregate readiness snapshot. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
 
+The public adapter uses a dedicated connection configuration with a three-second PostgreSQL statement timeout and read-only transactions. It also asserts `READ ONLY` and a local timeout at the start of every search transaction, closes the connection on success or failure, and converts backend faults to a generic 503 at the HTTP boundary. These controls apply only to public API search and do not weaken the separate local ingestion/operator workflows.
+
 `GET /api/states` exposes canonical state metadata, including structured SIR schedule dates, CEO portal, official source labels, URLs, types, and `last_verified` dates so clients can show deadlines and source freshness.
 
 `GET /api/forms` exposes the canonical SIR form catalogue and common document categories from `config/forms/sir-actions.json`.

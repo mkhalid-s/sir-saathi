@@ -4,7 +4,12 @@ import importlib
 import pytest
 
 from services.api.search import SearchRequest
-from services.api.search_backend import PostgresSearchBackend, configured_search_backend, public_search_sql
+from services.api.search_backend import (
+    PUBLIC_SEARCH_STATEMENT_TIMEOUT_MS,
+    PostgresSearchBackend,
+    configured_search_backend,
+    public_search_sql,
+)
 from services.api.models import InternalVoterRecord
 from services.api.privacy import RateLimitDecision
 
@@ -21,7 +26,7 @@ class SharedLimiter:
 class FakeCursor:
     def __init__(self, rows):
         self.rows = rows
-        self.executed = None
+        self.executed = []
 
     def __enter__(self):
         return self
@@ -30,7 +35,7 @@ class FakeCursor:
         return None
 
     def execute(self, query, params):
-        self.executed = (" ".join(query.split()), params)
+        self.executed.append((" ".join(query.split()), params))
 
     def fetchall(self):
         return self.rows
@@ -68,7 +73,11 @@ def test_postgres_backend_uses_bounded_parameters_and_closes_connection() -> Non
     backend = PostgresSearchBackend(lambda: connection)
     request = SearchRequest(state_id="IN-MH", query="  Sample   Voter ", ac_number=172, part_number=21, limit=5)
     results = backend.search(request)
-    assert connection.cursor_obj.executed[1] == ("sample voter", "IN-MH", 172, 21, 21, 0.2, 5)
+    assert connection.cursor_obj.executed[0] == ("SET TRANSACTION READ ONLY", ())
+    assert connection.cursor_obj.executed[1] == (
+        f"SET LOCAL statement_timeout = '{PUBLIC_SEARCH_STATEMENT_TIMEOUT_MS}ms'", ()
+    )
+    assert connection.cursor_obj.executed[2][1] == ("sample voter", "IN-MH", 172, 21, 21, 0.2, 5)
     assert connection.closed is True
     assert results[0].name == "Sample Voter"
     assert results[0].epic_last4 == "1234"
@@ -77,7 +86,7 @@ def test_postgres_backend_uses_bounded_parameters_and_closes_connection() -> Non
 def test_postgres_backend_readiness_is_non_sensitive_and_closes_connection() -> None:
     connection = FakeConnection([])
     assert PostgresSearchBackend(lambda: connection).ready() is True
-    assert connection.cursor_obj.executed == ("SELECT 1", ())
+    assert connection.cursor_obj.executed == [("SELECT 1", ())]
     assert connection.closed is True
     assert PostgresSearchBackend(lambda: (_ for _ in ()).throw(TimeoutError("private"))).ready() is False
 
@@ -97,6 +106,23 @@ def test_configured_postgres_backend_uses_a_bounded_connect_timeout(monkeypatch)
     assert backend is not None
     assert backend.ready() is False
     assert captured["connect_timeout"] == 3
+    assert f"statement_timeout={PUBLIC_SEARCH_STATEMENT_TIMEOUT_MS}" in captured["options"]
+    assert "default_transaction_read_only=on" in captured["options"]
+
+
+def test_postgres_backend_closes_connection_when_query_fails() -> None:
+    class FailingCursor(FakeCursor):
+        def execute(self, query, params):
+            super().execute(query, params)
+            if "WITH search_input" in query:
+                raise TimeoutError("synthetic statement timeout")
+
+    connection = FakeConnection([])
+    connection.cursor_obj = FailingCursor([])
+    backend = PostgresSearchBackend(lambda: connection)
+    with pytest.raises(TimeoutError, match="statement timeout"):
+        backend.search(SearchRequest(state_id="IN-MH", query="sample", ac_number=172))
+    assert connection.closed is True
 
 
 def test_search_backend_is_called_only_after_launch_policy_passes(monkeypatch) -> None:

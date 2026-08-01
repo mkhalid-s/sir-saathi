@@ -28,6 +28,7 @@ Before any public launch:
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public indexed search requires official schedule provenance, not reported-only dates.
 - Real public search uses the atomic shared Redis limiter configured by `SIR_SAATHI_REDIS_URL`; missing or unavailable Redis fails closed before database search.
+- The indexed-search database role is read-only, and the adapter's transaction-level read-only assertion plus three-second statement timeout are confirmed in the rehearsal; a forced timeout returns a generic 503 and releases the connection.
 - `SIR_SAATHI_TRUSTED_PROXY_HOPS` matches the deployed proxy chain, and direct client access to the API is blocked before forwarded IP headers are trusted.
 - Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
 - The PWA build has the matching `PUBLIC_TURNSTILE_SITE_KEY`; the indexed client is visible only for launch-ready states and resets every single-use or expired response.

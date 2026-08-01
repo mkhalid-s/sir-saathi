@@ -10,6 +10,7 @@ from .search import SearchRequest, validate_search_scope
 
 DATABASE_URL_ENV = "SIR_SAATHI_DATABASE_URL"
 PUBLIC_SIMILARITY_THRESHOLD = 0.2
+PUBLIC_SEARCH_STATEMENT_TIMEOUT_MS = 3_000
 
 
 class SearchBackend(Protocol):
@@ -79,6 +80,11 @@ class PostgresSearchBackend:
         connection = self._connection_factory()
         try:
             with connection.cursor() as cursor:
+                cursor.execute("SET TRANSACTION READ ONLY", ())
+                cursor.execute(
+                    f"SET LOCAL statement_timeout = '{PUBLIC_SEARCH_STATEMENT_TIMEOUT_MS}ms'",
+                    (),
+                )
                 cursor.execute(
                     public_search_sql(),
                     (
@@ -135,6 +141,14 @@ def configured_search_backend() -> SearchBackend | None:
         import psycopg
         from psycopg.rows import dict_row
 
-        return psycopg.connect(database_url, row_factory=dict_row, connect_timeout=3)
+        return psycopg.connect(
+            database_url,
+            row_factory=dict_row,
+            connect_timeout=3,
+            options=(
+                f"-c statement_timeout={PUBLIC_SEARCH_STATEMENT_TIMEOUT_MS} "
+                "-c default_transaction_read_only=on"
+            ),
+        )
 
     return PostgresSearchBackend(connect)
