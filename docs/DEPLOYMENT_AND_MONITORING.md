@@ -31,6 +31,14 @@ python -m pipeline.sir_saathi_pipeline.deployment_preflight --mode indexed-searc
 
 Passing indexed-search preflight proves configuration shape only. It does not enable a state or scope, contact dependencies, verify a backup, replace migration checks, or grant launch authorization.
 
+After the candidate release is deployed, audit the real public surface:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.deployment_probe --origin "$PUBLIC_SITE_URL"
+```
+
+The value-redacting probe follows normal redirects and checks 26 transport-level contracts: the final URL stays on the requested HTTPS origin, the homepage identifies the PWA, required browser-security headers and deny-by-default/Turnstile CSP directives are present, `/api/health` is same-origin JSON with `Cache-Control: no-store`, and an unknown route returns the no-index HTML recovery page with HTTP 404. It reports stable check IDs rather than response bodies, redirect destinations, or network exception details. Passing the probe is deployed-release evidence, but is not a substitute for the browser, accessibility, backup/restore, or indexed-search rehearsal.
+
 ## API Smoke Check
 
 ```sh
@@ -87,7 +95,7 @@ Real indexed search additionally requires runtime secrets/configuration outside 
 
 ## Monitoring
 
-Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/health` route and every request has a 10-second timeout. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Alert on API health failure, PWA failure, disk pressure, missing/failed encrypted backups, failed archive verification, overdue restore drills, and elevated error rates.
+Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/health` route and every request has a 10-second timeout. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Use the fuller deployment probe after releases and edge-policy changes rather than on a high-frequency uptime interval. Alert on API health failure, PWA failure, disk pressure, missing/failed encrypted backups, failed archive verification, overdue restore drills, and elevated error rates.
 
 After every edge-policy change, inspect a deployed state page and exercise the indexed-search challenge in a browser with the console open. Treat CSP violations involving same-origin Astro assets or `https://challenges.cloudflare.com` as release blockers; do not broaden the policy to arbitrary third-party origins.
 

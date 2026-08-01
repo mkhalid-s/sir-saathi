@@ -15,6 +15,8 @@ htmlcov/
 .venv/
 venv/
 env/
+# This project deliberately uses the pip-compatible requirements.lock.
+uv.lock
 
 # Local configuration and secrets
 .env

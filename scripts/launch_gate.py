@@ -37,6 +37,7 @@ REQUIRED_FILES = [
     "pipeline/sir_saathi_pipeline/migrations.py",
     "pipeline/sir_saathi_pipeline/backups.py",
     "pipeline/sir_saathi_pipeline/deployment_preflight.py",
+    "pipeline/sir_saathi_pipeline/deployment_probe.py",
     "scripts/check_accessibility.py",
     "scripts/check_discoverability.py",
 ]
@@ -126,6 +127,16 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("deployment preflight must distinguish safe launch modes without exposing values")
     if "TURNSTILE_HOSTNAME_ENV" not in preflight or "TRUSTED_PROXY_HOPS_ENV" not in preflight:
         raise RuntimeError("indexed-search preflight must validate abuse and proxy boundaries")
+    probe = (ROOT / "pipeline/sir_saathi_pipeline/deployment_probe.py").read_text(encoding="utf-8")
+    for contract in [
+        "origin.invalid_https_origin",
+        "api_health.no_store",
+        "csp.default_deny",
+        "not_found.noindex",
+        "values_redacted",
+    ]:
+        if contract not in probe:
+            raise RuntimeError(f"deployment probe is missing release contract: {contract}")
 
 
 def verify_abuse_protection() -> None:

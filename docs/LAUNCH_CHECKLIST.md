@@ -21,6 +21,7 @@ Before any public launch:
 - The generated 41-page accessibility audit, including the no-index error page, passes, and the deployed build has a recorded manual review using the browser, assistive-technology, zoom, reflow, contrast, forced-colour, reduced-motion, and RTL matrix in `docs/ACCESSIBILITY.md`.
 - `PUBLIC_SITE_URL` was set to the final HTTPS origin; the generated discoverability audit passes and no canonical, alternate, sitemap, or robots URL uses the `.example` CI origin.
 - The value-redacting deployment preflight passes in the intended `guidance` or `indexed-search` mode; indexed mode remains configuration evidence, not search-scope authorization.
+- The deployed-origin probe passes all 26 same-origin routing, PWA, security-header, CSP, API no-store, and no-index 404 checks against the candidate HTTPS release.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.
 - Public indexed search requires official schedule provenance, not reported-only dates.
