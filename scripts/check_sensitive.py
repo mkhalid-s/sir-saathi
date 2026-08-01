@@ -81,6 +81,10 @@ def is_text_candidate(path: str) -> bool:
     return Path(path).suffix.lower() in TEXT_SUFFIXES or Path(path).name in {"Makefile", "Dockerfile"}
 
 
+def is_reviewed_workflow_permission(path: str, line: str) -> bool:
+    return path.startswith(".github/workflows/") and bool(re.fullmatch(r"\s*id-token:\s*write\s*", line))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--staged", action="store_true", help="scan staged files only")
@@ -110,6 +114,8 @@ def main() -> int:
             continue
         for line_no, line in enumerate(text.splitlines(), 1):
             for label, pattern in CONTENT_PATTERNS:
+                if label == "inline secret assignment" and is_reviewed_workflow_permission(rel_path, line):
+                    continue
                 if pattern.search(line):
                     findings.append(f"{rel_path}:{line_no}: {label}: {line[:160]}")
 

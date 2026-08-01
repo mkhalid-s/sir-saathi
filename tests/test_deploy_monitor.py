@@ -16,6 +16,8 @@ def test_deployment_reference_files_exist() -> None:
         "pipeline/sir_saathi_pipeline/deployment_preflight.py",
         "pipeline/sir_saathi_pipeline/deployment_probe.py",
         "pipeline/sir_saathi_pipeline/deployment_rehearsal.py",
+        "pipeline/sir_saathi_pipeline/release_bundle.py",
+        ".github/workflows/release-artifact.yml",
     ]:
         assert (ROOT / rel).is_file()
 
@@ -99,6 +101,18 @@ def test_ci_and_deployment_use_the_exact_python_lock() -> None:
     assert any(dependency.startswith("fastapi==") for dependency in dependencies)
     assert any(dependency.startswith("psycopg-binary==") for dependency in dependencies)
     assert any(dependency.startswith("redis==") for dependency in dependencies)
+
+
+def test_release_workflow_is_explicit_commit_bound_and_attested() -> None:
+    workflow = (ROOT / ".github/workflows/release-artifact.yml").read_text(encoding="utf-8")
+
+    assert "workflow_dispatch:" in workflow
+    assert "PUBLIC_RELEASE_COMMIT: ${{ github.sha }}" in workflow
+    assert "check_csp.py" in workflow
+    assert "check_discoverability.py --require-production-origin" in workflow
+    assert "pipeline.sir_saathi_pipeline.release_bundle" in workflow
+    assert "actions/attest@v4" in workflow
+    assert "actions/upload-artifact@v4" in workflow
 
 
 def test_backup_operator_path_is_encrypted_and_non_destructive() -> None:

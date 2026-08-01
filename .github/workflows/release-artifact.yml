@@ -1,0 +1,74 @@
+name: Attested PWA release artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      public_site_url:
+        description: Exact production HTTPS origin used for canonical URLs
+        required: true
+        type: string
+      turnstile_site_key:
+        description: Public Turnstile site key approved for this origin
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install locked Python dependencies
+        run: python -m pip install -r requirements.lock pytest==9.0.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked web dependencies
+        run: npm ci
+      - name: Run repository launch gate
+        run: python scripts/launch_gate.py
+      - name: Build commit-bound production PWA
+        env:
+          PUBLIC_SITE_URL: ${{ inputs.public_site_url }}
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ inputs.turnstile_site_key }}
+          PUBLIC_RELEASE_COMMIT: ${{ github.sha }}
+          ASTRO_TELEMETRY_DISABLED: '1'
+        run: npm run web:build
+      - name: Validate production metadata and offline inventory
+        run: |
+          python scripts/check_accessibility.py
+          python scripts/check_csp.py
+          python scripts/check_visual_accessibility.py
+          python scripts/check_discoverability.py --require-production-origin
+          npm run pwa:offline:check
+      - name: Create and independently verify deterministic bundle
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          python -m pipeline.sir_saathi_pipeline.release_bundle \
+            --create apps/web/dist \
+            --output "reports/sir-saathi-web-${RELEASE_COMMIT}.tar.gz" \
+            --expected-commit "${RELEASE_COMMIT}"
+          python -m pipeline.sir_saathi_pipeline.release_bundle \
+            --verify "reports/sir-saathi-web-${RELEASE_COMMIT}.tar.gz" \
+            --expected-commit "${RELEASE_COMMIT}"
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: reports/sir-saathi-web-${{ github.sha }}.tar.gz
+      - name: Retain verified release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: sir-saathi-web-${{ github.sha }}
+          path: reports/sir-saathi-web-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          retention-days: 30

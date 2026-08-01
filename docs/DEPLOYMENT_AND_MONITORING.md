@@ -24,6 +24,23 @@ Build with Node 22. Set `PUBLIC_RELEASE_COMMIT` to the full lowercase 40-charact
 
 Set `PUBLIC_SITE_URL` to the exact public HTTPS origin during every production build. It drives canonical links, reviewed-locale alternates, `sitemap.xml`, and `robots.txt`; the checked-in `.example` origin is only a deterministic local/CI default. Run `python scripts/check_discoverability.py --require-production-origin` after the production build so reserved example output cannot be deployed.
 
+Package the reviewed static output into a deterministic, commit-bound bundle rather than copying a mutable working directory:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.release_bundle \
+  --create apps/web/dist \
+  --output "reports/sir-saathi-web-${PUBLIC_RELEASE_COMMIT}.tar.gz" \
+  --expected-commit "$PUBLIC_RELEASE_COMMIT"
+
+python -m pipeline.sir_saathi_pipeline.release_bundle \
+  --verify "reports/sir-saathi-web-${PUBLIC_RELEASE_COMMIT}.tar.gz" \
+  --expected-commit "$PUBLIC_RELEASE_COMMIT"
+```
+
+Creation refuses symlinks and overwrites, verifies the 41-route release manifest against the HTML, records every static file's size and SHA-256 digest, normalizes archive metadata, writes atomically, and then independently reopens and verifies the result. Verification rejects unsafe archive paths, unexpected files, type changes, digest mismatches, corrupt compression, wrong commits, and oversized bundles without extracting content. Its redacted report contains the release commit, bundle digest, byte/file counts, and no file content. After verification, extract into a new empty staging directory, make the resulting `web/` tree root-owned and non-writable by Caddy, promote it under `/srv/sir-saathi/web/releases/<commit>`, and atomically repoint `current`; never extract directly over the active release.
+
+The manually dispatched `Attested PWA release artifact` workflow requires the final origin and public Turnstile site key, reruns the launch gate, performs the production build, enforces production discoverability, creates and verifies the deterministic bundle, retains it for 30 days, and generates GitHub build provenance. GitHub's [artifact attestation guidance](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations) requires the workflow's OIDC and attestation permissions and supports verification with `gh attestation verify`. An attestation binds bytes to a repository, workflow, and commit; it does not replace this application's tests, review, authorization, or local digest verification.
+
 Run the read-only, value-redacting production preflight in the same environment used for the release. Both modes require the final build and monitor origins plus the public/API release commits to match. Guidance-only deployment checks five fields. Indexed-search mode additionally requires `SIR_SAATHI_DEPLOYMENT_MODE=indexed-search` and validates the PostgreSQL/Redis URLs, distinct Turnstile public/server values, exact Turnstile hostname, trusted proxy hops, and private encrypted-backup destination/recipient:
 
 ```sh
@@ -125,6 +142,6 @@ The `Official source freshness` GitHub Actions workflow runs every day at 08:47 
 ## Rollback
 
 1. Revert to the last known good Git commit.
-2. Atomically repoint `/srv/sir-saathi/web/current` to the last known good PWA release.
+2. Re-verify the retained bundle and commit identity for the last known good PWA release, then atomically repoint `/srv/sir-saathi/web/current` to its existing immutable directory.
 3. Restart API service from the previous release directory.
 4. Restore database only from verified backups when schema/data changes require it.

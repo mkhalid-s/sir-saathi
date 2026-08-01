@@ -44,11 +44,13 @@ REQUIRED_FILES = [
     "pipeline/sir_saathi_pipeline/translation_campaign.py",
     "pipeline/sir_saathi_pipeline/deployment_preflight.py",
     "pipeline/sir_saathi_pipeline/deployment_probe.py",
+    "pipeline/sir_saathi_pipeline/release_bundle.py",
     "pipeline/sir_saathi_pipeline/accessibility_evidence.py",
     "scripts/check_accessibility.py",
     "scripts/check_csp.py",
     "scripts/check_visual_accessibility.py",
     "scripts/check_discoverability.py",
+    ".github/workflows/release-artifact.yml",
 ]
 
 
@@ -167,6 +169,28 @@ def verify_deploy_templates() -> None:
     ]:
         if contract not in probe:
             raise RuntimeError(f"deployment probe is missing release contract: {contract}")
+    release_bundle = (ROOT / "pipeline/sir_saathi_pipeline/release_bundle.py").read_text(encoding="utf-8")
+    for contract in [
+        "release-manifest.json",
+        "release.invalid_expected_commit",
+        "release_manifest.invalid_nationwide_scope",
+        "source.symlink_not_allowed",
+        "bundle.content_mismatch",
+        "values_redacted",
+    ]:
+        if contract not in release_bundle:
+            raise RuntimeError(f"static release bundle is missing integrity contract: {contract}")
+    release_workflow = (ROOT / ".github/workflows/release-artifact.yml").read_text(encoding="utf-8")
+    for contract in [
+        "workflow_dispatch:",
+        "PUBLIC_RELEASE_COMMIT: ${{ github.sha }}",
+        "check_csp.py",
+        "check_discoverability.py --require-production-origin",
+        "actions/attest@v4",
+        "actions/upload-artifact@v4",
+    ]:
+        if contract not in release_workflow:
+            raise RuntimeError(f"release workflow is missing artifact contract: {contract}")
     accessibility_evidence = (ROOT / "pipeline/sir_saathi_pipeline/accessibility_evidence.py").read_text(encoding="utf-8")
     for contract in [
         "ready_for_accessibility_signoff",
