@@ -36,6 +36,7 @@ REQUIRED_FILES = [
     "requirements.lock",
     "pipeline/sir_saathi_pipeline/migrations.py",
     "pipeline/sir_saathi_pipeline/backups.py",
+    "pipeline/sir_saathi_pipeline/deployment_preflight.py",
     "scripts/check_accessibility.py",
     "scripts/check_discoverability.py",
 ]
@@ -120,6 +121,11 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("database backups must be encrypted and independently verifiable")
     if "backup directory must stay outside the repository" not in backups or "plaintext_written_to_disk" not in backups:
         raise RuntimeError("database backups must stay private and never persist plaintext dumps")
+    preflight = (ROOT / "pipeline/sir_saathi_pipeline/deployment_preflight.py").read_text(encoding="utf-8")
+    if 'choices=["guidance", "indexed-search"]' not in preflight or "values_redacted" not in preflight:
+        raise RuntimeError("deployment preflight must distinguish safe launch modes without exposing values")
+    if "TURNSTILE_HOSTNAME_ENV" not in preflight or "TRUSTED_PROXY_HOPS_ENV" not in preflight:
+        raise RuntimeError("indexed-search preflight must validate abuse and proxy boundaries")
 
 
 def verify_abuse_protection() -> None:

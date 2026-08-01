@@ -22,6 +22,15 @@ Build with Node 22 and set `PUBLIC_TURNSTILE_SITE_KEY` to the public site key pa
 
 Set `PUBLIC_SITE_URL` to the exact public HTTPS origin during every production build. It drives canonical links, reviewed-locale alternates, `sitemap.xml`, and `robots.txt`; the checked-in `.example` origin is only a deterministic local/CI default. Run `python scripts/check_discoverability.py --require-production-origin` after the production build so reserved example output cannot be deployed.
 
+Run the read-only, value-redacting production preflight in the same environment used for the release. Guidance-only deployment requires the final build and monitor origins to match. Indexed-search mode additionally requires and validates the PostgreSQL/Redis URLs, distinct Turnstile public/server values, exact Turnstile hostname, trusted proxy hops, and private encrypted-backup destination/recipient:
+
+```sh
+python -m pipeline.sir_saathi_pipeline.deployment_preflight --mode guidance
+python -m pipeline.sir_saathi_pipeline.deployment_preflight --mode indexed-search
+```
+
+Passing indexed-search preflight proves configuration shape only. It does not enable a state or scope, contact dependencies, verify a backup, replace migration checks, or grant launch authorization.
+
 ## API Smoke Check
 
 ```sh
