@@ -41,6 +41,9 @@ def test_caddy_serves_the_static_pwa_on_the_api_origin() -> None:
     assert "PWA is served by Cloudflare Pages" not in caddy
     assert "path /sw.js /manifest.webmanifest" in caddy
     assert 'Cache-Control "no-cache"' in caddy
+    assert "handle_errors" in caddy
+    assert "http.error.status_code" in caddy
+    assert "rewrite @notFound /404.html" in caddy
 
 
 def test_caddy_enforces_browser_security_headers_with_turnstile_allowlist() -> None:

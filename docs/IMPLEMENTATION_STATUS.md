@@ -6,7 +6,7 @@ Reviewed on 2026-08-01. This is the handoff map for the autonomous review → va
 
 | Area | Current evidence |
 |---|---|
-| Nationwide guidance | All 36 states and union territories have governed IDs, display names, official links, schedule provenance, source-freshness metadata, and a generated public guide. The English build has 40 HTML pages: home, three policy pages, and 36 jurisdiction pages. |
+| Nationwide guidance | All 36 states and union territories have governed IDs, display names, official links, schedule provenance, source-freshness metadata, and a generated public guide. The English build has 40 indexable guidance/policy pages plus an accessible no-index 404 recovery page. |
 | SIR schedules | Reviewed official evidence drives current phases and deadlines. Himachal Pradesh, Jammu and Kashmir, and Ladakh remain explicitly “schedule to be announced”; the app invents no dates. |
 | Guidance and forms | Situation-based, date-aware guidance and the canonical enumeration/Form 6/Form 7/Form 8 reference are shared by the PWA and API. Guidance is advisory and always points back to official channels. |
 | Privacy-safe search boundary | Public indexed search is disabled for every jurisdiction by default. Any future scope requires an exact roll version and versioned AC, official schedule provenance, a readiness report, independent human authorization, server-side Turnstile, shared Redis rate limiting, redacted results, and an append-only decision event. |
@@ -17,7 +17,7 @@ Reviewed on 2026-08-01. This is the handoff map for the autonomous review → va
 | Deployment and security | Caddy serves the PWA and `/api/*` on one HTTPS origin. The template includes HSTS, anti-framing, no-sniff, referrer, permissions, cross-origin-resource, and deny-by-default Turnstile-compatible CSP headers. Production dependencies are locked. |
 | Operations | Health probes, a daily official-source freshness workflow, source expiry gates, canonical/alternate/sitemap/robots validation, checksum-pinned serialized database migrations, direct-to-`age` encrypted backups with non-destructive archive verification, sensitive-data scanning, dependency audit, tests, build, accessibility audit, and discoverability audit are part of the release gate. |
 
-The review snapshot passes 240 tests, reports zero npm vulnerabilities, verifies 140 governed source records as fresh, precaches 54 generated offline assets, and reports zero automated accessibility or discoverability findings across the 40-page English build.
+The review snapshot passes 241 tests, reports zero npm vulnerabilities, verifies 140 governed source records as fresh, precaches 55 generated offline assets, and reports zero automated accessibility or discoverability findings across 40 indexable English pages plus the no-index error page.
 
 ## Pending External Evidence
 

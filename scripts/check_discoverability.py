@@ -21,12 +21,16 @@ class MetadataParser(HTMLParser):
         self.lang = ""
         self.canonicals: list[str] = []
         self.alternates: dict[str, str] = {}
+        self.noindex = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
         if tag == "html":
             self.lang = attributes.get("lang") or ""
         if tag != "link":
+            if tag == "meta" and attributes.get("name", "").casefold() == "robots":
+                directives = attributes.get("content", "").casefold().replace(",", " ").split()
+                self.noindex = "noindex" in directives
             return
         relations = set((attributes.get("rel") or "").split())
         href = attributes.get("href") or ""
@@ -57,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     canonical_urls: set[str] = set()
     expected_languages: set[str] | None = None
     origins: set[str] = set()
+    noindex_pages: list[str] = []
     html_paths = sorted(DIST.rglob("*.html"))
     if not html_paths:
         issues.append("no generated HTML pages found")
@@ -65,6 +70,11 @@ def main(argv: list[str] | None = None) -> int:
         parser = MetadataParser()
         parser.feed(html_path.read_text(encoding="utf-8"))
         label = html_path.relative_to(DIST).as_posix()
+        if parser.noindex:
+            noindex_pages.append(label)
+            if parser.canonicals or parser.alternates:
+                issues.append(f"{label}: noindex page must not publish canonical or locale alternates")
+            continue
         if len(parser.canonicals) != 1:
             issues.append(f"{label}: expected exactly one canonical URL")
             continue
@@ -120,12 +130,15 @@ def main(argv: list[str] | None = None) -> int:
             issues.append("robots.txt must point to the canonical sitemap")
         if args.require_production_origin and urlparse(origin).hostname and urlparse(origin).hostname.endswith(".example"):
             issues.append("production output must not use a reserved .example origin")
+    if noindex_pages != ["404.html"]:
+        issues.append("generated site must contain exactly one noindex document at 404.html")
 
     report = {
         "alternate_languages": sorted(expected_languages or []),
         "issue_count": len(issues),
         "issues": issues,
         "page_count": len(html_paths),
+        "noindex_pages": noindex_pages,
         "passed": not issues,
         "sitemap_url_count": len(sitemap_urls),
     }

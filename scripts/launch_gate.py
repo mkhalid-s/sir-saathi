@@ -20,6 +20,7 @@ REQUIRED_FILES = [
     "apps/web/public/manifest.webmanifest",
     "apps/web/public/sw.js",
     "apps/web/src/pages/privacy.astro",
+    "apps/web/src/pages/404.astro",
     "apps/web/src/pages/methodology.astro",
     "apps/web/src/pages/data-use.astro",
     "apps/web/src/pages/states/[stateId].astro",
@@ -69,6 +70,8 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("Caddy must serve the built PWA on the same origin as /api/*")
     if "PWA is served by Cloudflare Pages" in caddy:
         raise RuntimeError("Caddy must not return a placeholder instead of the PWA")
+    if "handle_errors" not in caddy or "404.html" not in caddy or "http.error.status_code" not in caddy:
+        raise RuntimeError("Caddy must serve the accessible 404 document with error status")
     if 'path /sw.js /manifest.webmanifest' not in caddy or 'Cache-Control "no-cache"' not in caddy:
         raise RuntimeError("service-worker control files must remain revalidatable")
     required_headers = {

@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { translate } from '../lib/i18n';
+---
+<BaseLayout
+  title={translate('en', 'not_found.meta_title')}
+  description={translate('en', 'not_found.copy')}
+  path="/404.html"
+  indexable={false}
+>
+  <main class="shell content-page error-page" id="main-content">
+    <p class="eyebrow dark">{translate('en', 'not_found.eyebrow')}</p>
+    <h1>{translate('en', 'not_found.title')}</h1>
+    <p>{translate('en', 'not_found.copy')}</p>
+    <div class="actions">
+      <a class="primary-button" href="/">{translate('en', 'not_found.home')}</a>
+      <a class="secondary-button" href="/#search-availability-title">{translate('en', 'not_found.directory')}</a>
+    </div>
+  </main>
+</BaseLayout>

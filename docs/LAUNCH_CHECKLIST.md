@@ -18,7 +18,7 @@ Before any public launch:
 - A recoverable pre-migration backup exists; the migration dry run was reviewed, `--apply` completed under the advisory lock, and `python -m pipeline.sir_saathi_pipeline.migrations --check` reports no pending or drifted history.
 - The backup was streamed directly into `age`, its private SHA-256 sidecar and `pg_restore --list` verification pass, and a trusted backup has been fully restored into an isolated PostgreSQL 16 drill database with aggregate readiness counts recorded.
 - Privacy, methodology, and data-use pages are published.
-- The generated 40-page accessibility audit passes, and the deployed build has a recorded manual review using the browser, assistive-technology, zoom, reflow, contrast, forced-colour, reduced-motion, and RTL matrix in `docs/ACCESSIBILITY.md`.
+- The generated 41-page accessibility audit, including the no-index error page, passes, and the deployed build has a recorded manual review using the browser, assistive-technology, zoom, reflow, contrast, forced-colour, reduced-motion, and RTL matrix in `docs/ACCESSIBILITY.md`.
 - `PUBLIC_SITE_URL` was set to the final HTTPS origin; the generated discoverability audit passes and no canonical, alternate, sitemap, or robots URL uses the `.example` CI origin.
 - Search is scoped by Assembly Constituency and redacted.
 - Public search fails closed unless state launch readiness and abuse-prevention checks pass.

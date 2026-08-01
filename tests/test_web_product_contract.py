@@ -32,6 +32,19 @@ def test_public_routes_generate_canonical_locale_alternates_and_sitemap() -> Non
     assert "must be an HTTPS origin" in config
 
 
+def test_unknown_routes_have_an_accessible_noindex_recovery_page() -> None:
+    page = (ROOT / "apps/web/src/pages/404.astro").read_text(encoding="utf-8")
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+
+    assert "indexable={false}" in page
+    assert 'id="main-content"' in page
+    assert 'href="/"' in page
+    assert 'href="/#search-availability-title"' in page
+    assert 'name="robots" content="noindex, nofollow"' in layout
+    assert "all 36 state and union-territory guides" in messages["not_found.copy"]
+
+
 def test_web_wizard_collects_sir_followup_questions() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]

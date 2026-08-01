@@ -31,8 +31,8 @@ def test_accessibility_audit_reports_broken_references_and_unlabelled_controls()
 
 def test_generated_nationwide_site_passes_structural_audit() -> None:
     dist = Path(__file__).resolve().parents[1] / "apps" / "web" / "dist"
-    if not dist.exists():
+    if not (dist / "404.html").exists():
         return
     report = audit_directory(dist)
-    assert report["page_count"] == 40
+    assert report["page_count"] == 41
     assert report["issues"] == []

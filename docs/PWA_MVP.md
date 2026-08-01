@@ -26,6 +26,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Locale-prefixed routes cover the homepage, every state/UT guide, privacy, methodology, and data-use pages. Internal guide, policy, and jurisdiction navigation preserves the locale; selecting another reviewed language reloads the complete localized page rather than translating only the interactive island.
 - Network-first offline caching precaches every generated jurisdiction/policy page and its hashed UI assets, preserves a previously visited locale route, and falls back to that locale's homepage before using the English app shell. API responses remain excluded from every cache, and a post-build check prevents incomplete precache manifests.
 - Every route displays a localized live-region notice when the browser reports it is offline, explicitly separating cached guidance from official links and indexed search that still require connectivity.
+- Unknown routes retain a real 404 status while rendering an accessible, no-index recovery page with direct links to the homepage and nationwide jurisdiction directory.
 - Schedule and source-check dates use locale-aware India-time formatting. Official source labels and jurisdiction-specific provenance notes remain verbatim evidence rather than being silently machine-translated.
 - Catalogue readiness is enforced twice: the Python review gate validates files before activation, and the web build independently rechecks schema version, exact keys, placeholders, reviewer identity, review date, and registry state before creating any localized route.
 - All 36 jurisdiction display names are governed translation keys while canonical `IN-*` IDs and official links remain unchanged. When more than one reviewed locale exists, every public page shows a keyboard-accessible language switcher that preserves the current home, policy, or jurisdiction route.
@@ -60,7 +61,7 @@ The hydrated wizard loads catalogues through `apps/web/src/lib/i18n.ts`; catalog
 - Service worker for offline app-shell fallback; API calls are not cached.
 - Keyboard skip navigation, visible focus indicators, semantic main landmarks, and status announcements for interactive results.
 - Assistive-technology announcements when guidance changes, labelled language-readiness help, automatic direction for voter names, 44px interactive targets, reduced-motion safeguards, and forced-colour focus visibility.
-- A generated-site structural audit covering all 40 pages. It verifies language and direction metadata, titles, main and heading landmarks, skip targets, unique IDs, ARIA references, form-control labels, and safe new-tab links. This deterministic check complements rather than replaces manual screen-reader, zoom, reflow, and contrast review.
+- A generated-site structural audit covering all 41 HTML pages, including the error page. It verifies language and direction metadata, titles, main and heading landmarks, skip targets, unique IDs, ARIA references, form-control labels, and safe new-tab links. This deterministic check complements rather than replaces manual screen-reader, zoom, reflow, and contrast review.
 
 ## Not Included Yet
 
