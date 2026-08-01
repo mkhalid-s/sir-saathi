@@ -64,6 +64,19 @@ def test_completed_phase_two_and_assam_dates_use_final_publication_evidence() ->
     )
 
 
+def test_reviewed_schedule_coverage_fails_closed_for_only_three_jurisdictions() -> None:
+    states = load_all_states()
+    official = {state_id for state_id, state in states.items() if state.schedule_provenance.confidence == "official"}
+    unverified = set(states) - official
+
+    assert len(official) == 33
+    assert unverified == {"IN-HP", "IN-JK", "IN-LA"}
+    assert states["IN-BR"].schedule.final_roll_date == date(2025, 9, 30)
+    assert states["IN-GJ"].schedule.final_roll_date == date(2026, 2, 17)
+    assert states["IN-UP"].schedule.final_roll_date == date(2026, 4, 10)
+    assert states["IN-LD"].schedule.final_roll_date == date(2026, 2, 14)
+
+
 def test_nationwide_registry_has_unique_eci_codes_and_valid_language_defaults() -> None:
     states = load_all_states()
     assert len({state.eci_state_code for state in states.values()}) == 36

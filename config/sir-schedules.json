@@ -235,6 +235,120 @@
         "last_verified": "2026-08-01",
         "notes": "The official ECI press note records Assam's separate final roll as published on 10 February 2026; it does not label Assam as Phase II SIR."
       }
+    },
+    {
+      "state_ids": ["IN-AN"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-21",
+      "status": "final_roll_published",
+      "source": {
+        "label": "CEO Andaman and Nicobar SIR 2026 final roll",
+        "url": "https://www.ceoandaman.nic.in/election/AnnounceContent/SERVICE%20VOTER%20FINAL%20ROLL%2021.02.2026.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official CEO final-roll document records SIR 2026 publication on 21 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-GJ"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-17",
+      "status": "final_roll_published",
+      "source": {
+        "label": "Akashvani final-roll report for Gujarat",
+        "url": "https://newsonair.gov.in/election-commission-of-india-releases-final-electoral-roll-for-gujarat/",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The Government of India public broadcaster records release of Gujarat's SIR final roll on 17 February 2026 and links electors to the CEO portal."
+      }
+    },
+    {
+      "state_ids": ["IN-MP"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-21",
+      "status": "final_roll_published",
+      "source": {
+        "label": "District Election Office Dhar final-publication page",
+        "url": "https://dhar.nic.in/en/district-election-office-2/",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official Madhya Pradesh district election page records voter figures from final publication dated 21 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-UP"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-04-10",
+      "status": "final_roll_published",
+      "source": {
+        "label": "District Saharanpur SIR final-roll page",
+        "url": "https://saharanpur.nic.in/election/electoral-roll/",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official Uttar Pradesh district page records the SIR 2026 final electoral roll as published on 10 April 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-LD"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-14",
+      "status": "final_roll_published",
+      "source": {
+        "label": "CEO Lakshadweep SIR final-publication press note",
+        "url": "https://ceolakshadweep.gov.in/Home",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The final-publication press note linked from the official CEO Lakshadweep page records publication on 14 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-BR"],
+      "phase": "Phase I",
+      "qualifying_date": "2025-07-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2025-09-30",
+      "status": "final_roll_published",
+      "source": {
+        "label": "CEO Bihar final-publication data",
+        "url": "https://ceoelection.bihar.gov.in/format_1to8.html",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official CEO Bihar publication data records the SIR 2025 final roll as published on 30 September 2025."
+      }
     }
   ]
 }

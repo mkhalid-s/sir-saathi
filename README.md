@@ -12,7 +12,7 @@ This repository is an MVP/prototype. It includes:
 - A FastAPI service in `services/api`.
 - A nationwide catalogue covering all 36 states and union territories, plus reviewed state and forms configuration in `config`.
 - The official ECI Phase III schedule shared across its 19 named jurisdictions, while unscheduled or not-yet-reviewed jurisdictions remain explicitly unverified.
-- Reviewed current schedule/final-publication evidence for 27 jurisdictions in total; the other 9 remain explicitly unverified rather than inferred.
+- Reviewed current schedule/final-publication evidence for 33 jurisdictions in total; Himachal Pradesh, Jammu and Kashmir, and Ladakh remain explicitly unverified rather than inferred.
 - A PostgreSQL schema and migration in `db`.
 - Local-only PDF parsing, ingestion, loading, search validation, readiness reporting, and operator workflow tools in `pipeline`.
 - Safety gates and sensitive-data checks in `scripts`.

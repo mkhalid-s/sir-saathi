@@ -13,12 +13,10 @@ schedule evidence does not imply parser readiness or enable indexed search.
 
 Phase II official evidence has been identified for 9 states and 3 union
 territories, and Bihar was Phase I. Final-publication evidence is now recorded
-for Chhattisgarh, Goa, Kerala, Puducherry, Rajasthan, Tamil Nadu, and West
-Bengal. Gujarat, Madhya Pradesh, Uttar Pradesh, Andaman and Nicobar Islands, and
-Lakshadweep remain a separate verification task because later dates must be
-confirmed from final-publication notices rather than copied from the original
-common target. Assam's separately labelled revision final-publication date is
-also recorded. Bihar, Himachal Pradesh, Jammu and Kashmir, and Ladakh remain
+for every Phase I and Phase II jurisdiction using later official ECI, CEO,
+government broadcaster, or district-election sources rather than copying the
+original common target. Assam's separately labelled revision final-publication
+date is also recorded. Himachal Pradesh, Jammu and Kashmir, and Ladakh remain
 schedule-unverified in this repository pending a reviewed jurisdiction-specific
 completion/order notice.
 
