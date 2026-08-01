@@ -3,6 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PolicyContent from '../components/PolicyContent.astro';
 import { translate } from '../lib/i18n';
 ---
-<BaseLayout title={translate('en', 'policy.meta.title', { title: translate('en', 'data_use.title') })}>
+<BaseLayout title={translate('en', 'policy.meta.title', { title: translate('en', 'data_use.title') })} path="/data-use/">
   <PolicyContent page="data-use" locale="en" />
 </BaseLayout>

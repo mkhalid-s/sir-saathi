@@ -29,6 +29,7 @@ REQUIRED_FILES = [
     ".github/workflows/source-freshness.yml",
     "requirements.lock",
     "scripts/check_accessibility.py",
+    "scripts/check_discoverability.py",
 ]
 
 
@@ -559,6 +560,7 @@ def main() -> int:
     run(["npm", "audit", "--workspace", "apps/web"])
     run(["npm", "run", "web:build"])
     run([sys.executable, "scripts/check_accessibility.py"])
+    run([sys.executable, "scripts/check_discoverability.py"])
     print("Launch gate passed.")
     return 0
 

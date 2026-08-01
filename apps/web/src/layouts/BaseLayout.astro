@@ -1,12 +1,20 @@
 ---
 import '../styles/global.css';
+import { availableLocales, localizedPath } from '../lib/i18n';
 const {
   title = 'SIR Saathi',
   description = 'Privacy-conscious voter guidance, official links, and state-specific SIR status for India.',
   lang = 'en',
   dir = 'ltr',
-  skipLabel = 'Skip to main content'
+  skipLabel = 'Skip to main content',
+  path = '/'
 } = Astro.props;
+if (!Astro.site) throw new Error('Astro site URL is required for canonical metadata');
+const canonicalUrl = new URL(localizedPath(path, lang), Astro.site);
+const alternates = availableLocales.map((locale) => ({
+  locale: locale.code,
+  url: new URL(localizedPath(path, locale.code), Astro.site as URL)
+}));
 ---
 <!doctype html>
 <html lang={lang} dir={dir}>
@@ -14,6 +22,11 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {alternates.map((alternate) => (
+      <link rel="alternate" hreflang={alternate.locale} href={alternate.url} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={new URL(localizedPath(path, 'en'), Astro.site)} />
     <meta name="theme-color" content="#0f172a" />
     <meta name="color-scheme" content="light" />
     <link rel="manifest" href="/manifest.webmanifest" />

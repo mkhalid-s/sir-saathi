@@ -20,6 +20,7 @@ const { state } = Astro.props;
 <BaseLayout
   title={translate('en', 'state.meta.title', { state: jurisdictionName('en', state.stateId) })}
   description={translate('en', 'state.meta.description', { state: jurisdictionName('en', state.stateId) })}
+  path={`/states/${state.stateId.toLowerCase()}/`}
 >
   <StateContent state={state} locale="en" />
 </BaseLayout>

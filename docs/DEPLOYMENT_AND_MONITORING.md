@@ -20,6 +20,8 @@ ASTRO_TELEMETRY_DISABLED=1 npm run web:build
 
 Build with Node 22 and set `PUBLIC_TURNSTILE_SITE_KEY` to the public site key paired with the API's server-side secret and allowed production hostname. Publish the contents of `apps/web/dist` into a versioned, root-owned directory under `/srv/sir-saathi/web/releases`, then atomically point `/srv/sir-saathi/web/current` at that release. The Caddy service needs read and directory-traversal permission, but it must not own the release files. Validate the adapted Caddyfile before reloading Caddy.
 
+Set `PUBLIC_SITE_URL` to the exact public HTTPS origin during every production build. It drives canonical links, reviewed-locale alternates, `sitemap.xml`, and `robots.txt`; the checked-in `.example` origin is only a deterministic local/CI default. Run `python scripts/check_discoverability.py --require-production-origin` after the production build so reserved example output cannot be deployed.
+
 ## API Smoke Check
 
 ```sh

@@ -26,6 +26,7 @@ const { locale, state } = Astro.props;
   lang={locale.code}
   dir={locale.direction}
   skipLabel={translate(locale.code, 'nav.skip')}
+  path={`/states/${state.stateId.toLowerCase()}/`}
 >
   <StateContent state={state} locale={locale.code} />
 </BaseLayout>

@@ -15,6 +15,23 @@ def test_web_state_data_imports_canonical_state_configs() -> None:
                 assert date_value not in source
 
 
+def test_public_routes_generate_canonical_locale_alternates_and_sitemap() -> None:
+    layout = (ROOT / "apps/web/src/layouts/BaseLayout.astro").read_text(encoding="utf-8")
+    sitemap = (ROOT / "apps/web/src/pages/sitemap.xml.ts").read_text(encoding="utf-8")
+    robots = (ROOT / "apps/web/src/pages/robots.txt.ts").read_text(encoding="utf-8")
+    config = (ROOT / "apps/web/astro.config.mjs").read_text(encoding="utf-8")
+
+    assert 'rel="canonical"' in layout
+    assert 'rel="alternate"' in layout
+    assert 'hreflang="x-default"' in layout
+    assert "availableLocales" in layout
+    assert "states.map" in sitemap
+    assert "availableLocales.flatMap" in sitemap
+    assert "Sitemap:" in robots
+    assert "PUBLIC_SITE_URL" in config
+    assert "must be an HTTPS origin" in config
+
+
 def test_web_wizard_collects_sir_followup_questions() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
     messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]

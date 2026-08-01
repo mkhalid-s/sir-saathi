@@ -31,6 +31,7 @@ const title = translate(locale.code, policy.titleKey);
   lang={locale.code}
   dir={locale.direction}
   skipLabel={translate(locale.code, 'nav.skip')}
+  path={`/${policy.path}/`}
 >
   <PolicyContent page={policy.path} locale={locale.code} />
 </BaseLayout>

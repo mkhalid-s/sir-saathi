@@ -28,6 +28,7 @@ The first web app is a mobile-first Astro + Preact PWA.
 - Schedule and source-check dates use locale-aware India-time formatting. Official source labels and jurisdiction-specific provenance notes remain verbatim evidence rather than being silently machine-translated.
 - Catalogue readiness is enforced twice: the Python review gate validates files before activation, and the web build independently rechecks schema version, exact keys, placeholders, reviewer identity, review date, and registry state before creating any localized route.
 - All 36 jurisdiction display names are governed translation keys while canonical `IN-*` IDs and official links remain unchanged. When more than one reviewed locale exists, every public page shows a keyboard-accessible language switcher that preserves the current home, policy, or jurisdiction route.
+- Every generated guidance page has one absolute canonical URL plus reviewed-locale and `x-default` alternates. The sitemap and robots policy are generated from the same 36-jurisdiction and runtime-ready locale catalogues, then checked against the built HTML.
 - Canonical English message keys in `config/translations/en.json` and a fail-closed readiness report. A non-English locale can be marked available only when it has the exact key set, preserves named placeholders, and records a fluent human reviewer and review date.
 - Locale direction is governed alongside availability. The hydrated wizard updates the document `lang` and `dir` attributes for reviewed selections, including right-to-left rendering for Urdu.
 

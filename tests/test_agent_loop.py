@@ -16,6 +16,14 @@ def test_slice_gate_checks_expected_commands() -> None:
     assert "scripts/launch_gate.py" in gate
 
 
+def test_launch_gate_audits_generated_discoverability() -> None:
+    gate = (ROOT / "scripts/launch_gate.py").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "scripts/check_discoverability.py" in gate
+    assert "scripts/check_discoverability.py" in workflow
+
+
 def test_official_source_freshness_has_an_unattended_fail_closed_monitor() -> None:
     workflow = (ROOT / ".github/workflows/source-freshness.yml").read_text(encoding="utf-8")
 
