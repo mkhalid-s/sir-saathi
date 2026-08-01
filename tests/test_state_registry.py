@@ -48,6 +48,22 @@ def test_phase_three_schedule_is_shared_across_19_reviewed_jurisdictions() -> No
     assert all(states[state_id].public_launch_ready is False for state_id in phase_three)
 
 
+def test_completed_phase_two_and_assam_dates_use_final_publication_evidence() -> None:
+    states = load_all_states()
+    assert states["IN-GA"].schedule.final_roll_date == date(2026, 2, 21)
+    assert states["IN-CG"].schedule.final_roll_date == date(2026, 2, 21)
+    assert states["IN-RJ"].schedule.final_roll_date == date(2026, 2, 21)
+    assert states["IN-KL"].schedule.final_roll_date == date(2026, 2, 21)
+    assert states["IN-TN"].schedule.final_roll_date == date(2026, 2, 17)
+    assert states["IN-PY"].schedule.final_roll_date == date(2026, 2, 14)
+    assert states["IN-AS"].schedule.final_roll_date == date(2026, 2, 10)
+    assert states["IN-AS"].schedule.phase == "Special Revision 2026"
+    assert all(
+        states[state_id].schedule.status_on(date(2026, 8, 1)) == "final_roll_published"
+        for state_id in {"IN-AS", "IN-CG", "IN-GA", "IN-KL", "IN-PY", "IN-RJ", "IN-TN"}
+    )
+
+
 def test_nationwide_registry_has_unique_eci_codes_and_valid_language_defaults() -> None:
     states = load_all_states()
     assert len({state.eci_state_code for state in states.values()}) == 36

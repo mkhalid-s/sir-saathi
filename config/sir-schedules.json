@@ -102,6 +102,139 @@
       "claims_end": "2026-11-20",
       "final_roll_date": "2026-12-23",
       "status": "pre_enumeration"
+    },
+    {
+      "state_ids": ["IN-GA"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-21",
+      "status": "final_roll_published",
+      "source": {
+        "label": "CEO Goa SIR final-publication press note",
+        "url": "https://www.ceogoa.nic.in/PDF/SIR2026/press-note-Final-publication.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official CEO Goa press note records publication of the SIR 2026 final roll on 21 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-CG"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-21",
+      "status": "final_roll_published",
+      "source": {
+        "label": "CEO Chhattisgarh SIR final-roll page",
+        "url": "https://ceochhattisgarh.nic.in/home_en.html",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official CEO Chhattisgarh page records the SIR 2026 final roll as published on 21 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-RJ"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-21",
+      "status": "final_roll_published",
+      "source": {
+        "label": "CEO Rajasthan SIR 2026 final electors summary",
+        "url": "https://election.rajasthan.gov.in/Elector%20Statics/Fact%20Sheet%2012.03.2026%20new%20map.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official CEO Rajasthan summary records the SIR final roll as published on 21 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-KL"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-21",
+      "status": "final_roll_published",
+      "source": {
+        "label": "ECI final-publication press note dated 15 March 2026",
+        "url": "https://ceogoa.nic.in/PDF/Press-Note-dt-15-03-2026-for-AS-KL-WB-TN-PUDU.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official ECI press note records Kerala's final roll as published on 21 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-TN"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-17",
+      "status": "final_roll_published",
+      "source": {
+        "label": "ECI final-publication press note dated 15 March 2026",
+        "url": "https://ceogoa.nic.in/PDF/Press-Note-dt-15-03-2026-for-AS-KL-WB-TN-PUDU.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official ECI press note records Tamil Nadu's final roll as published on 17 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-PY"],
+      "phase": "Phase II",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-14",
+      "status": "final_roll_published",
+      "source": {
+        "label": "ECI final-publication press note dated 15 March 2026",
+        "url": "https://ceogoa.nic.in/PDF/Press-Note-dt-15-03-2026-for-AS-KL-WB-TN-PUDU.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official ECI press note records Puducherry's final roll as published on 14 February 2026."
+      }
+    },
+    {
+      "state_ids": ["IN-AS"],
+      "phase": "Special Revision 2026",
+      "qualifying_date": "2026-01-01",
+      "enumeration_start": null,
+      "enumeration_end": null,
+      "draft_roll_date": null,
+      "claims_start": null,
+      "claims_end": null,
+      "final_roll_date": "2026-02-10",
+      "status": "final_roll_published",
+      "source": {
+        "label": "ECI final-publication press note dated 15 March 2026",
+        "url": "https://ceogoa.nic.in/PDF/Press-Note-dt-15-03-2026-for-AS-KL-WB-TN-PUDU.pdf",
+        "source_type": "official_portal",
+        "last_verified": "2026-08-01",
+        "notes": "The official ECI press note records Assam's separate final roll as published on 10 February 2026; it does not label Assam as Phase II SIR."
+      }
     }
   ]
 }

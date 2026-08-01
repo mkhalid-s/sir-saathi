@@ -102,6 +102,9 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
 
     if request.situation == "existing_voter":
         schedule_unverified = state.schedule.status == "schedule_unverified"
+        revision_complete = state.schedule.status_on(request.today) == "final_roll_published" if request.today else (
+            state.schedule.status == "final_roll_published"
+        )
         enumeration_closed = bool(
             request.today
             and state.schedule.enumeration_end
@@ -112,6 +115,12 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
                 "Check your name in the current electoral roll through the official ECI or CEO portal.",
                 "Check official CEO notices to learn which revision process and dates currently apply.",
                 "If your entry is missing or incorrect, contact your BLO or ERO and use the form they confirm is appropriate.",
+            ]
+        elif revision_complete:
+            actions = [
+                "Check your entry in the final/current electoral roll through the official portal or local BLO support.",
+                "If your entry is missing or incorrect, use the current official enrolment or correction process confirmed by your BLO or ERO.",
+                "Keep every acknowledgement or submission confirmation safely.",
             ]
         elif enumeration_closed:
             actions = [
@@ -136,6 +145,8 @@ def get_guidance(request: GuidanceInput, states: dict[str, StateConfig] | None =
             summary=(
                 "Confirm your current roll entry and check the official jurisdiction notice before relying on any SIR dates or steps."
                 if schedule_unverified
+                else "The reviewed revision schedule is complete. Verify the final/current roll and use current official remedies for any missing or incorrect entry."
+                if revision_complete
                 else "You appear to be an existing voter. The safest next step is to verify your roll entry and complete the SIR enumeration process."
             ),
             actions=tuple(actions),

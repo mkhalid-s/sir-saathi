@@ -79,6 +79,19 @@ def test_shared_phase_three_schedule_drives_source_backed_guidance() -> None:
     assert not result.warnings
 
 
+def test_completed_revision_never_sends_voter_back_to_enumeration() -> None:
+    result = get_guidance(
+        GuidanceInput(
+            state_id="IN-GA",
+            situation="existing_voter",
+            today=date(2026, 8, 1),
+        )
+    )
+    assert "final/current electoral roll" in result.actions[0]
+    assert "reviewed revision schedule is complete" in result.summary
+    assert all("enumeration" not in action.casefold() for action in result.actions)
+
+
 def test_deadline_warning_when_close() -> None:
     result = get_guidance(
         GuidanceInput(

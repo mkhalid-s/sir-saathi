@@ -296,19 +296,22 @@ def apply_schedule_overrides(
     with schedule_path.open(encoding="utf-8") as handle:
         catalogue = json.load(handle)
     source_raw = _require(catalogue, "source")
-    source = DataSource(
-        label=_require(source_raw, "label"),
-        url=_require(source_raw, "url"),
-        source_type=_require(source_raw, "source_type"),
-        last_verified=_require_date(source_raw, "last_verified"),
-        notes=_require(source_raw, "notes"),
-    )
-    if source.source_type != "official_portal":
+    if _require(source_raw, "source_type") != "official_portal":
         raise ValueError("reviewed nationwide schedule source must be an official portal")
 
     updated = dict(states)
     seen: set[str] = set()
     for group in _require(catalogue, "schedule_groups"):
+        group_source_raw = group.get("source", source_raw)
+        source = DataSource(
+            label=_require(group_source_raw, "label"),
+            url=_require(group_source_raw, "url"),
+            source_type=_require(group_source_raw, "source_type"),
+            last_verified=_require_date(group_source_raw, "last_verified"),
+            notes=_require(group_source_raw, "notes"),
+        )
+        if source.source_type != "official_portal":
+            raise ValueError("reviewed schedule group source must be an official portal")
         schedule = SirSchedule(
             phase=_require(group, "phase"),
             qualifying_date=_parse_date(group.get("qualifying_date")),
@@ -320,8 +323,8 @@ def apply_schedule_overrides(
             final_roll_date=_parse_date(group.get("final_roll_date")),
             status=_require(group, "status"),
         )
-        if not schedule.enumeration_start or not schedule.final_roll_date:
-            raise ValueError("reviewed schedule groups require enumeration and final-roll dates")
+        if not schedule.final_roll_date:
+            raise ValueError("reviewed schedule groups require a final-roll date")
         for state_id in _require(group, "state_ids"):
             if state_id in seen:
                 raise ValueError(f"duplicate reviewed schedule state_id: {state_id}")

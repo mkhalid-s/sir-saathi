@@ -119,8 +119,20 @@ def verify_source_freshness() -> None:
         for group in schedule_catalogue.get("schedule_groups", [])
         for state_id in group.get("state_ids", [])
     ]
-    if len(scheduled_ids) != 19 or len(set(scheduled_ids)) != 19:
+    phase_three_ids = [
+        state_id
+        for group in schedule_catalogue.get("schedule_groups", [])
+        if group.get("phase") == "Phase III"
+        for state_id in group.get("state_ids", [])
+    ]
+    if len(phase_three_ids) != 19 or len(set(phase_three_ids)) != 19:
         raise RuntimeError("Phase III schedule catalogue must cover exactly 19 unique jurisdictions")
+    if len(scheduled_ids) != len(set(scheduled_ids)):
+        raise RuntimeError("reviewed schedule catalogue must not duplicate jurisdictions")
+    for group in schedule_catalogue.get("schedule_groups", []):
+        group_source = group.get("source", schedule_source)
+        if group_source.get("source_type") != "official_portal" or not group_source.get("last_verified"):
+            raise RuntimeError("every reviewed schedule group must have fresh official provenance")
     if "sir-schedules.json" not in (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8"):
         raise RuntimeError("web state catalogue must consume shared reviewed schedules")
     for path in sorted((ROOT / "config/states").glob("*.json")):

@@ -12,13 +12,15 @@ in `config/sir-schedules.json` and consumed by both the API and PWA. This
 schedule evidence does not imply parser readiness or enable indexed search.
 
 Phase II official evidence has been identified for 9 states and 3 union
-territories, and Bihar was Phase I. Final-publication dates changed in several
-later notices, so the remaining unconfigured Phase II jurisdictions are a
-separate verification task rather than copying the original common schedule as
-current truth. Assam followed a special
-revision path. Himachal Pradesh, Jammu and Kashmir, and Ladakh also remain
-schedule-unverified in this repository pending a jurisdiction-specific official
-order or status notice.
+territories, and Bihar was Phase I. Final-publication evidence is now recorded
+for Chhattisgarh, Goa, Kerala, Puducherry, Rajasthan, Tamil Nadu, and West
+Bengal. Gujarat, Madhya Pradesh, Uttar Pradesh, Andaman and Nicobar Islands, and
+Lakshadweep remain a separate verification task because later dates must be
+confirmed from final-publication notices rather than copied from the original
+common target. Assam's separately labelled revision final-publication date is
+also recorded. Bihar, Himachal Pradesh, Jammu and Kashmir, and Ladakh remain
+schedule-unverified in this repository pending a reviewed jurisdiction-specific
+completion/order notice.
 
 ## 1. ECI API — Fully Mapped (No Auth, No CAPTCHA)
 

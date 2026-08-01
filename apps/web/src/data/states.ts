@@ -53,6 +53,7 @@ type ScheduleGroupConfig = StateConfig['sir_schedule'] & {
   state_ids: string[];
   phase: string;
   qualifying_date: string;
+  source?: SourceConfig;
 };
 
 export interface StateSummary {
@@ -201,6 +202,7 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
   };
   const schedule = scheduleByState[config.state_id];
   if (!schedule) return baseline;
+  const scheduleSource = schedule.source ?? scheduleCatalogue.source;
   const currentPhase = currentPhaseForSchedule(schedule);
   return {
     ...baseline,
@@ -209,15 +211,15 @@ function stateFromJurisdiction(config: JurisdictionConfig): StateSummary {
     enumerationEnd: displayDate(schedule.enumeration_end),
     claimsEnd: displayDate(schedule.claims_end),
     finalRollDate: displayDate(schedule.final_roll_date),
-    sourceLabels: [scheduleCatalogue.source.label, ...baseline.sourceLabels],
+    sourceLabels: [scheduleSource.label, ...baseline.sourceLabels],
     sourceFreshness: [
-      `${scheduleCatalogue.source.label}: last checked ${displayDate(scheduleCatalogue.source.last_verified)}`,
+      `${scheduleSource.label}: last checked ${displayDate(scheduleSource.last_verified)}`,
       ...baseline.sourceFreshness
     ],
     scheduleProvenance: {
-      label: scheduleCatalogue.source.label,
+      label: scheduleSource.label,
       confidence: 'official',
-      notes: scheduleCatalogue.source.notes
+      notes: scheduleSource.notes ?? ''
     }
   };
 }
