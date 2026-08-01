@@ -88,6 +88,7 @@ def exact_scope_sql() -> str:
             vs.ok_records,
             vs.issue_records,
             scope.enabled AS currently_enabled,
+            scope.operated_by,
             scope.reviewed_by,
             scope.reviewed_at
         FROM roll_versions rv
@@ -157,7 +158,7 @@ def _inspect_scope_with_cursor(
     if row is None:
         blockers.append("exact roll version and versioned AC scope does not exist")
         loaded = None
-        scope = {"currently_enabled": False, "reviewed_by": None, "reviewed_at": None}
+        scope = {"currently_enabled": False, "operated_by": None, "reviewed_by": None, "reviewed_at": None}
     else:
         voter_records = int(row.get("voter_records") or 0)
         issue_records = int(row.get("issue_records") or 0)
@@ -196,6 +197,7 @@ def _inspect_scope_with_cursor(
         }
         scope = {
             "currently_enabled": bool(row.get("currently_enabled")),
+            "operated_by": row.get("operated_by"),
             "reviewed_by": row.get("reviewed_by"),
             "reviewed_at": _json_value(row.get("reviewed_at")),
         }
@@ -223,17 +225,18 @@ def authorization_sql() -> str:
     return """
         WITH audit AS (
             INSERT INTO public_search_scope_events (
-                event_id, roll_version_id, ac_id, action, reviewed_by, reason, readiness_snapshot
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                event_id, roll_version_id, ac_id, action, operated_by, reviewed_by, reason, readiness_snapshot
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
             RETURNING reviewed_at
         )
-        INSERT INTO public_search_scopes (roll_version_id, ac_id, enabled, reviewed_by, reviewed_at)
-        SELECT %s, %s, %s, %s, audit.reviewed_at FROM audit
+        INSERT INTO public_search_scopes (roll_version_id, ac_id, enabled, operated_by, reviewed_by, reviewed_at)
+        SELECT %s, %s, %s, %s, %s, audit.reviewed_at FROM audit
         ON CONFLICT (roll_version_id, ac_id) DO UPDATE SET
             enabled = EXCLUDED.enabled,
+            operated_by = EXCLUDED.operated_by,
             reviewed_by = EXCLUDED.reviewed_by,
             reviewed_at = EXCLUDED.reviewed_at
-        RETURNING enabled, reviewed_by, reviewed_at
+        RETURNING enabled, operated_by, reviewed_by, reviewed_at
     """
 
 
@@ -242,6 +245,7 @@ def change_authorization(
     request: ScopeRequest,
     *,
     action: str,
+    operated_by: str,
     reviewed_by: str,
     reason: str,
     apply: bool,
@@ -249,6 +253,10 @@ def change_authorization(
 ) -> dict[str, Any]:
     if action not in {"enable", "disable"}:
         raise ValueError("action must be enable or disable")
+    if not operated_by.strip():
+        raise ValueError("operated_by is required")
+    if len(operated_by) > 200:
+        raise ValueError("operated_by must be 200 characters or fewer")
     if not reviewed_by.strip():
         raise ValueError("reviewed_by is required")
     if len(reviewed_by) > 200:
@@ -257,6 +265,8 @@ def change_authorization(
         raise ValueError("reason is required")
     if len(reason) > 500:
         raise ValueError("reason must be 500 characters or fewer")
+    if action == "enable" and operated_by.strip().casefold() == reviewed_by.strip().casefold():
+        raise ValueError("enable requires different operated_by and reviewed_by identities")
 
     if not apply:
         report = inspect_scope(connection, request, states=states)
@@ -288,12 +298,14 @@ def change_authorization(
                     request.roll_version_id,
                     request.ac_id,
                     action,
+                    operated_by.strip(),
                     reviewed_by.strip(),
                     reason.strip(),
                     evidence,
                     request.roll_version_id,
                     request.ac_id,
                     action == "enable",
+                    operated_by.strip(),
                     reviewed_by.strip(),
                 ),
             )
@@ -306,6 +318,7 @@ def change_authorization(
         "event_id": event_id,
         "authorization": {
             "currently_enabled": bool(changed.get("enabled")),
+            "operated_by": changed.get("operated_by"),
             "reviewed_by": changed.get("reviewed_by"),
             "reviewed_at": _json_value(changed.get("reviewed_at")),
         },
@@ -317,6 +330,7 @@ def scope_database(
     request: ScopeRequest,
     *,
     action: str | None,
+    operated_by: str | None,
     reviewed_by: str | None,
     reason: str | None,
     apply: bool,
@@ -331,6 +345,7 @@ def scope_database(
             connection,
             request,
             action=action,
+            operated_by=operated_by or "",
             reviewed_by=reviewed_by or "",
             reason=reason or "",
             apply=apply,
@@ -351,6 +366,7 @@ def build_parser() -> argparse.ArgumentParser:
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument("--enable", action="store_const", const="enable", dest="action")
     actions.add_argument("--disable", action="store_const", const="disable", dest="action")
+    parser.add_argument("--operated-by", help="Accountable change operator identifier; required for changes.")
     parser.add_argument("--reviewed-by", help="Accountable human reviewer identifier; required for changes.")
     parser.add_argument("--reason", help="Non-empty review/revocation rationale; required for changes.")
     parser.add_argument("--apply", action="store_true", help="Apply the requested change; omission is a dry run.")
@@ -369,8 +385,8 @@ def main(argv: list[str] | None = None, *, scope_fn: ScopeFn = scope_database) -
     if args.apply and args.action is None:
         print(json.dumps(failure_report("--apply requires --enable or --disable"), indent=2, sort_keys=True))
         return 1
-    if args.action is not None and (not args.reviewed_by or not args.reason):
-        print(json.dumps(failure_report("changes require --reviewed-by and --reason"), indent=2, sort_keys=True))
+    if args.action is not None and (not args.operated_by or not args.reviewed_by or not args.reason):
+        print(json.dumps(failure_report("changes require --operated-by, --reviewed-by, and --reason"), indent=2, sort_keys=True))
         return 1
     request = ScopeRequest(args.state, args.ac, args.roll_version_id, args.ac_id, args.max_quality_issue_rate)
     try:
@@ -378,6 +394,7 @@ def main(argv: list[str] | None = None, *, scope_fn: ScopeFn = scope_database) -
             database_url,
             request,
             action=args.action,
+            operated_by=args.operated_by,
             reviewed_by=args.reviewed_by,
             reason=args.reason,
             apply=args.apply,

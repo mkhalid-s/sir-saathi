@@ -103,7 +103,7 @@ dry run unless `--apply` is explicitly present:
 
 ```sh
 SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id>
-SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --reviewed-by <reviewer-id> --reason "<approval record>"
+SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --operated-by <operator-id> --reviewed-by <different-reviewer-id> --reason "<approval record>"
 ```
 
 No jurisdiction is enabled in the repository by default. Applying an enable or

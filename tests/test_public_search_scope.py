@@ -24,6 +24,7 @@ READY_ROW = {
     "ok_records": 2,
     "issue_records": 0,
     "currently_enabled": False,
+    "operated_by": None,
     "reviewed_by": None,
     "reviewed_at": None,
 }
@@ -100,6 +101,7 @@ def test_enable_is_dry_run_by_default() -> None:
         connection,
         request(),
         action="enable",
+        operated_by="operator@example.test",
         reviewed_by="reviewer@example.test",
         reason="Pilot acceptance record OPS-42",
         apply=False,
@@ -113,17 +115,21 @@ def test_enable_is_dry_run_by_default() -> None:
 
 def test_change_metadata_is_required_and_bounded() -> None:
     connection = FakeConnection(READY_ROW)
-    for reviewed_by, reason, expected in [
-        (" ", "approved", "reviewed_by is required"),
-        ("reviewer", " ", "reason is required"),
-        ("r" * 201, "approved", "reviewed_by must be 200"),
-        ("reviewer", "x" * 501, "reason must be 500"),
+    for operated_by, reviewed_by, reason, expected in [
+        (" ", "reviewer", "approved", "operated_by is required"),
+        ("operator", " ", "approved", "reviewed_by is required"),
+        ("operator", "reviewer", " ", "reason is required"),
+        ("o" * 201, "reviewer", "approved", "operated_by must be 200"),
+        ("operator", "r" * 201, "approved", "reviewed_by must be 200"),
+        ("operator", "reviewer", "x" * 501, "reason must be 500"),
+        (" Same Person ", "same person", "approved", "different operated_by and reviewed_by"),
     ]:
         try:
             public_search_scope.change_authorization(
                 connection,
                 request(),
                 action="enable",
+                operated_by=operated_by,
                 reviewed_by=reviewed_by,
                 reason=reason,
                 apply=False,
@@ -136,7 +142,7 @@ def test_change_metadata_is_required_and_bounded() -> None:
 
 
 def test_enable_appends_event_and_updates_scope_atomically() -> None:
-    changed = {"enabled": True, "reviewed_by": "reviewer-1", "reviewed_at": "2026-08-01T00:00:00Z"}
+    changed = {"enabled": True, "operated_by": "operator-1", "reviewed_by": "reviewer-1", "reviewed_at": "2026-08-01T00:00:00Z"}
     write_cursor = FakeCursor(READY_ROW, changed)
     connection = FakeConnection()
     connection.cursors = [write_cursor]
@@ -145,6 +151,7 @@ def test_enable_appends_event_and_updates_scope_atomically() -> None:
         connection,
         request(),
         action="enable",
+        operated_by="operator-1",
         reviewed_by="reviewer-1",
         reason="Approved evidence ticket OPS-42",
         apply=True,
@@ -159,8 +166,8 @@ def test_enable_appends_event_and_updates_scope_atomically() -> None:
     query, params = write_cursor.executed[2]
     assert "INSERT INTO public_search_scope_events" in query
     assert "INSERT INTO public_search_scopes" in query
-    assert params[3:6] == ("enable", "reviewer-1", "Approved evidence ticket OPS-42")
-    snapshot = json.loads(params[6])
+    assert params[3:7] == ("enable", "operator-1", "reviewer-1", "Approved evidence ticket OPS-42")
+    snapshot = json.loads(params[7])
     assert snapshot["ready_to_enable"] is True
     assert "results" not in snapshot
 
@@ -172,6 +179,7 @@ def test_enable_fails_closed_without_mutating_when_readiness_blocked() -> None:
         connection,
         request(),
         action="enable",
+        operated_by="operator-1",
         reviewed_by="reviewer-1",
         reason="Should remain blocked",
         apply=True,
@@ -185,7 +193,7 @@ def test_enable_fails_closed_without_mutating_when_readiness_blocked() -> None:
 
 
 def test_disable_remains_available_when_launch_readiness_is_blocked() -> None:
-    changed = {"enabled": False, "reviewed_by": "reviewer-1", "reviewed_at": "2026-08-01T00:00:00Z"}
+    changed = {"enabled": False, "operated_by": "operator-1", "reviewed_by": "operator-1", "reviewed_at": "2026-08-01T00:00:00Z"}
     cursor = FakeCursor(READY_ROW, changed)
     connection = FakeConnection()
     connection.cursors = [cursor]
@@ -194,7 +202,8 @@ def test_disable_remains_available_when_launch_readiness_is_blocked() -> None:
         connection,
         request(),
         action="disable",
-        reviewed_by="reviewer-1",
+        operated_by="operator-1",
+        reviewed_by="operator-1",
         reason="Emergency revocation",
         apply=True,
         states=states(launch_ready=False),
@@ -213,7 +222,7 @@ def test_cli_requires_explicit_review_metadata_and_apply_is_separate(capsys, mon
 
     assert exit_code == 1
     assert output["applied"] is False
-    assert "--reviewed-by and --reason" in output["error"]
+    assert "--operated-by, --reviewed-by, and --reason" in output["error"]
 
 
 def test_cli_outputs_safe_dry_run(capsys, monkeypatch) -> None:
@@ -227,7 +236,7 @@ def test_cli_outputs_safe_dry_run(capsys, monkeypatch) -> None:
     exit_code = public_search_scope.main(
         [
             "--state", "IN-MH", "--ac", "172", "--roll-version-id", "roll-1", "--ac-id", "ac-1",
-            "--enable", "--reviewed-by", "reviewer-1", "--reason", "OPS-42 approved",
+            "--enable", "--operated-by", "operator-1", "--reviewed-by", "reviewer-1", "--reason", "OPS-42 approved",
         ],
         scope_fn=fake_scope,
     )
@@ -236,3 +245,4 @@ def test_cli_outputs_safe_dry_run(capsys, monkeypatch) -> None:
     assert exit_code == 0
     assert output["dry_run"] is True
     assert calls[0][2]["apply"] is False
+    assert calls[0][2]["operated_by"] == "operator-1"

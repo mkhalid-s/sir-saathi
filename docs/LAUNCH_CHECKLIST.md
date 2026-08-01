@@ -30,9 +30,9 @@ Before any public launch:
 - `SIR_SAATHI_TRUSTED_PROXY_HOPS` matches the deployed proxy chain, and direct client access to the API is blocked before forwarded IP headers are trusted.
 - Turnstile is verified server-side with a deployment secret, expected action, and production hostname; client verification claims are rejected.
 - The PWA build has the matching `PUBLIC_TURNSTILE_SITE_KEY`; the indexed client is visible only for launch-ready states and resets every single-use or expired response.
-- Every enabled database search scope pins an exact roll version and versioned AC in `public_search_scopes`, with reviewer identity and timestamp; ingestion never enables it.
-- Run the exact-scope command without `--apply`, resolve every blocker, and obtain independent human approval before applying an enable decision.
-- Confirm each applied enable or disable has a matching append-only `public_search_scope_events` record with a non-sensitive rationale and aggregate readiness snapshot.
+- Every enabled database search scope pins an exact roll version and versioned AC in `public_search_scopes`, with distinct operator/reviewer identities and a timestamp; ingestion never enables it.
+- Run the exact-scope command without `--apply`, resolve every blocker, and obtain approval from a reviewer whose normalized identity differs from the operator before applying an enable decision.
+- Confirm each applied enable or disable has a matching append-only `public_search_scope_events` record with both identities, a non-sensitive rationale, and an aggregate readiness snapshot. Emergency disables may use the same accountable identity for both roles so revocation is never delayed.
 - Exercise `--disable --apply` in the deployment runbook and confirm revocation immediately removes the scope from public search.
 - Official links and source freshness are visible.
 - `python -m pipeline.sir_saathi_pipeline.source_freshness --fail-on-stale` passes; active schedules have been checked within 7 days.

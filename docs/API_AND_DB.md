@@ -13,7 +13,7 @@ The first API surface is intentionally small and served under the `/api` prefix:
 
 Name search fails closed unless the request is explicitly using the sanitized pilot fixture or a future state has passed public launch readiness. Public search must be scoped by Assembly Constituency; `part_number` can only narrow a search when `ac_number` is also present.
 
-The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with reviewer identity and timestamp. Every authorization change also appends a `public_search_scope_events` row with its rationale and aggregate readiness snapshot. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
+The production adapter in `services/api/search_backend.py` reads PostgreSQL only after the state, abuse-verification, and rate-limit gates pass. Its query joins `public_search_scopes`, so it can read only an exact roll-version and versioned-AC combination that is enabled with distinct operator/reviewer identities and a timestamp. Every authorization change also appends a `public_search_scope_events` row with both identities, its rationale, and aggregate readiness snapshot. Ingestion and readiness commands never create or enable allowlist rows. If `SIR_SAATHI_DATABASE_URL` is absent, no real search backend is configured and the API fails closed.
 
 `GET /api/states` exposes canonical state metadata, including structured SIR schedule dates, CEO portal, official source labels, URLs, types, and `last_verified` dates so clients can show deadlines and source freshness.
 
@@ -115,7 +115,7 @@ not write anything:
 SIR_SAATHI_DATABASE_URL="postgresql://sir_saathi@127.0.0.1:5432/sir_saathi" python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id>
 ```
 
-`--enable` and `--disable` both require an accountable reviewer identifier and a
+`--enable` and `--disable` both require accountable operator and reviewer identifiers and a
 non-empty reason. They still default to a dry run; `--apply` is the separate,
 explicit mutation switch. The applied readiness check, append-only event, and
 allowlist update run in one serializable transaction. Enable fails closed on any
@@ -123,13 +123,13 @@ blocker; disable remains available when launch or data readiness has degraded.
 
 ```bash
 # Preview, with no database write
-python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --reviewed-by <reviewer-id> --reason "<approval record>"
+python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --operated-by <operator-id> --reviewed-by <different-reviewer-id> --reason "<approval record>"
 
 # Apply only after the preview and independent human approval
-python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --reviewed-by <reviewer-id> --reason "<approval record>" --apply
+python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --enable --operated-by <operator-id> --reviewed-by <different-reviewer-id> --reason "<approval record>" --apply
 
 # Emergency or planned revocation
-python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --disable --reviewed-by <reviewer-id> --reason "<revocation record>" --apply
+python -m pipeline.sir_saathi_pipeline.public_search_scope --state IN-MH --ac 172 --roll-version-id <roll-id> --ac-id <versioned-ac-id> --disable --operated-by <operator-id> --reviewed-by <reviewer-id> --reason "<revocation record>" --apply
 ```
 
 Do not place voter names, EPIC values, addresses, or search strings in

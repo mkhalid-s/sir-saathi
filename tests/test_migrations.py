@@ -9,11 +9,13 @@ def test_migration_catalogue_is_ordered_and_has_a_self_contained_baseline() -> N
     assert [migration.migration_id for migration in catalogue] == sorted(
         migration.migration_id for migration in catalogue
     )
-    assert len(catalogue) == 7
+    assert len(catalogue) == 8
     assert "CREATE EXTENSION IF NOT EXISTS pg_trgm" in catalogue[0].sql
     assert "\\i" not in catalogue[0].sql
     assert "public_search_scopes" not in catalogue[0].sql
     assert all(len(migration.checksum) == 64 for migration in catalogue)
+    assert "public_search_scope_events_enable_dual_control" in catalogue[-1].sql
+    assert "UPDATE public_search_scopes\nSET enabled = FALSE" in catalogue[-1].sql
 
 
 def test_migration_plan_is_dry_run_friendly_and_detects_history_drift() -> None:
@@ -21,7 +23,7 @@ def test_migration_plan_is_dry_run_friendly_and_detects_history_drift() -> None:
     clean = {migration.migration_id: migration.checksum for migration in catalogue}
 
     pending = migrations.migration_plan(catalogue, {})
-    assert pending["pending_count"] == 7
+    assert pending["pending_count"] == 8
     assert pending["ready_to_apply"] is True
     assert migrations.migration_plan(catalogue, clean)["pending_count"] == 0
 

@@ -117,8 +117,10 @@ CREATE TABLE IF NOT EXISTS public_search_scopes (
     roll_version_id TEXT NOT NULL REFERENCES roll_versions(roll_version_id),
     ac_id TEXT NOT NULL REFERENCES assembly_constituencies(ac_id),
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    operated_by TEXT NOT NULL CHECK (btrim(operated_by) <> '' AND char_length(operated_by) <= 200),
     reviewed_by TEXT NOT NULL CHECK (btrim(reviewed_by) <> '' AND char_length(reviewed_by) <= 200),
     reviewed_at TIMESTAMPTZ NOT NULL,
+    CHECK (NOT enabled OR lower(btrim(operated_by)) <> lower(btrim(reviewed_by))),
     PRIMARY KEY (roll_version_id, ac_id)
 );
 
@@ -129,10 +131,12 @@ CREATE TABLE IF NOT EXISTS public_search_scope_events (
     roll_version_id TEXT NOT NULL REFERENCES roll_versions(roll_version_id),
     ac_id TEXT NOT NULL REFERENCES assembly_constituencies(ac_id),
     action TEXT NOT NULL CHECK (action IN ('enable', 'disable')),
+    operated_by TEXT NOT NULL CHECK (btrim(operated_by) <> '' AND char_length(operated_by) <= 200),
     reviewed_by TEXT NOT NULL CHECK (btrim(reviewed_by) <> '' AND char_length(reviewed_by) <= 200),
     reason TEXT NOT NULL CHECK (btrim(reason) <> '' AND char_length(reason) <= 500),
     readiness_snapshot JSONB NOT NULL,
-    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (action <> 'enable' OR lower(btrim(operated_by)) <> lower(btrim(reviewed_by)))
 );
 
 CREATE INDEX IF NOT EXISTS idx_public_search_scope_events_scope_time
