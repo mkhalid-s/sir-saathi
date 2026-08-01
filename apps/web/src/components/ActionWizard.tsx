@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { states, uiLanguageOptionsForState, uiLanguageReadiness } from '../data/states';
 import { deadlineFor, defaultAnswers, guidanceFor, type Situation, type StatusAnswer, type WizardAnswers } from '../lib/guidance';
+import { translate, type MessageKey, type MessageValues } from '../lib/i18n';
 
 const situations: { value: Situation; label: string }[] = [
   { value: 'existing_voter', label: 'I am already a voter and want to verify' },
@@ -49,8 +50,9 @@ export default function ActionWizard() {
   const languageOptions = uiLanguageOptionsForState(state.languageCodes);
   const languageReadiness = uiLanguageReadiness(state.languages);
   const scheduleKnown = state.currentPhase !== 'schedule_unverified';
-  const guidanceBoundaryText = 'Guidance only: SIR Saathi does not decide voter eligibility or replace official ECI, CEO, BLO, or ERO channels.';
-  const shareSafetyText = 'Confirm deadlines and eligibility on the official portal. Do not include EPIC, address, or other private details when forwarding.';
+  const message = (key: MessageKey, values: MessageValues = {}) => translate(uiLanguage, key, values);
+  const guidanceBoundaryText = message('safety.guidance_boundary');
+  const shareSafetyText = `${message('safety.confirm_official')} ${message('safety.no_private_share')}`;
   const shareText = [
     `SIR Saathi checklist for ${state.name}: ${guidance.title}.`,
     `Next: ${guidance.actions[0]}`,
@@ -91,8 +93,8 @@ export default function ActionWizard() {
       <div class="find-flow" aria-labelledby="find-name-title">
         <div>
           <p class="eyebrow dark">Find my name</p>
-          <h2 id="find-name-title">Start with a safe official check.</h2>
-          <p class="reference-copy">Enter only the hints you would use on the official portal. This MVP fallback does not send these details to SIR Saathi servers, call indexed search, or expose public voter records.</p>
+          <h2 id="find-name-title">{message('find.title')}</h2>
+          <p class="reference-copy">Enter only the hints you would use on the official portal. {message('find.privacy_notice')}</p>
         </div>
         <form class="find-form" onSubmit={(event) => {
           event.preventDefault();
@@ -124,7 +126,7 @@ export default function ActionWizard() {
         </form>
         {findSubmitted && (
           <div class="find-result" aria-live="polite">
-            <h3>Use official search first for {state.name}</h3>
+            <h3>{message('find.official_first', { state: state.name })}</h3>
             <p>Open the official portal and search with your name plus district, AC, or part number if you know them. Confirm any match on the official portal before acting.</p>
             <ol class="official-check-steps">
               <li>Select {state.name} or the matching state section on the official portal.</li>
@@ -134,8 +136,8 @@ export default function ActionWizard() {
             </ol>
             <p>Indexed public search is not used here unless a state passes launch readiness, official schedule provenance, privacy, and abuse checks.</p>
             <div class="actions">
-              <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">Open official portal</a>
-              <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>If not found, show missing-name steps</button>
+              <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_official')}</a>
+              <button class="secondary-button" type="button" onClick={useMissingNameGuidance}>{message('find.not_found')}</button>
               <button class="secondary-button" type="button" onClick={clearFindNameHints}>Clear entered details</button>
             </div>
           </div>
@@ -174,19 +176,19 @@ export default function ActionWizard() {
       </div>
 
       <div class="result-card priority-${guidance.priority}">
-        <p class="result-status">{state.status}</p>
+        <p class="result-status">{message(`status.${state.currentPhase}` as MessageKey)}</p>
         <h2 class="result-title">{guidance.title}</h2>
         <p class="result-summary">{guidance.summary}</p>
         <p class="source-note">{guidanceBoundaryText}</p>
-        <p class="deadline">Deadline: {deadline ?? 'Check official portal'}</p>
-        <p class="source-note">Sources: {state.sourceLabels.join(', ')}</p>
+        <p class="deadline">{message('guidance.deadline', { deadline: deadline ?? message('guidance.deadline_unknown') })}</p>
+        <p class="source-note">{message('guidance.sources', { sources: state.sourceLabels.join(', ') })}</p>
         <p class="source-note">Schedule source: {state.scheduleProvenance.label} ({state.scheduleProvenance.confidence}).</p>
         <p class="source-note">Schedule note: {state.scheduleProvenance.notes}</p>
         <p class="source-note">Sources last checked: {state.sourceFreshness.join('; ')}</p>
-        <p class="source-note">Confirm deadlines and eligibility on the official portal before acting.</p>
-        <p class="source-note">UI language status: {languageReadiness}</p>
+        <p class="source-note">{message('safety.confirm_official')}</p>
+        <p class="source-note">{message('guidance.language_status', { status: languageReadiness })}</p>
         <p class="source-note">State languages tracked: {state.languages.join(', ')}. Default: {state.defaultLanguage}.</p>
-        {!state.publicLaunchReady && <p class="warning-note">Indexed public search is not launch-ready for this state yet. Use official channels for final verification.</p>}
+        {!state.publicLaunchReady && <p class="warning-note">{message('safety.search_unavailable')}</p>}
       </div>
 
       {guidance.notices.length > 0 && (
@@ -197,13 +199,13 @@ export default function ActionWizard() {
 
       <div class="action-grid">
         <div>
-          <h3 class="list-title">Do this next</h3>
+          <h3 class="list-title">{message('guidance.next_actions')}</h3>
           <ol>
             {guidance.actions.map((action) => <li>{action}</li>)}
           </ol>
         </div>
         <div>
-          <h3 class="list-title">Keep ready</h3>
+          <h3 class="list-title">{message('guidance.documents')}</h3>
           <ul>
             {guidance.documents.map((document) => <li>{document}</li>)}
           </ul>
@@ -212,8 +214,8 @@ export default function ActionWizard() {
 
       <div class="actions">
         <p class="share-note">{shareSafetyText}</p>
-        <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">Open official portal</a>
-        <a class="secondary-button" href={shareUrl} target="_blank" rel="noreferrer">Share checklist</a>
+        <a class="primary-button" href={state.officialLink} target="_blank" rel="noreferrer">{message('find.open_official')}</a>
+        <a class="secondary-button" href={shareUrl} target="_blank" rel="noreferrer">{message('guidance.share')}</a>
       </div>
     </section>
   );

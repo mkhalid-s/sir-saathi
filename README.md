@@ -35,6 +35,7 @@ The web app is a mobile-first Progressive Web App. It currently provides:
 - Search availability status that explains when indexed search is off and why.
 - UI language readiness messaging. English is available; non-English UI translations are marked planned until human review.
 - A translation-catalogue readiness command that enforces exact keys, placeholders, and fluent human-review attestations before a locale can be enabled.
+- Runtime catalogue discovery for the guidance wizard, with registry-gated locale activation and safe English fallback.
 - Installable PWA manifest, app icon, and offline app-shell service worker. API requests are not cached offline.
 
 More detail: `docs/PWA_MVP.md`.

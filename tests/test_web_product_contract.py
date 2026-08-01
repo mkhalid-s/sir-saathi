@@ -16,6 +16,7 @@ def test_web_state_data_imports_canonical_state_configs() -> None:
 
 def test_web_wizard_collects_sir_followup_questions() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     for field in [
         "bloVisited",
         "enumerationFormReceived",
@@ -24,34 +25,36 @@ def test_web_wizard_collects_sir_followup_questions() -> None:
         "baseRollFound",
     ]:
         assert field in source
-    assert "Sources:" in source
+    assert "guidance.sources" in source
     assert "Schedule source:" in source
     assert "Schedule note:" in source
     assert "Sources last checked:" in source
-    assert "Confirm deadlines and eligibility on the official portal" in source
-    assert "Indexed public search is not launch-ready" in source
-    assert "Guidance only: SIR Saathi does not decide voter eligibility" in source
-    assert "replace official ECI, CEO, BLO, or ERO channels" in source
+    assert "Confirm deadlines and eligibility on the official portal" in messages["safety.confirm_official"]
+    assert "Indexed public search is not launch-ready" in messages["safety.search_unavailable"]
+    assert "Guidance only: SIR Saathi does not decide voter eligibility" in messages["safety.guidance_boundary"]
+    assert "replace official ECI, CEO, BLO, or ERO channels" in messages["safety.guidance_boundary"]
+    assert "translate(uiLanguage" in source
 
 
 def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
     page_source = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
     wizard_source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "Find my name safely" in page_source
     assert 'href="#find-name"' in page_source
     assert 'id="find-name"' in wizard_source
-    assert "Start with a safe official check" in wizard_source
+    assert "Start with a safe official check" in messages["find.title"]
     assert "State for official check" in wizard_source
     assert "updateState" in wizard_source
     assert "setFindSubmitted(false)" in wizard_source
-    assert "does not send these details to SIR Saathi servers" in wizard_source
-    assert "call indexed search" in wizard_source
+    assert "does not send these details to SIR Saathi servers" in messages["find.privacy_notice"]
+    assert "call indexed search" in messages["find.privacy_notice"]
     assert "official-check-steps" in wizard_source
     assert "Search with the name as it may appear in the roll" in wizard_source
     assert "Try common spelling variations" in wizard_source
     assert "contact BLO or ERO" in wizard_source
-    assert "Open official portal" in wizard_source
-    assert "If not found, show missing-name steps" in wizard_source
+    assert "Open official portal" in messages["find.open_official"]
+    assert "If not found, show missing-name steps" in messages["find.not_found"]
     assert "Clear entered details" in wizard_source
     assert "clearFindNameHints" in wizard_source
     assert "setNameQuery('')" in wizard_source
@@ -65,9 +68,10 @@ def test_homepage_surfaces_safe_find_name_entry_flow() -> None:
 
 def test_web_share_checklist_includes_safety_reminder() -> None:
     source = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     assert "shareSafetyText" in source
-    assert "Confirm deadlines and eligibility on the official portal" in source
-    assert "Do not include EPIC, address, or other private details" in source
+    assert "Confirm deadlines and eligibility on the official portal" in messages["safety.confirm_official"]
+    assert "Do not include EPIC, address" in messages["safety.no_private_share"]
     assert "encodeURIComponent(shareText)" in source
 
 
@@ -148,7 +152,10 @@ def test_web_surfaces_reviewed_ui_language_readiness() -> None:
     assert "human review" in state_source
     assert "UI language" in wizard_source
     assert "(planned)" in wizard_source
-    assert "UI language status:" in wizard_source
+    assert "guidance.language_status" in wizard_source
+    i18n_source = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
+    assert "import.meta.glob" in i18n_source
+    assert "locale.status === 'available'" in i18n_source
 
 
 def test_web_copy_does_not_overstate_source_certainty() -> None:
@@ -156,6 +163,7 @@ def test_web_copy_does_not_overstate_source_certainty() -> None:
         ROOT / "apps/web/src/data/states.ts",
         ROOT / "apps/web/src/components/ActionWizard.tsx",
         ROOT / "apps/web/src/pages/methodology.astro",
+        ROOT / "config/translations/en.json",
     ]
     combined = "\n".join(path.read_text(encoding="utf-8") for path in web_sources)
     assert "verified " not in combined.casefold()

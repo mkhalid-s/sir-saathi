@@ -161,12 +161,15 @@ def verify_ui_language_readiness() -> None:
 
     states_source = (ROOT / "apps/web/src/data/states.ts").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    i18n = (ROOT / "apps/web/src/lib/i18n.ts").read_text(encoding="utf-8")
     if "uiLanguageReadiness" not in states_source or "English UI is available now" not in states_source:
         raise RuntimeError("web must expose explicit UI language readiness")
     if "human review" not in states_source:
         raise RuntimeError("planned non-English UI translations must require human review")
     if "UI language" not in wizard or "(planned)" not in wizard:
         raise RuntimeError("wizard must show available and planned UI language status")
+    if "import.meta.glob" not in i18n or "hasEnabledCatalogue" not in i18n or "translate(uiLanguage" not in wizard:
+        raise RuntimeError("reviewed translation catalogues must drive rendered wizard copy")
     report = translation_readiness()
     invalid_available = [
         item["locale"]
@@ -179,41 +182,44 @@ def verify_ui_language_readiness() -> None:
 
 def verify_safe_share_copy() -> None:
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     if "shareSafetyText" not in wizard or "encodeURIComponent(shareText)" not in wizard:
         raise RuntimeError("wizard must use explicit safe checklist share text")
-    if "Confirm deadlines and eligibility on the official portal" not in wizard:
+    if "Confirm deadlines and eligibility on the official portal" not in messages["safety.confirm_official"]:
         raise RuntimeError("shared checklist must ask users to confirm official deadlines")
-    if "Do not include EPIC, address, or other private details" not in wizard:
+    if "Do not include EPIC, address" not in messages["safety.no_private_share"]:
         raise RuntimeError("shared checklist must warn against forwarding private voter details")
 
 
 def verify_guidance_boundary_copy() -> None:
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
-    if "Guidance only: SIR Saathi does not decide voter eligibility" not in wizard:
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
+    if "safety.guidance_boundary" not in wizard or "Guidance only: SIR Saathi does not decide voter eligibility" not in messages["safety.guidance_boundary"]:
         raise RuntimeError("wizard must say guidance is not an eligibility decision")
-    if "replace official ECI, CEO, BLO, or ERO channels" not in wizard:
+    if "replace official ECI, CEO, BLO, or ERO channels" not in messages["safety.guidance_boundary"]:
         raise RuntimeError("wizard must direct final decisions to official channels")
 
 
 def verify_safe_find_name_flow() -> None:
     homepage = (ROOT / "apps/web/src/pages/index.astro").read_text(encoding="utf-8")
     wizard = (ROOT / "apps/web/src/components/ActionWizard.tsx").read_text(encoding="utf-8")
+    messages = json.loads((ROOT / "config/translations/en.json").read_text(encoding="utf-8"))["messages"]
     if "Find my name safely" not in homepage or 'href="#find-name"' not in homepage:
         raise RuntimeError("homepage must expose a clear safe find-name entry point")
-    if 'id="find-name"' not in wizard or "Start with a safe official check" not in wizard:
+    if 'id="find-name"' not in wizard or "Start with a safe official check" not in messages["find.title"]:
         raise RuntimeError("wizard must contain the safe find-name flow")
     if "State for official check" not in wizard or "updateState" not in wizard:
         raise RuntimeError("find-name flow must ask for state before official search steps")
     if "setFindSubmitted(false)" not in wizard:
         raise RuntimeError("find-name flow must hide stale official-check results when state changes")
-    if "does not send these details to SIR Saathi servers" not in wizard:
+    if "does not send these details to SIR Saathi servers" not in messages["find.privacy_notice"]:
         raise RuntimeError("find-name flow must explain local-only fallback behavior")
     for expected in ["official-check-steps", "Search with the name as it may appear in the roll", "Try common spelling variations", "contact BLO or ERO"]:
         if expected not in wizard:
             raise RuntimeError("find-name flow must show official-check steps before missing-name guidance")
-    if "call indexed search" not in wizard or "/api/search" in wizard:
+    if "call indexed search" not in messages["find.privacy_notice"] or "/api/search" in wizard:
         raise RuntimeError("find-name flow must not call indexed public search in the MVP fallback")
-    if "If not found, show missing-name steps" not in wizard or "situation: 'missing_name'" not in wizard or "currentRollFound: 'no'" not in wizard:
+    if "find.not_found" not in wizard or "situation: 'missing_name'" not in wizard or "currentRollFound: 'no'" not in wizard:
         raise RuntimeError("find-name flow must hand off to missing-name guidance with current-roll-not-found status")
     if "Clear entered details" not in wizard or "clearFindNameHints" not in wizard:
         raise RuntimeError("find-name flow must let users clear local search hints")
