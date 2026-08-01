@@ -24,4 +24,5 @@ If sensitive data is exposed:
 - Review sources marked `expiring` before they become launch blockers. The report contains public source labels and dates only—never voter queries or records.
 - Weekly dependency audit.
 - Daily API/PWA health checks after launch.
-- Backup restore test before enabling real indexed search.
+- Create an encrypted database backup before every migration or roll ingestion and on the deployment's reviewed schedule; verify its checksum/decryption/archive structure with `python -m pipeline.sir_saathi_pipeline.backups verify`.
+- Perform and record an isolated full restore test before enabling real indexed search and at the reviewed recovery-test cadence. Archive verification alone is insufficient.

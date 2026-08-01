@@ -15,9 +15,9 @@ Reviewed on 2026-08-01. This is the handoff map for the autonomous review → va
 | Accessibility | The generated-page structural audit covers every public page and currently reports zero findings. Keyboard, live-region, RTL, forced-colour, reduced-motion, reflow, zoom, and assistive-technology expectations are documented; manual conformance evidence is still required. |
 | PWA and offline | Install metadata, interoperable icons, service-worker update controls, a localized offline notice, and a build-generated precache of every jurisdiction/policy page plus hashed UI assets are present. API responses are never cached. |
 | Deployment and security | Caddy serves the PWA and `/api/*` on one HTTPS origin. The template includes HSTS, anti-framing, no-sniff, referrer, permissions, cross-origin-resource, and deny-by-default Turnstile-compatible CSP headers. Production dependencies are locked. |
-| Operations | Health probes, a daily official-source freshness workflow, source expiry gates, canonical/alternate/sitemap/robots validation, checksum-pinned serialized database migrations, sensitive-data scanning, dependency audit, tests, build, accessibility audit, and discoverability audit are part of the release gate. |
+| Operations | Health probes, a daily official-source freshness workflow, source expiry gates, canonical/alternate/sitemap/robots validation, checksum-pinned serialized database migrations, direct-to-`age` encrypted backups with non-destructive archive verification, sensitive-data scanning, dependency audit, tests, build, accessibility audit, and discoverability audit are part of the release gate. |
 
-The review snapshot passes 232 tests, reports zero npm vulnerabilities, verifies 140 governed source records as fresh, precaches 54 generated offline assets, and reports zero automated accessibility or discoverability findings across the 40-page English build.
+The review snapshot passes 239 tests, reports zero npm vulnerabilities, verifies 140 governed source records as fresh, precaches 54 generated offline assets, and reports zero automated accessibility or discoverability findings across the 40-page English build.
 
 ## Pending External Evidence
 

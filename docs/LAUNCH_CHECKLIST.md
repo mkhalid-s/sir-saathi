@@ -16,6 +16,7 @@ Before any public launch:
 - The deployed origin returns the reviewed HSTS, anti-framing, referrer, permissions, cross-origin-resource, and deny-by-default CSP headers, and Turnstile completes without CSP violations.
 - The systemd service reads `/etc/sir-saathi/api.env`, the file is `root:sir-saathi` mode `0640`, and the default monitor successfully probes `/api/health` with a bounded timeout.
 - A recoverable pre-migration backup exists; the migration dry run was reviewed, `--apply` completed under the advisory lock, and `python -m pipeline.sir_saathi_pipeline.migrations --check` reports no pending or drifted history.
+- The backup was streamed directly into `age`, its private SHA-256 sidecar and `pg_restore --list` verification pass, and a trusted backup has been fully restored into an isolated PostgreSQL 16 drill database with aggregate readiness counts recorded.
 - Privacy, methodology, and data-use pages are published.
 - The generated 40-page accessibility audit passes, and the deployed build has a recorded manual review using the browser, assistive-technology, zoom, reflow, contrast, forced-colour, reduced-motion, and RTL matrix in `docs/ACCESSIBILITY.md`.
 - `PUBLIC_SITE_URL` was set to the final HTTPS origin; the generated discoverability audit passes and no canonical, alternate, sitemap, or robots URL uses the `.example` CI origin.

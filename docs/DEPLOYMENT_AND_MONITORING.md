@@ -42,6 +42,25 @@ SIR_SAATHI_DATABASE_URL="<operator-owned connection>" python -m pipeline.sir_saa
 
 The runner expands the reviewed initial schema, records a SHA-256 checksum for every migration, rejects changed or unknown history, holds a PostgreSQL advisory lock across the operation, and applies each pending file in its own transaction. It never prints the database URL. Take and verify a recoverable backup before `--apply`; schema rollback remains restore/release-specific and is not inferred automatically.
 
+## Encrypted Database Backups
+
+Install PostgreSQL 16 client tools and `age` on the operator host. Choose an absolute backup directory outside the repository, owned by the backup operator and mode `0700`. Create an `age` recipient/identity pair using the deployment's secret-management process; the identity file must never enter Git or the application VM release directory.
+
+```sh
+SIR_SAATHI_DATABASE_URL="<operator-owned connection>" \
+SIR_SAATHI_BACKUP_DIR="/secure/off-host/sir-saathi" \
+SIR_SAATHI_AGE_RECIPIENT="<age recipient>" \
+python -m pipeline.sir_saathi_pipeline.backups create
+
+SIR_SAATHI_AGE_IDENTITY_FILE="/secure/keys/sir-saathi-backup-identity" \
+python -m pipeline.sir_saathi_pipeline.backups verify \
+  --backup "/secure/off-host/sir-saathi/<backup>.dump.age"
+```
+
+Creation streams `pg_dump` custom-format output directly into `age`; no plaintext archive is written. The command atomically promotes a non-empty encrypted artifact, writes a private SHA-256 sidecar, removes partial output on failure, and reports only the filename, checksum, and size—not the connection or voter data. Verification checks the encrypted checksum, decrypts as a stream, and asks `pg_restore --list` to validate archive structure without writing plaintext or connecting to a database.
+
+Archive verification is not a restore drill. Before public indexed search, restore a reviewed backup into a newly created isolated PostgreSQL 16 database with no public network route, run migrations with `--check`, compare aggregate row/readiness counts, record the operator/date/result outside the repository, and securely destroy the drill database. PostgreSQL archives can execute source-controlled database definitions during restore, so use only backups produced by the trusted deployment and a least-privileged isolated target.
+
 Real indexed search additionally requires runtime secrets/configuration outside Git: `SIR_SAATHI_DATABASE_URL`, `SIR_SAATHI_REDIS_URL`, `SIR_SAATHI_TURNSTILE_SECRET`, `SIR_SAATHI_TURNSTILE_HOSTNAME`, and the exact `SIR_SAATHI_TRUSTED_PROXY_HOPS` value. The configured application factory loads all five. `PUBLIC_TURNSTILE_SITE_KEY` is intentionally public and belongs in the PWA build environment; the Turnstile secret must never use the `PUBLIC_` prefix. Keep Uvicorn on loopback so untrusted clients cannot bypass Caddy or forge trusted forwarding headers.
 
 ## Local Database
@@ -59,7 +78,7 @@ Real indexed search additionally requires runtime secrets/configuration outside 
 
 ## Monitoring
 
-Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/health` route and every request has a 10-second timeout. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Alert on API health failure, PWA failure, disk pressure, database backup failure, and elevated error rates.
+Run `infra/monitoring/healthcheck.sh` from cron or an external uptime service. Its default API probe is the loopback `/api/health` route and every request has a 10-second timeout. `WEB_URL` is required and must be the deployed public HTTPS origin so the probe exercises Caddy, TLS, and the PWA together; optionally override `API_URL` and `CURL_TIMEOUT_SECONDS`. Alert on API health failure, PWA failure, disk pressure, missing/failed encrypted backups, failed archive verification, overdue restore drills, and elevated error rates.
 
 After every edge-policy change, inspect a deployed state page and exercise the indexed-search challenge in a browser with the console open. Treat CSP violations involving same-origin Astro assets or `https://challenges.cloudflare.com` as release blockers; do not broaden the policy to arbitrary third-party origins.
 

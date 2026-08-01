@@ -34,6 +34,7 @@ REQUIRED_FILES = [
     ".github/workflows/source-freshness.yml",
     "requirements.lock",
     "pipeline/sir_saathi_pipeline/migrations.py",
+    "pipeline/sir_saathi_pipeline/backups.py",
     "scripts/check_accessibility.py",
     "scripts/check_discoverability.py",
 ]
@@ -109,6 +110,13 @@ def verify_deploy_templates() -> None:
         raise RuntimeError("database migrations must be checksummed and serialized")
     if "connection.transaction()" not in migrations or "--apply" not in migrations or "--check" not in migrations:
         raise RuntimeError("database migrations must be atomic, dry-run-first, and deploy-checkable")
+    backups = (ROOT / "pipeline/sir_saathi_pipeline/backups.py").read_text(encoding="utf-8")
+    if '"PGDATABASE": database_url' not in backups or '"--format=custom"' not in backups:
+        raise RuntimeError("database backups must keep credentials out of process arguments and use restorable archives")
+    if '"--encrypt", "--recipient"' not in backups or '"--decrypt", "--identity"' not in backups:
+        raise RuntimeError("database backups must be encrypted and independently verifiable")
+    if "backup directory must stay outside the repository" not in backups or "plaintext_written_to_disk" not in backups:
+        raise RuntimeError("database backups must stay private and never persist plaintext dumps")
 
 
 def verify_abuse_protection() -> None:

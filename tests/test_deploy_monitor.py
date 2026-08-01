@@ -12,6 +12,7 @@ def test_deployment_reference_files_exist() -> None:
         "infra/monitoring/healthcheck.sh",
         "infra/docker-compose.yml",
         "requirements.lock",
+        "pipeline/sir_saathi_pipeline/backups.py",
     ]:
         assert (ROOT / rel).is_file()
 
@@ -89,3 +90,15 @@ def test_ci_and_deployment_use_the_exact_python_lock() -> None:
     assert any(dependency.startswith("fastapi==") for dependency in dependencies)
     assert any(dependency.startswith("psycopg-binary==") for dependency in dependencies)
     assert any(dependency.startswith("redis==") for dependency in dependencies)
+
+
+def test_backup_operator_path_is_encrypted_and_non_destructive() -> None:
+    backup = (ROOT / "pipeline/sir_saathi_pipeline/backups.py").read_text(encoding="utf-8")
+
+    assert '"PGDATABASE": database_url' in backup
+    assert '"--format=custom"' in backup
+    assert '"--encrypt", "--recipient"' in backup
+    assert '"--decrypt", "--identity"' in backup
+    assert '"--list"' in backup
+    assert "plaintext_written_to_disk" in backup
+    assert "backup directory must stay outside the repository" in backup
