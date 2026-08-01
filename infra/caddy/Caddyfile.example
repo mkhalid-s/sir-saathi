@@ -1,4 +1,5 @@
 sir-saathi.example {
+    root * /srv/sir-saathi/web/current
     encode zstd gzip
 
     header {
@@ -13,6 +14,12 @@ sir-saathi.example {
     }
 
     handle {
-        respond "PWA is served by Cloudflare Pages" 200
+        @pwaControl path /sw.js /manifest.webmanifest
+        header @pwaControl Cache-Control "no-cache"
+
+        @hashedAssets path /_astro/*
+        header @hashedAssets Cache-Control "public, max-age=31536000, immutable"
+
+        file_server
     }
 }

@@ -32,6 +32,16 @@ def test_caddy_routes_api_prefix_without_stripping() -> None:
     assert "Cache-Control" in caddy
 
 
+def test_caddy_serves_the_static_pwa_on_the_api_origin() -> None:
+    caddy = (ROOT / "infra/caddy/Caddyfile.example").read_text(encoding="utf-8")
+
+    assert "root * /srv/sir-saathi/web/current" in caddy
+    assert "file_server" in caddy
+    assert "PWA is served by Cloudflare Pages" not in caddy
+    assert "path /sw.js /manifest.webmanifest" in caddy
+    assert 'Cache-Control "no-cache"' in caddy
+
+
 def test_compose_is_local_only_and_not_trust_auth() -> None:
     compose = (ROOT / "infra/docker-compose.yml").read_text(encoding="utf-8")
     assert "Local development only" in compose
@@ -45,6 +55,8 @@ def test_healthcheck_probes_the_deployed_api_route_with_a_timeout() -> None:
     assert "http://127.0.0.1:8000/api/health" in healthcheck
     assert "127.0.0.1:8000/health" not in healthcheck
     assert "--max-time" in healthcheck
+    assert 'WEB_URL="${WEB_URL:-}"' in healthcheck
+    assert "WEB_URL must be set" in healthcheck
 
 
 def test_ci_and_deployment_use_the_exact_python_lock() -> None:

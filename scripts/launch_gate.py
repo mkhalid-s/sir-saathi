@@ -57,6 +57,12 @@ def verify_deploy_templates() -> None:
     systemd = (ROOT / "infra/systemd/sir-saathi-api.service").read_text(encoding="utf-8")
     if "handle /api/*" not in caddy or "reverse_proxy 127.0.0.1:8000" not in caddy:
         raise RuntimeError("Caddy template must proxy /api/* to the local API service")
+    if "root * /srv/sir-saathi/web/current" not in caddy or "file_server" not in caddy:
+        raise RuntimeError("Caddy must serve the built PWA on the same origin as /api/*")
+    if "PWA is served by Cloudflare Pages" in caddy:
+        raise RuntimeError("Caddy must not return a placeholder instead of the PWA")
+    if 'path /sw.js /manifest.webmanifest' not in caddy or 'Cache-Control "no-cache"' not in caddy:
+        raise RuntimeError("service-worker control files must remain revalidatable")
     if "POSTGRES_HOST_AUTH_METHOD" in compose or "127.0.0.1:5432:5432" not in compose:
         raise RuntimeError("local compose must not expose unauthenticated Postgres")
     if "redis:8-alpine" not in compose or "127.0.0.1:6379:6379" not in compose:
